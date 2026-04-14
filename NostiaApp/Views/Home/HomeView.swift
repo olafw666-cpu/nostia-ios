@@ -121,7 +121,7 @@ struct HomeView: View {
             await vm.loadAll()
             locationManager.requestLocationOnce()
         }
-        .onChange(of: locationManager.location) { newLoc in
+        .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }
             Task { await vm.updateLocation(loc) }
         }

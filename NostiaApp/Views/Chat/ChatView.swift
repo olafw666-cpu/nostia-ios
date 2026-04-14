@@ -43,7 +43,7 @@ struct ChatView: View {
                     }
                     .padding(.horizontal, 16)
                 }
-                .onChange(of: vm.messages.count) { _ in
+                .onChange(of: vm.messages.count) {
                     withAnimation { proxy.scrollTo("bottom") }
                 }
                 .onAppear {

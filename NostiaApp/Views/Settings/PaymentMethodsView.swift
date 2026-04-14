@@ -11,7 +11,7 @@ struct PaymentMethodsView: View {
                     ProgressView().tint(Color.nostiaAccent).padding(40)
                 } else {
                     // Saved cards
-                    SettingsSection(title: "Saved Cards") {
+                    GlassSection(title: "Saved Cards") {
                         if vm.paymentMethods.isEmpty {
                             Text("No saved payment methods")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -52,7 +52,7 @@ struct PaymentMethodsView: View {
                     }
 
                     // Stripe Connect — for receiving payments
-                    SettingsSection(title: "Receive Payments") {
+                    GlassSection(title: "Receive Payments") {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "banknote.fill").foregroundColor(Color.nostiaSuccess).frame(width: 24)
@@ -94,7 +94,7 @@ struct PaymentMethodsView: View {
             }
             .padding(16)
         }
-        .background(Color.nostiaBackground)
+        .background(.clear)
         .task { await vm.load() }
         .refreshable { await vm.load() }
         .sheet(isPresented: $vm.showOnboarding) {

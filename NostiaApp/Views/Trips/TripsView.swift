@@ -168,12 +168,12 @@ struct EditTripSheet: View {
                     NostiaTextField(label: "Title *", placeholder: "Trip title", text: $title)
                     NostiaTextField(label: "Destination *", placeholder: "Destination", text: $destination)
                     NostiaTextField(label: "Start Date", placeholder: "YYYY-MM-DD", text: $startDate, keyboardType: .numberPad)
-                        .onChange(of: startDate) { newValue in
+                        .onChange(of: startDate) { _, newValue in
                             let formatted = formatTripDate(newValue)
                             if formatted != newValue { startDate = formatted }
                         }
                     NostiaTextField(label: "End Date", placeholder: "YYYY-MM-DD", text: $endDate, keyboardType: .numberPad)
-                        .onChange(of: endDate) { newValue in
+                        .onChange(of: endDate) { _, newValue in
                             let formatted = formatTripDate(newValue)
                             if formatted != newValue { endDate = formatted }
                         }

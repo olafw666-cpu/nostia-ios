@@ -44,7 +44,7 @@ struct CreatePostSheet: View {
                             .padding(14)
                             .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .onChange(of: selectedPhoto) { item in
+                    .onChange(of: selectedPhoto) { _, item in
                         Task {
                             if let data = try? await item?.loadTransferable(type: Data.self) {
                                 let img = UIImage(data: data)

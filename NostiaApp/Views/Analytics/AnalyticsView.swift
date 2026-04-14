@@ -26,7 +26,7 @@ struct AnalyticsView: View {
                         Text("90 days").tag(90)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: vm.selectedDays) { _ in Task { await vm.load() } }
+                    .onChange(of: vm.selectedDays) { Task { await vm.load() } }
 
                     // Metric cards
                     if let d = vm.dashboard {
