@@ -171,8 +171,8 @@ struct ExpenseCard: View {
 
             HStack {
                 if let paidBy = entry.paidByName {
-                    Text("Paid by ").foregroundColor(Color.nostiaTextSecond) +
-                    Text(paidBy).bold().foregroundColor(.white)
+                    Text("Paid by \(Text(paidBy).bold().foregroundColor(.white))")
+                        .foregroundColor(Color.nostiaTextSecond)
                 }
                 Spacer()
                 if let cat = entry.category {
