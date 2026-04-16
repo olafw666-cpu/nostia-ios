@@ -97,7 +97,7 @@ struct VaultView: View {
                 if ok { showAddExpense = false; await vm.loadVault(tripId: tripId) }
             }
         }
-        .paymentSheet(isPresented: $vm.showPaymentSheet, paymentSheet: vm.paymentSheet ?? dummyPaymentSheet()) { result in
+        .optionalPaymentSheet(isPresented: $vm.showPaymentSheet, paymentSheet: vm.paymentSheet) { result in
             Task {
                 await vm.handlePaymentResult(result, tripId: tripId)
                 if case .completed = result {
@@ -106,9 +106,20 @@ struct VaultView: View {
             }
         }
     }
+}
 
-    private func dummyPaymentSheet() -> PaymentSheet {
-        PaymentSheet(paymentIntentClientSecret: "pi_dummy_secret_dummy", configuration: PaymentSheet.Configuration())
+private extension View {
+    @ViewBuilder
+    func optionalPaymentSheet(
+        isPresented: Binding<Bool>,
+        paymentSheet: PaymentSheet?,
+        onCompletion: @escaping (PaymentSheetResult) -> Void
+    ) -> some View {
+        if let sheet = paymentSheet {
+            self.paymentSheet(isPresented: isPresented, paymentSheet: sheet, onCompletion: onCompletion)
+        } else {
+            self
+        }
     }
 }
 
