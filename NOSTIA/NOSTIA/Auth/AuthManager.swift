@@ -60,15 +60,13 @@ final class AuthManager: ObservableObject {
 
     func logout() {
         // Revoke token server-side (fire-and-forget) before deleting locally
-        if let token = getToken() {
+        if let token = getToken(), let url = URL(string: AppConfig.apiBaseURL + "/auth/logout") {
             Task {
-                _ = try? await URLSession.shared.data(for: {
-                    var req = URLRequest(url: URL(string: AppConfig.apiBaseURL + "/auth/logout")!)
-                    req.httpMethod = "POST"
-                    req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    return req
-                }())
+                var req = URLRequest(url: url)
+                req.httpMethod = "POST"
+                req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                _ = try? await URLSession.shared.data(for: req)
             }
         }
         deleteToken()
