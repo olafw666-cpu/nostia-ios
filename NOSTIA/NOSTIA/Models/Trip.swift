@@ -26,10 +26,13 @@ struct Trip: Codable, Identifiable, Hashable {
 }
 
 struct TripParticipant: Codable, Identifiable, Hashable {
-    let id: Int
-    let userId: Int
+    let id: Int        // user's ID (u.id from server query)
     let name: String?
     let username: String?
+    let role: String?
+
+    // Alias for call-sites that use .userId — server returns "id", not "userId"
+    var userId: Int { id }
 }
 
 struct CreateTripBody: Encodable {

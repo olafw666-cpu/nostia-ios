@@ -52,6 +52,7 @@ struct PrivacyView: View {
                                  value: consentStatus?.dataCollectionConsent == true ? "Granted" : "Not granted",
                                  valueColor: consentStatus?.dataCollectionConsent == true ? Color.nostiaSuccess : Color.nostriaDanger)
 
+
                         Button { showRevokeAlert = true } label: {
                             HStack {
                                 Image(systemName: "xmark.shield").foregroundColor(Color.nostriaDanger)
@@ -130,9 +131,9 @@ struct PrivacyView: View {
     func loadData() async {
         isLoading = true
         async let userData = AuthAPI.shared.getMe()
-        async let consentData: ConsentStatus? = try? APIClient.shared.request("/consent")
-        let (u, c) = await (try? userData, await consentData)
-        user = u; consentStatus = c
+        async let consentResponseData: ConsentResponse? = try? APIClient.shared.request("/consent")
+        let (u, c) = await (try? userData, await consentResponseData)
+        user = u; consentStatus = c?.consent
         isLoading = false
     }
 
@@ -153,9 +154,23 @@ struct PrivacyView: View {
     }
 }
 
+// Server wraps the consent object: { consent: { locationConsent: 1, ... }, isValid: bool }
+// SQLite stores booleans as integers (0/1), so we decode as Int and derive Bool.
+struct ConsentResponse: Decodable {
+    let consent: ConsentStatus?
+}
+
 struct ConsentStatus: Decodable {
-    let locationConsent: Bool?
-    let dataCollectionConsent: Bool?
+    private let locationConsentRaw: Int?
+    private let dataCollectionConsentRaw: Int?
+
+    var locationConsent: Bool { locationConsentRaw.map { $0 != 0 } ?? false }
+    var dataCollectionConsent: Bool { dataCollectionConsentRaw.map { $0 != 0 } ?? false }
+
+    enum CodingKeys: String, CodingKey {
+        case locationConsentRaw = "locationConsent"
+        case dataCollectionConsentRaw = "dataCollectionConsent"
+    }
 }
 
 // MARK: - Glass Settings Components
