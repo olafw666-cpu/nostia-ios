@@ -50,7 +50,11 @@ struct HomeView: View {
                         Button {
                             Task { await vm.toggleHomeStatus() }
                         } label: {
-                            Text(vm.user?.isHomeOpen == true ? "🏠 Open" : "🔒 Closed")
+                            HStack(spacing: 5) {
+                                Image(systemName: vm.user?.isHomeOpen == true ? "house" : "lock")
+                                    .font(.system(size: 13))
+                                Text(vm.user?.isHomeOpen == true ? "Open" : "Closed")
+                            }
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 16).padding(.vertical, 8)

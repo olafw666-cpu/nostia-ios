@@ -131,7 +131,11 @@ struct FriendRow: View {
                         .background(Color.nostiaAccent).clipShape(Circle())
                         .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
                 }
-                Text(friend.isHomeOpen ? "🏠 Open" : "🔒 Closed")
+                HStack(spacing: 5) {
+                        Image(systemName: friend.isHomeOpen ? "house" : "lock")
+                            .font(.system(size: 12))
+                        Text(friend.isHomeOpen ? "Open" : "Closed")
+                    }
                     .font(.caption.bold()).foregroundColor(.white)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .glassEffect(in: Capsule())

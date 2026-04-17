@@ -46,9 +46,9 @@ struct CreatePostSheet: View {
                     }
                     .onChange(of: selectedPhoto) { _, item in
                         Task {
-                            if let data = try? await item?.loadTransferable(type: Data.self) {
-                                let img = UIImage(data: data)
-                                let compressed = img?.jpegData(compressionQuality: 0.6) ?? data
+                            if let data = try? await item?.loadTransferable(type: Data.self),
+                               let img = UIImage(data: data),
+                               let compressed = img.resizedForUpload().jpegData(compressionQuality: 0.55) {
                                 vm.newPostImageData = compressed.base64EncodedString()
                             }
                         }
