@@ -16,26 +16,24 @@ struct VaultView: View {
                 if vm.isLoading {
                     ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
                 } else if let data = vm.vaultData {
-                    // Total amount
-                    if let total = data.totalAmount {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Total Expenses").font(.footnote).foregroundColor(Color.nostiaTextSecond)
-                                Text(String(format: "$%.2f", total))
-                                    .font(.system(size: 34, weight: .bold)).foregroundColor(.white)
-                            }
-                            Spacer()
-                            Button { showAddExpense = true } label: {
-                                Label("Add Expense", systemImage: "plus")
-                                    .font(.subheadline.bold()).foregroundColor(.white)
-                                    .padding(.horizontal, 16).padding(.vertical, 10)
-                                    .background(Color.nostiaAccent).cornerRadius(12)
-                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
-                            }
+                    // Total amount header — always visible so Add Expense is always reachable
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Total Expenses").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                            Text(String(format: "$%.2f", data.totalAmount ?? 0))
+                                .font(.system(size: 34, weight: .bold)).foregroundColor(.white)
                         }
-                        .padding(16)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+                        Spacer()
+                        Button { showAddExpense = true } label: {
+                            Label("Add Expense", systemImage: "plus")
+                                .font(.subheadline.bold()).foregroundColor(.white)
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                .background(Color.nostiaAccent).cornerRadius(12)
+                                .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                        }
                     }
+                    .padding(16)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 18))
 
                     // Balances
                     if !data.balances.isEmpty {

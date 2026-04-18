@@ -185,11 +185,17 @@ struct CreateTripSheet: View {
     @State private var title = ""
     @State private var destination = ""
     @State private var description = ""
-    @State private var startDate = ""
-    @State private var endDate = ""
+    @State private var startDateEnabled = false
+    @State private var startDateValue = Date()
+    @State private var endDateEnabled = false
+    @State private var endDateValue = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
     @State private var isSaving = false
     @State private var validationError: String?
     @Environment(\.dismiss) private var dismiss
+
+    private let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
+    }()
 
     var body: some View {
         NavigationStack {
@@ -197,16 +203,49 @@ struct CreateTripSheet: View {
                 VStack(spacing: 16) {
                     NostiaTextField(label: "Title *", placeholder: "Trip title", text: $title)
                     NostiaTextField(label: "Destination *", placeholder: "Where are you going?", text: $destination)
-                    NostiaTextField(label: "Start Date *", placeholder: "YYYY-MM-DD", text: $startDate, keyboardType: .numberPad)
-                        .onChange(of: startDate) { _, newValue in
-                            let formatted = formatTripDate(newValue)
-                            if formatted != newValue { startDate = formatted }
+
+                    // Start date
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Start Date")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                            Spacer()
+                            Toggle("", isOn: $startDateEnabled)
+                                .labelsHidden().tint(Color.nostiaAccent)
                         }
-                    NostiaTextField(label: "End Date *", placeholder: "YYYY-MM-DD", text: $endDate, keyboardType: .numberPad)
-                        .onChange(of: endDate) { _, newValue in
-                            let formatted = formatTripDate(newValue)
-                            if formatted != newValue { endDate = formatted }
+                        if startDateEnabled {
+                            DatePicker("", selection: $startDateValue, displayedComponents: .date)
+                                .datePickerStyle(.graphical)
+                                .tint(Color.nostiaAccent)
+                                .colorScheme(.dark)
+                                .padding(8)
+                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                         }
+                    }
+
+                    // End date
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("End Date")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                            Spacer()
+                            Toggle("", isOn: $endDateEnabled)
+                                .labelsHidden().tint(Color.nostiaAccent)
+                        }
+                        if endDateEnabled {
+                            DatePicker("", selection: $endDateValue,
+                                       in: startDateEnabled ? startDateValue... : Date.distantPast...,
+                                       displayedComponents: .date)
+                                .datePickerStyle(.graphical)
+                                .tint(Color.nostiaAccent)
+                                .colorScheme(.dark)
+                                .padding(8)
+                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
                             .font(.system(size: 14, weight: .semibold))
@@ -238,21 +277,13 @@ struct CreateTripSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         validationError = nil
-                        if !startDate.isEmpty && !isValidTripDate(startDate) {
-                            validationError = "Start date is not a valid date."; return
-                        }
-                        if !endDate.isEmpty && !isValidTripDate(endDate) {
-                            validationError = "End date is not a valid date."; return
-                        }
-                        if !startDate.isEmpty && !endDate.isEmpty && endDate < startDate {
-                            validationError = "End date must be on or after start date."; return
-                        }
+                        let start = startDateEnabled ? dateFmt.string(from: startDateValue) : nil
+                        let end = endDateEnabled ? dateFmt.string(from: endDateValue) : nil
                         isSaving = true
                         Task {
                             await onSave(title, destination,
                                          description.isEmpty ? nil : description,
-                                         startDate.isEmpty ? nil : startDate,
-                                         endDate.isEmpty ? nil : endDate)
+                                         start, end)
                             isSaving = false
                         }
                     } label: {
@@ -276,11 +307,15 @@ struct CreateExpenseSheet: View {
     @State private var description = ""
     @State private var amountText = ""
     @State private var category = ""
-    @State private var dateText = ""
+    @State private var dateValue = Date()
     @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
 
     let categories = ["Food", "Transport", "Accommodation", "Activities", "Shopping", "Other"]
+
+    private let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
+    }()
 
     var body: some View {
         NavigationStack {
@@ -300,7 +335,17 @@ struct CreateExpenseSheet: View {
                         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                     }
 
-                    NostiaTextField(label: "Date *", placeholder: "YYYY-MM-DD", text: $dateText)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Date *")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                        DatePicker("", selection: $dateValue, displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            .tint(Color.nostiaAccent)
+                            .colorScheme(.dark)
+                            .padding(8)
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                    }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Category")
@@ -327,25 +372,21 @@ struct CreateExpenseSheet: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        guard let amount = Double(amountText), amount > 0, !description.isEmpty, !dateText.isEmpty else { return }
+                        guard let amount = Double(amountText), amount > 0, !description.isEmpty else { return }
                         isSaving = true
                         Task {
-                            await onSave(description, amount, category.isEmpty ? nil : category, dateText)
+                            await onSave(description, amount, category.isEmpty ? nil : category, dateFmt.string(from: dateValue))
                             isSaving = false
                         }
                     } label: {
                         if isSaving { ProgressView().tint(Color.nostiaAccent) }
                         else { Text("Add").fontWeight(.semibold).foregroundColor(Color.nostiaAccent) }
                     }
-                    .disabled(description.isEmpty || amountText.isEmpty || dateText.isEmpty || isSaving)
+                    .disabled(description.isEmpty || amountText.isEmpty || isSaving)
                 }
             }
         }
         .presentationBackground(.ultraThinMaterial)
-        .onAppear {
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            dateText = fmt.string(from: Date())
-        }
     }
 }
 

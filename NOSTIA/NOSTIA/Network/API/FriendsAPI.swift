@@ -19,7 +19,7 @@ final class FriendsAPI {
     }
 
     func sendRequest(to userId: Int) async throws {
-        try await client.requestVoid("/friends/request", method: "POST", body: ["userId": userId])
+        try await client.requestVoid("/friends/request", method: "POST", body: ["friendId": userId])
     }
 
     func acceptRequest(_ requestId: Int) async throws {

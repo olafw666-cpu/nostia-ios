@@ -118,6 +118,7 @@ struct TripCard: View {
                     Button { onVault() } label: {
                         Label("Vault", systemImage: "creditcard")
                             .font(.footnote.bold()).foregroundColor(Color.nostiaSuccess)
+                            .lineLimit(1).fixedSize()
                     }
                 }
             }
