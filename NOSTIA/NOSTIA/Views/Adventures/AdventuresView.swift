@@ -3,6 +3,7 @@ import SwiftUI
 struct AdventuresView: View {
     @StateObject private var vm = AdventuresViewModel()
     @State private var showCreateAdventure = false
+    @State private var showCreateEvent = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,15 +29,26 @@ struct AdventuresView: View {
             if vm.isLoading {
                 LoadingView()
             } else if vm.selectedTab == .events {
-                List(vm.events) { event in
-                    EventCard(event: event)
-                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                }
-                .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
-                .refreshable { await vm.loadAll() }
-                .overlay {
-                    if vm.events.isEmpty { EmptyStateView(icon: "calendar", text: "No events", sub: "Check back soon!") }
+                ZStack(alignment: .bottomTrailing) {
+                    List(vm.events) { event in
+                        EventCard(event: event)
+                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    }
+                    .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
+                    .refreshable { await vm.loadAll() }
+                    .overlay {
+                        if vm.events.isEmpty { EmptyStateView(icon: "calendar", text: "No events", sub: "Tap + to create one!") }
+                    }
+
+                    Button(action: { showCreateEvent = true }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 22, weight: .bold)).foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.nostiaAccent).clipShape(Circle())
+                            .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 12, y: 6)
+                    }
+                    .padding(20)
                 }
             } else {
                 // Category filters
@@ -87,6 +99,9 @@ struct AdventuresView: View {
         .sheet(isPresented: $showCreateAdventure) {
             CreateAdventureSheet(vm: vm, isPresented: $showCreateAdventure)
         }
+        .sheet(isPresented: $showCreateEvent) {
+            CreateEventFromDiscoverSheet(vm: vm, isPresented: $showCreateEvent)
+        }
     }
 }
 
@@ -97,6 +112,14 @@ struct EventCard: View {
             HStack {
                 Text(event.title).font(.headline).foregroundColor(.white)
                 Spacer()
+                if let vis = event.visibility, vis != "public" {
+                    Label(vis == "friends" ? "Friends" : "Private",
+                          systemImage: vis == "friends" ? "person.2" : "lock")
+                        .font(.caption.bold()).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(vis == "friends" ? Color.nostiaAccent : Color.nostriaDanger)
+                        .cornerRadius(12)
+                }
                 if let dist = event.formattedDistance {
                     Text(dist).font(.caption.bold()).foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
@@ -109,11 +132,151 @@ struct EventCard: View {
             if let loc = event.location {
                 Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
-            Label(event.formattedDate, systemImage: "calendar")
-                .font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
+            HStack {
+                Label(event.formattedDate, systemImage: "calendar")
+                    .font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
+                if let name = event.creatorName {
+                    Spacer()
+                    Text("by \(name)").font(.caption).foregroundColor(Color.nostiaTextMuted)
+                }
+            }
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: - Create Event from Discover tab
+
+struct CreateEventFromDiscoverSheet: View {
+    @ObservedObject var vm: AdventuresViewModel
+    @Binding var isPresented: Bool
+
+    @State private var title = ""
+    @State private var location = ""
+    @State private var description = ""
+    @State private var eventDate = Date()
+    @State private var hasDate = true
+    @State private var visibility = "public"
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+
+    let visibilityOptions = ["public", "friends", "private"]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Title *").font(.caption.bold()).foregroundColor(.white.opacity(0.7))
+                        TextField("Event name", text: $title)
+                            .padding(12)
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundColor(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Location").font(.caption.bold()).foregroundColor(.white.opacity(0.7))
+                        TextField("Where is it?", text: $location)
+                            .padding(12)
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundColor(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Date & Time").font(.caption.bold()).foregroundColor(.white.opacity(0.7))
+                            Spacer()
+                            Toggle("", isOn: $hasDate).labelsHidden().tint(Color.nostiaAccent)
+                        }
+                        if hasDate {
+                            DatePicker("", selection: $eventDate)
+                                .datePickerStyle(.graphical)
+                                .tint(Color.nostiaAccent)
+                                .colorScheme(.dark)
+                                .padding(8)
+                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Visibility").font(.caption.bold()).foregroundColor(.white.opacity(0.7))
+                        HStack(spacing: 8) {
+                            ForEach(visibilityOptions, id: \.self) { opt in
+                                FilterChip(
+                                    title: opt.capitalized,
+                                    isActive: visibility == opt,
+                                    action: { visibility = opt }
+                                )
+                            }
+                        }
+                        Text(visibility == "public" ? "Anyone can see this event" :
+                             visibility == "friends" ? "Only your friends can see this" :
+                             "Only you can see this")
+                            .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Description").font(.caption.bold()).foregroundColor(.white.opacity(0.7))
+                        TextEditor(text: $description)
+                            .frame(minHeight: 80).padding(8)
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundColor(.white).scrollContentBackground(.hidden)
+                    }
+
+                    if let err = errorMessage {
+                        Text(err).font(.caption).foregroundColor(Color.nostriaDanger)
+                    }
+
+                    Button(action: {
+                        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else {
+                            errorMessage = "Title is required"; return
+                        }
+                        isLoading = true; errorMessage = nil
+                        Task {
+                            do {
+                                try await vm.createEvent(
+                                    title: title.trimmingCharacters(in: .whitespaces),
+                                    description: description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description,
+                                    location: location.trimmingCharacters(in: .whitespaces).isEmpty ? nil : location,
+                                    eventDate: hasDate ? eventDate : nil,
+                                    visibility: visibility
+                                )
+                                isPresented = false
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                            isLoading = false
+                        }
+                    }) {
+                        HStack {
+                            if isLoading { ProgressView().tint(.white) }
+                            else { Text("Create Event").fontWeight(.bold) }
+                        }
+                        .frame(maxWidth: .infinity).padding()
+                        .background(
+                            title.isEmpty
+                                ? AnyShapeStyle(Color.nostiaInput)
+                                : AnyShapeStyle(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
+                                                               startPoint: .leading, endPoint: .trailing))
+                        )
+                        .foregroundColor(.white).cornerRadius(14)
+                    }
+                    .disabled(isLoading || title.isEmpty)
+                }
+                .padding(20)
+            }
+            .background(.clear)
+            .navigationTitle("New Event")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isPresented = false }.foregroundColor(Color.nostiaTextSecond)
+                }
+            }
+        }
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 

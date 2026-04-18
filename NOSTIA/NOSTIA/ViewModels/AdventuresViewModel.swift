@@ -55,4 +55,19 @@ final class AdventuresViewModel: ObservableObject {
         )
         await loadAll()
     }
+
+    func createEvent(title: String, description: String?, location: String?, eventDate: Date?, visibility: String) async throws {
+        let fmt = ISO8601DateFormatter()
+        let dateStr = eventDate.map { fmt.string(from: $0) }
+        let _ = try await AdventuresAPI.shared.createEvent(
+            title: title,
+            description: description,
+            location: location,
+            eventDate: dateStr,
+            lat: nil,
+            lng: nil,
+            visibility: visibility
+        )
+        await loadAll()
+    }
 }

@@ -23,6 +23,8 @@ struct Event: Codable, Identifiable {
     var latitude: Double?
     var longitude: Double?
     var distance: Double?
+    var visibility: String?
+    var creatorName: String?
     var createdAt: String?
 
     var formattedDate: String {
