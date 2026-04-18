@@ -49,6 +49,24 @@ struct PaymentMethodsView: View {
                                 Divider().background(Color.nostriaBorder)
                             }
                         }
+
+                        // Add card button
+                        Button {
+                            Task { await vm.startAddCard() }
+                        } label: {
+                            HStack {
+                                if vm.isLoading {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
+                                    Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                }
+                            }
+                            .frame(maxWidth: .infinity).padding(14)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
+                        }
+                        .padding(.horizontal, 16).padding(.bottom, 12)
+                        .disabled(vm.isLoading)
                     }
 
                     // Stripe Connect — for receiving payments
@@ -101,6 +119,24 @@ struct PaymentMethodsView: View {
             if let url = vm.onboardingURL {
                 SafariView(url: url)
             }
+        }
+        .optionalPaymentSheet(isPresented: $vm.showAddCard, paymentSheet: vm.addCardSheet) { result in
+            Task { await vm.handleAddCardResult(result) }
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func optionalPaymentSheet(
+        isPresented: Binding<Bool>,
+        paymentSheet: PaymentSheet?,
+        onCompletion: @escaping (PaymentSheetResult) -> Void
+    ) -> some View {
+        if let sheet = paymentSheet {
+            self.paymentSheet(isPresented: isPresented, paymentSheet: sheet, onCompletion: onCompletion)
+        } else {
+            self
         }
     }
 }
