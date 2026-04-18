@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import StripePaymentSheet
 
 @MainActor
 final class PaymentsViewModel: ObservableObject {
@@ -9,6 +10,8 @@ final class PaymentsViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var onboardingURL: URL?
     @Published var showOnboarding = false
+    @Published var addCardSheet: PaymentSheet?
+    @Published var showAddCard = false
 
     func load() async {
         isLoading = true
@@ -48,5 +51,39 @@ final class PaymentsViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func startAddCard() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let intent = try await PaymentsAPI.shared.createSetupIntent()
+            var config = PaymentSheet.Configuration()
+            config.merchantDisplayName = "Nostia"
+            config.customer = PaymentSheet.CustomerConfiguration(
+                id: intent.customerId,
+                ephemeralKeySecret: intent.ephemeralKey
+            )
+            addCardSheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
+            showAddCard = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    func handleAddCardResult(_ result: PaymentSheetResult) async {
+        showAddCard = false
+        switch result {
+        case .completed:
+            // Payment method is now attached to the Stripe customer on Stripe's side.
+            // Reload so the server can reflect the saved card.
+            await load()
+        case .canceled:
+            break
+        case .failed(let error):
+            errorMessage = error.localizedDescription
+        }
+        addCardSheet = nil
     }
 }

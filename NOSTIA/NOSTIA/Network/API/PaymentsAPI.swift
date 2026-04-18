@@ -1,5 +1,11 @@
 import Foundation
 
+struct SetupIntentResponse: Decodable {
+    let clientSecret: String
+    let customerId: String
+    let ephemeralKey: String
+}
+
 final class PaymentsAPI {
     static let shared = PaymentsAPI()
     private let client = APIClient.shared
@@ -15,6 +21,15 @@ final class PaymentsAPI {
 
     func setDefaultPaymentMethod(id: String) async throws {
         try await client.requestVoid("/stripe/payment-methods/\(id)/default", method: "PUT")
+    }
+
+    func createSetupIntent() async throws -> SetupIntentResponse {
+        try await client.request("/stripe/setup-intent", method: "POST")
+    }
+
+    func savePaymentMethod(paymentMethodId: String) async throws {
+        try await client.requestVoid("/stripe/payment-methods/save", method: "POST",
+                                     body: ["paymentMethodId": paymentMethodId])
     }
 
     func startOnboarding() async throws -> String {
