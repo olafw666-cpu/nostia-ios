@@ -4,6 +4,7 @@ struct CommentsSheet: View {
     let postId: Int
     @ObservedObject var vm: FeedViewModel
     @FocusState private var inputFocused: Bool
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -36,7 +37,7 @@ struct CommentsSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { inputFocused = false }
+                    Button("Done") { inputFocused = false; dismiss() }
                         .foregroundColor(Color.nostiaAccent)
                 }
             }

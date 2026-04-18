@@ -109,17 +109,23 @@ struct TripCard: View {
                             .glassEffect(in: RoundedRectangle(cornerRadius: 8))
                             .foregroundColor(Color.nostiaTextSecond)
                     }
+                    .buttonStyle(.plain)
                     Button { onEdit() } label: {
                         Image(systemName: "pencil")
                             .padding(6)
                             .glassEffect(in: RoundedRectangle(cornerRadius: 8))
                             .foregroundColor(Color.nostiaTextSecond)
                     }
+                    .buttonStyle(.plain)
                     Button { onVault() } label: {
                         Label("Vault", systemImage: "creditcard")
                             .font(.footnote.bold()).foregroundColor(Color.nostiaSuccess)
                             .lineLimit(1).fixedSize()
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.nostiaSuccess.opacity(0.4), lineWidth: 1))
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
