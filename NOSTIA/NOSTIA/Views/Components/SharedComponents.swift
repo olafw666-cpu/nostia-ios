@@ -201,7 +201,7 @@ struct CreateTripSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    NostiaTextField(label: "Title *", placeholder: "Trip title", text: $title)
+                    NostiaTextField(label: "Title *", placeholder: "Vault title", text: $title)
                     NostiaTextField(label: "Destination *", placeholder: "Where are you going?", text: $destination)
 
                     // Start date
@@ -267,7 +267,7 @@ struct CreateTripSheet: View {
                 .padding(20)
             }
             .background(.clear)
-            .navigationTitle("Create Trip")
+            .navigationTitle("Create Vault")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
