@@ -25,6 +25,8 @@ final class FriendsViewModel: ObservableObject {
             friends = f
             receivedRequests = r.received
             sentRequests = r.sent
+        } catch is CancellationError {
+            // view refreshed mid-load; ignore
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -17,6 +17,12 @@ struct VaultEntry: Codable, Identifiable {
     var paidByName: String?
     var splits: [VaultSplit]?
 
+    enum CodingKeys: String, CodingKey {
+        case id, description, amount, currency, category, date, splits
+        case paidById = "paidBy"
+        case paidByName
+    }
+
     var formattedDate: String {
         let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
         let out = DateFormatter(); out.dateFormat = "MMM d, yyyy"

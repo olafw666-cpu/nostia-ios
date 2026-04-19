@@ -30,7 +30,7 @@ struct TripsView: View {
                 .refreshable { await vm.loadTrips() }
                 .overlay {
                     if vm.trips.isEmpty {
-                        EmptyStateView(icon: "airplane", text: "No trips yet", sub: "Create your first adventure!")
+                        EmptyStateView(icon: "creditcard", text: "No vaults yet", sub: "Create your first vault!")
                     }
                 }
             }
@@ -133,10 +133,10 @@ struct TripCard: View {
         .glassEffect(in: RoundedRectangle(cornerRadius: 18))
         .contextMenu {
             Button(role: .destructive) { showDeleteAlert = true } label: {
-                Label("Delete Trip", systemImage: "trash")
+                Label("Delete Vault", systemImage: "trash")
             }
         }
-        .alert("Delete Trip", isPresented: $showDeleteAlert) {
+        .alert("Delete Vault", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { onDelete() }
         } message: {
@@ -203,7 +203,7 @@ struct EditTripSheet: View {
                 .padding(20)
             }
             .background(.clear)
-            .navigationTitle("Edit Trip")
+            .navigationTitle("Edit Vault")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {

@@ -11,7 +11,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                HomeView()
+                HomeView(selectedTab: $selectedTab)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
@@ -21,22 +21,22 @@ struct MainTabView: View {
 
             NavigationStack {
                 TripsView()
-                    .navigationTitle("My Trips")
+                    .navigationTitle("My Vaults")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Trips", systemImage: "airplane") }
+            .tabItem { Label("Vaults", systemImage: "creditcard") }
             .tag(1)
 
             NavigationStack {
-                FeedView()
-                    .navigationTitle("Feed")
+                FriendsMapView()
+                    .navigationTitle("Map")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Feed", systemImage: selectedTab == 2 ? "photo.on.rectangle.angled.fill" : "photo.on.rectangle.angled") }
+            .tabItem { Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map") }
             .tag(2)
 
             NavigationStack {
@@ -58,16 +58,6 @@ struct MainTabView: View {
             }
             .tabItem { Label("Friends", systemImage: selectedTab == 4 ? "person.2.fill" : "person.2") }
             .tag(4)
-
-            NavigationStack {
-                FriendsMapView()
-                    .navigationTitle("Friends Map")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .tabItem { Label("Map", systemImage: selectedTab == 5 ? "map.fill" : "map") }
-            .tag(5)
         }
         .tint(Color.nostiaAccent)
         .onAppear {

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Binding var selectedTab: Int
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject var locationManager: LocationManager
     @State private var showLogoutAlert = false
@@ -32,9 +33,10 @@ struct HomeView: View {
                                 showLogoutAlert = true
                             } label: {
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .font(.title2)
+                                    .font(.system(size: 18))
+                                    .frame(width: 20, height: 20)
                                     .foregroundColor(.white)
-                                    .padding(10)
+                                    .padding(12)
                                     .glassEffect(in: Circle())
                             }
                         }
@@ -77,17 +79,23 @@ struct HomeView: View {
 
                 // Quick stats
                 HStack(spacing: 12) {
-                    StatCard(icon: "airplane", color: Color.nostiaAccent,
-                             count: vm.trips.count, label: "Trips")
+                    StatCard(icon: "creditcard", color: Color.nostiaAccent,
+                             count: vm.trips.count, label: "Vaults") {
+                        selectedTab = 1
+                    }
                     StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
-                             count: vm.friends.count, label: "Friends")
+                             count: vm.friends.count, label: "Friends") {
+                        selectedTab = 4
+                    }
                     StatCard(icon: "calendar", color: Color.nostiaWarning,
-                             count: vm.upcomingEvents.count, label: "Events")
+                             count: vm.upcomingEvents.count, label: "Events") {
+                        selectedTab = 3
+                    }
                 }
 
-                // Upcoming trips preview
+                // Upcoming vaults preview
                 if !vm.trips.isEmpty {
-                    SectionHeader(title: "Upcoming Trips")
+                    SectionHeader(title: "Upcoming Vaults")
                     ForEach(vm.trips.prefix(2)) { trip in
                         TripPreviewCard(trip: trip)
                     }
@@ -103,14 +111,6 @@ struct HomeView: View {
                     SectionHeader(title: "Upcoming Events")
                     ForEach(vm.upcomingEvents.prefix(2)) { event in
                         EventPreviewCard(event: event)
-                    }
-                }
-
-                // Recent feed posts
-                if !vm.feed.isEmpty {
-                    SectionHeader(title: "Recent Posts")
-                    ForEach(vm.feed.prefix(3)) { post in
-                        FeedPreviewCard(post: post)
                     }
                 }
             }
@@ -142,15 +142,21 @@ struct HomeView: View {
 
 struct StatCard: View {
     let icon: String; let color: Color; let count: Int; let label: String
+    var onTap: (() -> Void)? = nil
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon).font(.title2).foregroundColor(color)
-            Text("\(count)").font(.system(size: 24, weight: .bold)).foregroundColor(.white)
-            Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
+        Button {
+            onTap?()
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon).font(.title2).foregroundColor(color)
+                Text("\(count)").font(.system(size: 24, weight: .bold)).foregroundColor(.white)
+                Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         }
-        .frame(maxWidth: .infinity)
-        .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .buttonStyle(.plain)
     }
 }
 
@@ -204,33 +210,6 @@ struct EventPreviewCard: View {
             Text(event.formattedDate).font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-    }
-}
-
-struct FeedPreviewCard: View {
-    let post: FeedPost
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                AvatarView(initial: String(post.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 32)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(post.name).font(.subheadline.bold()).foregroundColor(.white)
-                    Text(post.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
-                }
-                Spacer()
-                HStack(spacing: 10) {
-                    Label("\(post.likeCount)", systemImage: "heart")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                    Label("\(post.commentCount)", systemImage: "bubble.right")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                }
-            }
-            if let content = post.content, !content.isEmpty {
-                Text(content).font(.subheadline).foregroundColor(Color.nostiaTextSecond).lineLimit(2)
-            }
-        }
-        .padding(14)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
     }
 }

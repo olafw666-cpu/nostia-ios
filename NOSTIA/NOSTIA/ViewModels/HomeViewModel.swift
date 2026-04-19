@@ -9,7 +9,6 @@ final class HomeViewModel: ObservableObject {
     @Published var upcomingEvents: [Event] = []
     @Published var nearbyEvents: [Event] = []
     @Published var friends: [Friend] = []
-    @Published var feed: [FeedPost] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -28,11 +27,9 @@ final class HomeViewModel: ObservableObject {
         async let t = TripsAPI.shared.getAll()
         async let e = AdventuresAPI.shared.getUpcomingEvents(limit: 5)
         async let f = FriendsAPI.shared.getAll()
-        async let fd = FeedAPI.shared.getUserFeed(limit: 5)
         trips = (try? await t) ?? []
         upcomingEvents = (try? await e) ?? []
         friends = (try? await f) ?? []
-        feed = (try? await fd) ?? []
         isLoading = false
     }
 
