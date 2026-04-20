@@ -18,11 +18,13 @@ final class FriendsViewModel: ObservableObject {
 
     func loadAll() async {
         isLoading = true
-        async let friendsData = FriendsAPI.shared.getAll()
-        async let requestsData = FriendsAPI.shared.getRequests()
         do {
-            let (f, r) = try await (friendsData, requestsData)
-            friends = f
+            friends = try await FriendsAPI.shared.getAll()
+        } catch {
+            if !isCancelledError(error) { errorMessage = error.localizedDescription }
+        }
+        do {
+            let r = try await FriendsAPI.shared.getRequests()
             receivedRequests = r.received
             sentRequests = r.sent
         } catch {
