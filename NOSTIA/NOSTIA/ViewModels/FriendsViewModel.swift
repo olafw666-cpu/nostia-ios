@@ -77,11 +77,22 @@ final class FriendsViewModel: ObservableObject {
     func acceptRequest(_ requestId: Int) async {
         do {
             try await FriendsAPI.shared.acceptRequest(requestId)
-            await loadAll()
-            activeTab = .friends
         } catch {
             errorMessage = error.localizedDescription
+            return
         }
+        // Accept succeeded — refresh friends list, always surface errors here
+        do {
+            friends = try await FriendsAPI.shared.getAll()
+        } catch {
+            errorMessage = "Accept succeeded but failed to refresh friends: \(error.localizedDescription)"
+        }
+        do {
+            let r = try await FriendsAPI.shared.getRequests()
+            receivedRequests = r.received
+            sentRequests = r.sent
+        } catch { }
+        activeTab = .friends
     }
 
     func rejectRequest(_ requestId: Int) async {
