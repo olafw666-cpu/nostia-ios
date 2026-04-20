@@ -76,6 +76,7 @@ final class FriendsViewModel: ObservableObject {
         do {
             try await FriendsAPI.shared.acceptRequest(requestId)
             await loadAll()
+            activeTab = .friends
         } catch {
             errorMessage = error.localizedDescription
         }
