@@ -25,10 +25,8 @@ final class FriendsViewModel: ObservableObject {
             friends = f
             receivedRequests = r.received
             sentRequests = r.sent
-        } catch is CancellationError {
-            // view refreshed mid-load; ignore
         } catch {
-            errorMessage = error.localizedDescription
+            if !isCancelledError(error) { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -45,9 +43,15 @@ final class FriendsViewModel: ObservableObject {
             searchPerformed = true
         } catch {
             searchPerformed = false
-            errorMessage = error.localizedDescription
+            if !isCancelledError(error) { errorMessage = error.localizedDescription }
         }
         isSearching = false
+    }
+
+    private func isCancelledError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let urlErr = error as? URLError, urlErr.code == .cancelled { return true }
+        return false
     }
 
     func clearSearch() {
