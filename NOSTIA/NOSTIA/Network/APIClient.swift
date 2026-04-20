@@ -3,7 +3,12 @@ import Foundation
 final class APIClient {
     static let shared = APIClient()
     private let baseURL = AppConfig.apiBaseURL
-    private let session = URLSession.shared
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        return URLSession(configuration: config)
+    }()
 
     private init() {}
 
