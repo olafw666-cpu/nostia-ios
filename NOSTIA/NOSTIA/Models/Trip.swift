@@ -13,6 +13,16 @@ struct Trip: Codable, Identifiable, Hashable {
 
     var participantCount: Int { participants?.count ?? 0 }
     var activeParticipants: [TripParticipant] { participants?.filter { $0.status != "kicked" } ?? [] }
+
+    var formattedDates: String {
+        guard let start = startDate, let end = endDate else { return "" }
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+        let out = DateFormatter(); out.dateFormat = "MMM d"
+        if let s = fmt.date(from: start), let e = fmt.date(from: end) {
+            return "\(out.string(from: s)) – \(out.string(from: e))"
+        }
+        return "\(start) – \(end)"
+    }
 }
 
 struct TripParticipant: Codable, Identifiable, Hashable {
