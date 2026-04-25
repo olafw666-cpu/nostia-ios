@@ -38,8 +38,12 @@ struct FriendsView: View {
                     EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
                 } else {
                     List(vm.searchResults) { user in
-                        UserSearchRow(user: user, onAdd: { Task { await vm.sendRequest(to: user.id) } })
-                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        UserSearchRow(
+                            user: user,
+                            isPending: vm.sentFriendIds.contains(user.id),
+                            onAdd: { Task { await vm.sendRequest(to: user.id) } }
+                        )
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 }
@@ -49,7 +53,7 @@ struct FriendsView: View {
                     TabButton(title: "Friends (\(vm.friends.count))", isActive: vm.activeTab == .friends) {
                         vm.activeTab = .friends
                     }
-                    TabButton(title: "Requests (\(vm.receivedRequests.count))", isActive: vm.activeTab == .requests) {
+                    TabButton(title: "Requests (\(vm.receivedRequests.count + vm.sentRequests.count))", isActive: vm.activeTab == .requests) {
                         vm.activeTab = .requests
                     }
                 }
@@ -76,16 +80,30 @@ struct FriendsView: View {
                         }
                     }
                 } else {
-                    List(vm.receivedRequests) { req in
-                        RequestRow(request: req,
-                                   onAccept: { Task { await vm.acceptRequest(req.id) } },
-                                   onReject: { Task { await vm.rejectRequest(req.id) } })
+                    List {
+                        ForEach(vm.receivedRequests) { req in
+                            RequestRow(request: req,
+                                       onAccept: { Task { await vm.acceptRequest(req.id) } },
+                                       onReject: { Task { await vm.rejectRequest(req.id) } })
+                                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        }
+                        if !vm.sentRequests.isEmpty {
+                            HStack {
+                                Text("Sent").font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
+                                Spacer()
+                            }
                             .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                            .padding(.top, 8)
+                            ForEach(vm.sentRequests) { req in
+                                SentRequestRow(request: req)
+                                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                            }
+                        }
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                     .refreshable { await vm.loadAll() }
                     .overlay {
-                        if vm.receivedRequests.isEmpty {
+                        if vm.receivedRequests.isEmpty && vm.sentRequests.isEmpty {
                             EmptyStateView(icon: "envelope", text: "No pending requests", sub: "")
                         }
                     }
@@ -183,6 +201,7 @@ struct RequestRow: View {
 
 struct UserSearchRow: View {
     let user: UserSearchResult
+    let isPending: Bool
     let onAdd: () -> Void
     var body: some View {
         HStack(spacing: 12) {
@@ -192,11 +211,38 @@ struct UserSearchRow: View {
                 Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
-            Button { onAdd() } label: {
-                Image(systemName: "person.badge.plus").foregroundColor(.white).padding(8)
-                    .background(Color.nostiaAccent).clipShape(Circle())
-                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
+            if isPending {
+                Image(systemName: "clock")
+                    .foregroundColor(Color.nostiaTextMuted).padding(8)
+                    .background(Color.nostiaTextMuted.opacity(0.2)).clipShape(Circle())
+            } else {
+                Button { onAdd() } label: {
+                    Image(systemName: "person.badge.plus").foregroundColor(.white).padding(8)
+                        .background(Color.nostiaAccent).clipShape(Circle())
+                        .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
+                }
             }
+        }
+        .padding(16)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, 4)
+    }
+}
+
+struct SentRequestRow: View {
+    let request: FriendRequest
+    var body: some View {
+        HStack(spacing: 12) {
+            AvatarView(initial: String(request.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(request.name).font(.headline).foregroundColor(.white)
+                Text("@\(request.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+            }
+            Spacer()
+            Text("Pending")
+                .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .glassEffect(in: Capsule())
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))

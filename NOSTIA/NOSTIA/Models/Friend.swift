@@ -16,6 +16,7 @@ struct FriendRequest: Codable, Identifiable {
     let id: Int
     let username: String
     let name: String
+    var friendId: Int?
     var createdAt: String?
 }
 
