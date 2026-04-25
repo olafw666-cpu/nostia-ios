@@ -13,6 +13,7 @@ final class FriendsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSearching = false
     @Published var errorMessage: String?
+    @Published var successMessage: String?
 
     enum FriendTab { case friends, requests }
 
@@ -69,6 +70,7 @@ final class FriendsViewModel: ObservableObject {
     func sendRequest(to userId: Int) async -> Bool {
         do {
             try await FriendsAPI.shared.sendRequest(to: userId)
+            successMessage = "Friend request sent!"
             clearSearch()
             await loadAll()
             activeTab = .requests
@@ -86,7 +88,7 @@ final class FriendsViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return
         }
-        // Accept succeeded — refresh friends list, always surface errors here
+        successMessage = "Friend request accepted!"
         do {
             friends = try await FriendsAPI.shared.getAll()
         } catch {
