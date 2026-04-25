@@ -16,6 +16,10 @@ final class FriendsViewModel: ObservableObject {
 
     enum FriendTab { case friends, requests }
 
+    var sentFriendIds: Set<Int> {
+        Set(sentRequests.compactMap(\.friendId))
+    }
+
     func loadAll() async {
         isLoading = true
         do {
@@ -67,6 +71,7 @@ final class FriendsViewModel: ObservableObject {
             try await FriendsAPI.shared.sendRequest(to: userId)
             clearSearch()
             await loadAll()
+            activeTab = .requests
             return true
         } catch {
             errorMessage = error.localizedDescription
