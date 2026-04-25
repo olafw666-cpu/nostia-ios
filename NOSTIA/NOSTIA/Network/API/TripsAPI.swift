@@ -13,19 +13,15 @@ final class TripsAPI {
         return try await client.request("/trips/\(id)")
     }
 
-    func create(title: String, destination: String, description: String?, startDate: String?, endDate: String?) async throws -> Trip {
-        var body: [String: Any] = ["title": title, "destination": destination]
+    func create(title: String, description: String?) async throws -> Trip {
+        var body: [String: Any] = ["title": title]
         if let d = description { body["description"] = d }
-        if let s = startDate { body["startDate"] = s }
-        if let e = endDate { body["endDate"] = e }
         return try await client.request("/trips", method: "POST", body: body)
     }
 
-    func update(_ id: Int, title: String, destination: String, description: String?, startDate: String?, endDate: String?) async throws -> Trip {
-        var body: [String: Any] = ["title": title, "destination": destination]
+    func update(_ id: Int, title: String, description: String?) async throws -> Trip {
+        var body: [String: Any] = ["title": title]
         if let d = description { body["description"] = d }
-        if let s = startDate { body["startDate"] = s }
-        if let e = endDate { body["endDate"] = e }
         return try await client.request("/trips/\(id)", method: "PUT", body: body)
     }
 
@@ -39,5 +35,21 @@ final class TripsAPI {
 
     func removeParticipant(tripId: Int, userId: Int) async throws -> Trip {
         return try await client.request("/trips/\(tripId)/participants/\(userId)", method: "DELETE")
+    }
+
+    func kickParticipant(tripId: Int, userId: Int) async throws -> Trip {
+        return try await client.request("/trips/\(tripId)/kick/\(userId)", method: "POST", body: [:])
+    }
+
+    func transferLeadership(tripId: Int, newLeaderId: Int) async throws -> Trip {
+        return try await client.request("/trips/\(tripId)/vault-leader", method: "POST", body: ["newLeaderId": newLeaderId])
+    }
+
+    func getChatMessages(tripId: Int, limit: Int = 100, offset: Int = 0) async throws -> [TripChatMessage] {
+        return try await client.request("/trips/\(tripId)/chat?limit=\(limit)&offset=\(offset)")
+    }
+
+    func sendChatMessage(tripId: Int, content: String) async throws -> TripChatMessage {
+        return try await client.request("/trips/\(tripId)/chat", method: "POST", body: ["content": content])
     }
 }

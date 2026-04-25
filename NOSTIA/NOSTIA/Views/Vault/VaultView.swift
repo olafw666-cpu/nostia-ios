@@ -1,9 +1,10 @@
 import SwiftUI
 import StripePaymentSheet
 
-struct VaultView: View {
+// VaultContentView: embeddable vault expense view (no own navigation)
+struct VaultContentView: View {
     let tripId: Int
-    let tripTitle: String
+    var isKicked: Bool = false
 
     @StateObject private var vm = VaultViewModel()
     @State private var showAddExpense = false
@@ -16,7 +17,6 @@ struct VaultView: View {
                 if vm.isLoading {
                     ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
                 } else if let data = vm.vaultData {
-                    // Total amount header — always visible so Add Expense is always reachable
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Total Expenses").font(.footnote).foregroundColor(Color.nostiaTextSecond)
@@ -24,18 +24,31 @@ struct VaultView: View {
                                 .font(.system(size: 34, weight: .bold)).foregroundColor(.white)
                         }
                         Spacer()
-                        Button { showAddExpense = true } label: {
-                            Label("Add Expense", systemImage: "plus")
-                                .font(.subheadline.bold()).foregroundColor(.white)
-                                .padding(.horizontal, 16).padding(.vertical, 10)
-                                .background(Color.nostiaAccent).cornerRadius(12)
-                                .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                        if !isKicked {
+                            Button { showAddExpense = true } label: {
+                                Label("Add Expense", systemImage: "plus")
+                                    .font(.subheadline.bold()).foregroundColor(.white)
+                                    .padding(.horizontal, 16).padding(.vertical, 10)
+                                    .background(Color.nostiaAccent).cornerRadius(12)
+                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                            }
                         }
                     }
                     .padding(16)
                     .glassEffect(in: RoundedRectangle(cornerRadius: 18))
 
-                    // Balances
+                    if isKicked {
+                        HStack(spacing: 6) {
+                            Image(systemName: "eye").foregroundColor(Color.nostiaTextMuted).font(.caption)
+                            Text("You're in read-only mode — settle your balance to leave")
+                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaTextMuted.opacity(0.3), lineWidth: 1))
+                    }
+
                     if !data.balances.isEmpty {
                         Text("Balances").font(.headline).foregroundColor(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -44,7 +57,6 @@ struct VaultView: View {
                         }
                     }
 
-                    // Expenses
                     if !data.entries.isEmpty {
                         Text("Expenses").font(.headline).foregroundColor(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -67,9 +79,6 @@ struct VaultView: View {
             .padding(16).padding(.bottom, 40)
         }
         .background(.clear)
-        .navigationTitle(tripTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
         .refreshable { await vm.loadVault(tripId: tripId) }
         .task { await vm.loadVault(tripId: tripId) }
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
@@ -90,7 +99,7 @@ struct VaultView: View {
             Button("OK") { paymentSuccessMessage = nil }
         } message: { Text(paymentSuccessMessage ?? "") }
         .sheet(isPresented: $showAddExpense) {
-            CreateExpenseSheet(tripId: tripId) { desc, amount, cat, date in
+            CreateExpenseSheet(tripId: tripId, showCategory: false) { desc, amount, cat, date in
                 let ok = await vm.addExpense(tripId: tripId, description: desc, amount: amount, category: cat, date: date)
                 if ok { showAddExpense = false; await vm.loadVault(tripId: tripId) }
             }
@@ -192,7 +201,6 @@ struct ExpenseCard: View {
             }
             .font(.caption)
 
-            // Splits
             if let splits = entry.splits, !splits.isEmpty {
                 Divider().background(Color.white.opacity(0.1))
                 ForEach(splits) { split in

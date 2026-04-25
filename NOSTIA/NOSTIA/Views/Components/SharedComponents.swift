@@ -177,124 +177,137 @@ func isValidTripDate(_ value: String) -> Bool {
     } ?? false
 }
 
-// MARK: - Create Trip Sheet
+// MARK: - Create Trip Sheet (2-step: details → invite friends)
 
 struct CreateTripSheet: View {
-    let onSave: (String, String, String?, String?, String?) async -> Void
+    let onSave: (String, String?, [Int]) async -> Void
 
+    @State private var step = 1
     @State private var title = ""
-    @State private var destination = ""
     @State private var description = ""
-    @State private var startDateEnabled = false
-    @State private var startDateValue = Date()
-    @State private var endDateEnabled = false
-    @State private var endDateValue = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+    @State private var friends: [Friend] = []
+    @State private var selectedFriendIds: Set<Int> = []
+    @State private var isLoadingFriends = false
     @State private var isSaving = false
-    @State private var validationError: String?
     @Environment(\.dismiss) private var dismiss
-
-    private let dateFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
-    }()
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    NostiaTextField(label: "Title *", placeholder: "Vault title", text: $title)
-                    NostiaTextField(label: "Destination *", placeholder: "Where are you going?", text: $destination)
-
-                    // Start date
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Start Date")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-                            Spacer()
-                            Toggle("", isOn: $startDateEnabled)
-                                .labelsHidden().tint(Color.nostiaAccent)
-                        }
-                        if startDateEnabled {
-                            DatePicker("", selection: $startDateValue, displayedComponents: .date)
-                                .datePickerStyle(.graphical)
-                                .tint(Color.nostiaAccent)
-                                .colorScheme(.dark)
-                                .padding(8)
-                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-
-                    // End date
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("End Date")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-                            Spacer()
-                            Toggle("", isOn: $endDateEnabled)
-                                .labelsHidden().tint(Color.nostiaAccent)
-                        }
-                        if endDateEnabled {
-                            DatePicker("", selection: $endDateValue,
-                                       in: startDateEnabled ? startDateValue... : Date.distantPast...,
-                                       displayedComponents: .date)
-                                .datePickerStyle(.graphical)
-                                .tint(Color.nostiaAccent)
-                                .colorScheme(.dark)
-                                .padding(8)
-                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Description")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                        TextEditor(text: $description)
-                            .frame(minHeight: 80).padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                            .foregroundColor(.white).scrollContentBackground(.hidden)
-                    }
-                    if let err = validationError {
-                        Text(err)
-                            .font(.footnote)
-                            .foregroundColor(Color.nostriaDanger)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-                .padding(20)
-            }
-            .background(.clear)
-            .navigationTitle("Create Vault")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundColor(Color.nostiaAccent)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        validationError = nil
-                        let start = startDateEnabled ? dateFmt.string(from: startDateValue) : nil
-                        let end = endDateEnabled ? dateFmt.string(from: endDateValue) : nil
-                        isSaving = true
-                        Task {
-                            await onSave(title, destination,
-                                         description.isEmpty ? nil : description,
-                                         start, end)
-                            isSaving = false
-                        }
-                    } label: {
-                        if isSaving { ProgressView().tint(Color.nostiaAccent) }
-                        else { Text("Create").fontWeight(.semibold).foregroundColor(Color.nostiaAccent) }
-                    }
-                    .disabled(title.isEmpty || destination.isEmpty || isSaving)
-                }
+            if step == 1 {
+                detailsStep
+            } else {
+                friendsStep
             }
         }
         .presentationBackground(.ultraThinMaterial)
+    }
+
+    private var detailsStep: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                NostiaTextField(label: "Title *", placeholder: "Vault name", text: $title)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Description")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    TextEditor(text: $description)
+                        .frame(minHeight: 80).padding(12)
+                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundColor(.white).scrollContentBackground(.hidden)
+                }
+            }
+            .padding(20)
+        }
+        .background(.clear)
+        .navigationTitle("Create Vault")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Cancel") { dismiss() }.foregroundColor(Color.nostiaAccent)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Next") {
+                    step = 2
+                    Task { await loadFriends() }
+                }
+                .fontWeight(.semibold).foregroundColor(Color.nostiaAccent)
+                .disabled(title.isEmpty)
+            }
+        }
+    }
+
+    private var friendsStep: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("SELECT FRIENDS")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(Color.nostiaTextSecond)
+                    .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 10)
+
+                if isLoadingFriends {
+                    ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
+                } else if friends.isEmpty {
+                    Text("No friends to add yet")
+                        .font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                        .padding(.horizontal, 20)
+                } else {
+                    ForEach(friends) { friend in
+                        HStack(spacing: 12) {
+                            AvatarView(initial: friend.initial, color: Color.nostiaAccent, size: 38)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(friend.name).font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                Text("@\(friend.username)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                            }
+                            Spacer()
+                            Image(systemName: selectedFriendIds.contains(friend.id) ? "checkmark.circle.fill" : "circle")
+                                .font(.title3)
+                                .foregroundColor(selectedFriendIds.contains(friend.id) ? Color.nostiaAccent : Color.nostiaTextMuted)
+                        }
+                        .padding(14)
+                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                        .padding(.horizontal, 16).padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if selectedFriendIds.contains(friend.id) {
+                                selectedFriendIds.remove(friend.id)
+                            } else {
+                                selectedFriendIds.insert(friend.id)
+                            }
+                        }
+                    }
+                }
+                Spacer(minLength: 32)
+            }
+        }
+        .background(.clear)
+        .navigationTitle("Add Friends")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Back") { step = 1 }.foregroundColor(Color.nostiaAccent)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isSaving = true
+                    Task {
+                        await onSave(title, description.isEmpty ? nil : description, Array(selectedFriendIds))
+                        isSaving = false
+                    }
+                } label: {
+                    if isSaving { ProgressView().tint(Color.nostiaAccent) }
+                    else { Text("Create").fontWeight(.semibold).foregroundColor(Color.nostiaAccent) }
+                }
+                .disabled(isSaving)
+            }
+        }
+    }
+
+    private func loadFriends() async {
+        isLoadingFriends = true
+        friends = (try? await FriendsAPI.shared.getAll()) ?? []
+        isLoadingFriends = false
     }
 }
 
@@ -302,6 +315,7 @@ struct CreateTripSheet: View {
 
 struct CreateExpenseSheet: View {
     let tripId: Int
+    var showCategory: Bool = true
     let onSave: (String, Double, String?, String) async -> Void
 
     @State private var description = ""
@@ -347,14 +361,16 @@ struct CreateExpenseSheet: View {
                             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Category")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(categories, id: \.self) { cat in
-                                    FilterChip(title: cat, isActive: category == cat) { category = cat }
+                    if showCategory {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Category")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(categories, id: \.self) { cat in
+                                        FilterChip(title: cat, isActive: category == cat) { category = cat }
+                                    }
                                 }
                             }
                         }
