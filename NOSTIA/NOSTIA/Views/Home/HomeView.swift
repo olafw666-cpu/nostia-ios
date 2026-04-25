@@ -175,7 +175,9 @@ struct TripPreviewCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(trip.title).font(.headline).foregroundColor(.white)
-                    Text(trip.destination).font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                    if let dest = trip.destination, !dest.isEmpty {
+                        Text(dest).font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                    }
                 }
                 Spacer()
                 HStack(spacing: 4) {
@@ -184,7 +186,9 @@ struct TripPreviewCard: View {
                 }
                 .font(.footnote)
             }
-            Text(trip.formattedDates).font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
+            if trip.startDate != nil || trip.endDate != nil {
+                Text(trip.formattedDates).font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
+            }
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
