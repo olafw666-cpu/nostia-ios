@@ -6,6 +6,20 @@ struct FriendsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if let msg = vm.successMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill").foregroundColor(Color.nostiaSuccess)
+                    Text(msg).font(.subheadline.bold()).foregroundColor(.white)
+                    Spacer()
+                    Button { vm.successMessage = nil } label: {
+                        Image(systemName: "xmark").font(.caption).foregroundColor(Color.nostiaTextMuted)
+                    }
+                }
+                .padding(12)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaSuccess.opacity(0.5), lineWidth: 1))
+                .padding(.horizontal, 16).padding(.top, 8)
+            }
             // Search bar
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
