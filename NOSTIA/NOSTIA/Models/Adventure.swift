@@ -24,8 +24,11 @@ struct Event: Codable, Identifiable {
     var longitude: Double?
     var distance: Double?
     var visibility: String?
+    var createdBy: Int?
     var creatorName: String?
     var createdAt: String?
+    var goingCount: Int?
+    var myRsvp: String?
 
     var formattedDate: String {
         let fmt = ISO8601DateFormatter()

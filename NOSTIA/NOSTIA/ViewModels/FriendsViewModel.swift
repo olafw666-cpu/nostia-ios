@@ -17,37 +17,33 @@ final class FriendsViewModel: ObservableObject {
 
     enum FriendTab { case friends, requests }
 
-    // Track in-flight load so accept/send can cancel it before refreshing
-    private var loadTask: Task<Void, Never>?
+    private var loadVersion = 0
 
     var sentFriendIds: Set<Int> {
         Set(sentRequests.compactMap(\.friendId))
     }
 
     func loadAll() async {
-        loadTask?.cancel()
-        let task = Task {
-            isLoading = true
-            do {
-                let f = try await FriendsAPI.shared.getAll()
-                if !Task.isCancelled { friends = f }
-            } catch {
-                if !isCancelledError(error) { errorMessage = error.localizedDescription }
-            }
-            guard !Task.isCancelled else { isLoading = false; return }
-            do {
-                let r = try await FriendsAPI.shared.getRequests()
-                if !Task.isCancelled {
-                    receivedRequests = r.received
-                    sentRequests = r.sent
-                }
-            } catch {
-                if !isCancelledError(error) { errorMessage = error.localizedDescription }
-            }
-            isLoading = false
+        loadVersion += 1
+        let myVersion = loadVersion
+        isLoading = true
+        do {
+            let f = try await FriendsAPI.shared.getAll()
+            guard loadVersion == myVersion else { isLoading = false; return }
+            friends = f
+        } catch {
+            errorMessage = error.localizedDescription
         }
-        loadTask = task
-        await task.value
+        guard loadVersion == myVersion else { isLoading = false; return }
+        do {
+            let r = try await FriendsAPI.shared.getRequests()
+            guard loadVersion == myVersion else { isLoading = false; return }
+            receivedRequests = r.received
+            sentRequests = r.sent
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        if loadVersion == myVersion { isLoading = false }
     }
 
     func search() async {
@@ -62,15 +58,9 @@ final class FriendsViewModel: ObservableObject {
             searchPerformed = true
         } catch {
             searchPerformed = false
-            if !isCancelledError(error) { errorMessage = error.localizedDescription }
+            errorMessage = error.localizedDescription
         }
         isSearching = false
-    }
-
-    private func isCancelledError(_ error: Error) -> Bool {
-        if error is CancellationError { return true }
-        if let urlErr = error as? URLError, urlErr.code == .cancelled { return true }
-        return false
     }
 
     func clearSearch() {
@@ -84,7 +74,6 @@ final class FriendsViewModel: ObservableObject {
             try await FriendsAPI.shared.sendRequest(to: userId)
             successMessage = "Friend request sent!"
             clearSearch()
-            loadTask?.cancel()
             await loadAll()
             activeTab = .requests
             return true
@@ -101,8 +90,6 @@ final class FriendsViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return
         }
-        // Cancel any in-flight stale loadAll so it can't overwrite the fresh data
-        loadTask?.cancel()
         successMessage = "Friend request accepted!"
         await loadAll()
         activeTab = .friends
@@ -111,7 +98,6 @@ final class FriendsViewModel: ObservableObject {
     func rejectRequest(_ requestId: Int) async {
         do {
             try await FriendsAPI.shared.rejectRequest(requestId)
-            loadTask?.cancel()
             await loadAll()
         } catch {
             errorMessage = error.localizedDescription

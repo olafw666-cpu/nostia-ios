@@ -8,6 +8,8 @@ struct FriendsMapView: View {
     @State private var cameraPosition = MapCameraPosition.automatic
     @State private var pendingCoordinate: CLLocationCoordinate2D?
     @State private var showCreateEvent = false
+    @State private var selectedEvent: Event?
+    @StateObject private var adventuresVM = AdventuresViewModel()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -38,23 +40,25 @@ struct FriendsMapView: View {
                             Annotation(event.title, coordinate: CLLocationCoordinate2D(
                                 latitude: lat, longitude: lng
                             )) {
+                                let pinColor: Color = event.visibility == "friends" ? .blue : Color.nostiaWarning
                                 VStack(spacing: 4) {
                                     ZStack {
                                         Circle()
-                                            .fill(Color.nostiaWarning.opacity(0.2))
+                                            .fill(pinColor.opacity(0.2))
                                             .frame(width: 44, height: 44)
-                                            .overlay(Circle().stroke(Color.nostiaWarning.opacity(0.6), lineWidth: 1.5))
+                                            .overlay(Circle().stroke(pinColor.opacity(0.6), lineWidth: 1.5))
                                         Image(systemName: "calendar")
                                             .font(.system(size: 18, weight: .semibold))
-                                            .foregroundColor(Color.nostiaWarning)
+                                            .foregroundColor(pinColor)
                                     }
-                                    .shadow(color: Color.nostiaWarning.opacity(0.4), radius: 8)
+                                    .shadow(color: pinColor.opacity(0.4), radius: 8)
                                     Text(event.title)
                                         .font(.caption.bold()).foregroundColor(.white)
                                         .lineLimit(1)
                                         .padding(.horizontal, 6).padding(.vertical, 2)
                                         .glassEffect(in: Capsule())
                                 }
+                                .onTapGesture { selectedEvent = event }
                             }
                         }
                     }
@@ -130,6 +134,9 @@ struct FriendsMapView: View {
                 }
             }
         }
+        .sheet(item: $selectedEvent, onDismiss: { Task { await loadAll() } }) { event in
+            EventDetailSheet(event: event, vm: adventuresVM)
+        }
     }
 
     func loadAll() async {
@@ -152,9 +159,12 @@ struct CreateEventSheet: View {
     @State private var locationName = ""
     @State private var description = ""
     @State private var eventDate = Date().addingTimeInterval(3600)
+    @State private var visibility = "public"
     @State private var isSaving = false
     @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
+
+    let visibilityOptions = ["public", "friends", "private"]
 
     private var isoFormatter: ISO8601DateFormatter {
         let f = ISO8601DateFormatter()
@@ -198,6 +208,20 @@ struct CreateEventSheet: View {
                             .colorScheme(.dark)
                     }
 
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Visibility")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                        HStack(spacing: 8) {
+                            ForEach(visibilityOptions, id: \.self) { opt in
+                                FilterChip(title: opt.capitalized, isActive: visibility == opt) { visibility = opt }
+                            }
+                        }
+                        Text(visibility == "public" ? "Anyone can see this" :
+                             visibility == "friends" ? "Only your friends" : "Only you")
+                            .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                    }
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
                             .font(.system(size: 14, weight: .semibold))
@@ -239,7 +263,8 @@ struct CreateEventSheet: View {
                                     location: locationName.isEmpty ? nil : locationName,
                                     eventDate: isoFormatter.string(from: eventDate),
                                     lat: coordinate.latitude,
-                                    lng: coordinate.longitude
+                                    lng: coordinate.longitude,
+                                    visibility: visibility
                                 )
                                 onSave(event)
                                 dismiss()

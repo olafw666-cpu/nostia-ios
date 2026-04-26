@@ -401,6 +401,13 @@ struct CreateExpenseSheet: View {
                     }
                     .disabled(description.isEmpty || amountText.isEmpty || isSaving)
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .foregroundColor(Color.nostiaAccent)
+                }
             }
         }
         .presentationBackground(.ultraThinMaterial)
