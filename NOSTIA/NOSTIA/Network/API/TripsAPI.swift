@@ -1,5 +1,12 @@
 import Foundation
 
+struct RedeemResult: Codable {
+    let trip: Trip
+    let alreadyMember: Bool
+    let friendsAdded: Int
+    let vaultName: String
+}
+
 final class TripsAPI {
     static let shared = TripsAPI()
     private let client = APIClient.shared
@@ -51,5 +58,15 @@ final class TripsAPI {
 
     func sendChatMessage(tripId: Int, content: String) async throws -> TripChatMessage {
         return try await client.request("/trips/\(tripId)/chat", method: "POST", body: ["content": content])
+    }
+
+    func getInviteToken(tripId: Int) async throws -> String {
+        struct R: Decodable { let token: String }
+        let r: R = try await client.request("/trips/\(tripId)/invite-token")
+        return r.token
+    }
+
+    func redeemInviteToken(_ token: String) async throws -> RedeemResult {
+        return try await client.request("/invite/redeem", method: "POST", body: ["token": token])
     }
 }
