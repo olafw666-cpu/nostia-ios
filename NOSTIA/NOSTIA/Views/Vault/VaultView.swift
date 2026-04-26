@@ -212,21 +212,27 @@ struct ExpenseCard: View {
                             .font(.footnote.bold()).foregroundColor(.white)
                         if split.paid {
                             Label("Paid", systemImage: "checkmark.circle.fill")
-                                .font(.caption).foregroundColor(Color.nostiaSuccess)
+                                .font(.subheadline.bold()).foregroundColor(Color.nostiaSuccess)
                         } else {
-                            HStack(spacing: 6) {
+                            HStack(spacing: 8) {
                                 Button { onMarkPaid(split.id) } label: {
-                                    Text("Cash").font(.caption.bold()).foregroundColor(.white)
-                                        .padding(.horizontal, 8).padding(.vertical, 4)
-                                        .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                                    Text("Cash")
+                                        .font(.subheadline.bold()).foregroundColor(.white)
+                                        .padding(.horizontal, 16).padding(.vertical, 8)
+                                        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1))
                                 }
                                 Button { onPayWithCard(split.id) } label: {
                                     if payingId == split.id {
-                                        ProgressView().tint(.white).scaleEffect(0.7).frame(width: 60, height: 24)
+                                        ProgressView().tint(.white).scaleEffect(0.8)
+                                            .frame(width: 70, height: 34)
+                                            .background(Color.nostiaAccent).cornerRadius(10)
                                     } else {
-                                        Text("Card").font(.caption.bold()).foregroundColor(.white)
-                                            .padding(.horizontal, 8).padding(.vertical, 4)
-                                            .background(Color.nostiaAccent).cornerRadius(8)
+                                        Text("Card")
+                                            .font(.subheadline.bold()).foregroundColor(.white)
+                                            .padding(.horizontal, 16).padding(.vertical, 8)
+                                            .background(Color.nostiaAccent).cornerRadius(10)
+                                            .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
                                     }
                                 }
                                 .disabled(payingId != nil)
