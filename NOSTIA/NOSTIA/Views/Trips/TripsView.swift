@@ -1,9 +1,18 @@
 import SwiftUI
+import AVFoundation
 
 struct TripsView: View {
     @StateObject private var vm = TripsViewModel()
     @State private var showCreateSheet = false
     @State private var tripToDetail: Trip?
+    @State private var showQRScanner = false
+    @State private var scanResultAlert: ScanResultAlert?
+
+    struct ScanResultAlert: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -31,7 +40,14 @@ struct TripsView: View {
                 }
             }
 
-            Button { showCreateSheet = true } label: {
+            Menu {
+                Button { showCreateSheet = true } label: {
+                    Label("Create Vault", systemImage: "plus.circle")
+                }
+                Button { Task { await requestCameraAndScan() } } label: {
+                    Label("Scan QR to Join", systemImage: "qrcode.viewfinder")
+                }
+            } label: {
                 LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
                     .frame(width: 60, height: 60).clipShape(Circle())
@@ -53,8 +69,55 @@ struct TripsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showQRScanner) {
+            QRScannerSheet { scanned in Task { await handleScan(scanned) } }
+        }
+        .alert(item: $scanResultAlert) { a in
+            Alert(title: Text(a.title), message: Text(a.message), dismissButton: .default(Text("OK")))
+        }
         .navigationDestination(item: $tripToDetail) { trip in
             VaultDetailView(trip: trip, tripsVM: vm)
+        }
+    }
+
+    @MainActor
+    private func requestCameraAndScan() async {
+        let granted = await AVCaptureDevice.requestAccess(for: .video)
+        if granted {
+            showQRScanner = true
+        } else {
+            scanResultAlert = ScanResultAlert(
+                title: "Camera Required",
+                message: "Enable camera access in Settings to scan QR codes."
+            )
+        }
+    }
+
+    @MainActor
+    private func handleScan(_ token: String) async {
+        do {
+            let result = try await TripsAPI.shared.redeemInviteToken(token)
+            await vm.loadTrips()
+            if result.alreadyMember {
+                scanResultAlert = ScanResultAlert(
+                    title: "Already a Member",
+                    message: "You're already in \"\(result.vaultName)\"."
+                )
+            } else {
+                let friendText = result.friendsAdded > 0
+                    ? " Also added \(result.friendsAdded) new \(result.friendsAdded == 1 ? "friend" : "friends")."
+                    : ""
+                scanResultAlert = ScanResultAlert(
+                    title: "Joined \(result.vaultName)!",
+                    message: "Welcome to the vault!\(friendText)"
+                )
+                tripToDetail = result.trip
+            }
+        } catch {
+            scanResultAlert = ScanResultAlert(
+                title: "Could Not Join",
+                message: error.localizedDescription
+            )
         }
     }
 }

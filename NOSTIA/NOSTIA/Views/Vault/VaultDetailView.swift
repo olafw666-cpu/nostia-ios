@@ -11,6 +11,7 @@ struct VaultDetailView: View {
     @State private var showKickSheet = false
     @State private var showTransferSheet = false
     @State private var showDeleteAlert = false
+    @State private var showQRInvite = false
     @State private var showAddExpense = false
     @State private var editTitle = ""
     @State private var editDescription = ""
@@ -33,6 +34,7 @@ struct VaultDetailView: View {
     }
 
     private var isKicked: Bool { myParticipant?.isKicked ?? false }
+    private var isActiveMember: Bool { myParticipant != nil && !isKicked }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +56,13 @@ struct VaultDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            if isActiveMember {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showQRInvite = true } label: {
+                        Image(systemName: "qrcode").foregroundColor(.white)
+                    }
+                }
+            }
             if isLeader {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditMenu = true } label: {
@@ -114,6 +123,9 @@ struct VaultDetailView: View {
         }
         .sheet(isPresented: $showTransferSheet) {
             TransferLeadershipSheet(trip: currentTrip, tripsVM: tripsVM)
+        }
+        .sheet(isPresented: $showQRInvite) {
+            VaultQRView(trip: currentTrip)
         }
     }
 }
