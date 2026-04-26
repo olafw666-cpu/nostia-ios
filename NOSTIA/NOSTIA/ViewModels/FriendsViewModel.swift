@@ -17,25 +17,37 @@ final class FriendsViewModel: ObservableObject {
 
     enum FriendTab { case friends, requests }
 
+    // Track in-flight load so accept/send can cancel it before refreshing
+    private var loadTask: Task<Void, Never>?
+
     var sentFriendIds: Set<Int> {
         Set(sentRequests.compactMap(\.friendId))
     }
 
     func loadAll() async {
-        isLoading = true
-        do {
-            friends = try await FriendsAPI.shared.getAll()
-        } catch {
-            if !isCancelledError(error) { errorMessage = error.localizedDescription }
+        loadTask?.cancel()
+        let task = Task {
+            isLoading = true
+            do {
+                let f = try await FriendsAPI.shared.getAll()
+                if !Task.isCancelled { friends = f }
+            } catch {
+                if !isCancelledError(error) { errorMessage = error.localizedDescription }
+            }
+            guard !Task.isCancelled else { isLoading = false; return }
+            do {
+                let r = try await FriendsAPI.shared.getRequests()
+                if !Task.isCancelled {
+                    receivedRequests = r.received
+                    sentRequests = r.sent
+                }
+            } catch {
+                if !isCancelledError(error) { errorMessage = error.localizedDescription }
+            }
+            isLoading = false
         }
-        do {
-            let r = try await FriendsAPI.shared.getRequests()
-            receivedRequests = r.received
-            sentRequests = r.sent
-        } catch {
-            if !isCancelledError(error) { errorMessage = error.localizedDescription }
-        }
-        isLoading = false
+        loadTask = task
+        await task.value
     }
 
     func search() async {
@@ -72,6 +84,7 @@ final class FriendsViewModel: ObservableObject {
             try await FriendsAPI.shared.sendRequest(to: userId)
             successMessage = "Friend request sent!"
             clearSearch()
+            loadTask?.cancel()
             await loadAll()
             activeTab = .requests
             return true
@@ -88,23 +101,17 @@ final class FriendsViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return
         }
+        // Cancel any in-flight stale loadAll so it can't overwrite the fresh data
+        loadTask?.cancel()
         successMessage = "Friend request accepted!"
-        do {
-            friends = try await FriendsAPI.shared.getAll()
-        } catch {
-            errorMessage = "Accept succeeded but failed to refresh friends: \(error.localizedDescription)"
-        }
-        do {
-            let r = try await FriendsAPI.shared.getRequests()
-            receivedRequests = r.received
-            sentRequests = r.sent
-        } catch { }
+        await loadAll()
         activeTab = .friends
     }
 
     func rejectRequest(_ requestId: Int) async {
         do {
             try await FriendsAPI.shared.rejectRequest(requestId)
+            loadTask?.cancel()
             await loadAll()
         } catch {
             errorMessage = error.localizedDescription

@@ -354,10 +354,11 @@ struct CreateExpenseSheet: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white.opacity(0.7))
                         DatePicker("", selection: $dateValue, displayedComponents: .date)
-                            .datePickerStyle(.graphical)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
                             .tint(Color.nostiaAccent)
                             .colorScheme(.dark)
-                            .padding(8)
+                            .padding(12)
                             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                     }
 
