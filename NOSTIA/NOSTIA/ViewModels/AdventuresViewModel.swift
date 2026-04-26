@@ -56,7 +56,7 @@ final class AdventuresViewModel: ObservableObject {
         await loadAll()
     }
 
-    func createEvent(title: String, description: String?, location: String?, eventDate: Date?, visibility: String) async throws {
+    func createEvent(title: String, description: String?, location: String?, eventDate: Date?, visibility: String, latitude: Double? = nil, longitude: Double? = nil) async throws {
         let fmt = ISO8601DateFormatter()
         let dateStr = eventDate.map { fmt.string(from: $0) }
         let _ = try await AdventuresAPI.shared.createEvent(
@@ -64,10 +64,23 @@ final class AdventuresViewModel: ObservableObject {
             description: description,
             location: location,
             eventDate: dateStr,
-            lat: nil,
-            lng: nil,
+            lat: latitude,
+            lng: longitude,
             visibility: visibility
         )
         await loadAll()
+    }
+
+    func rsvpEvent(eventId: Int, status: String) async throws -> Event {
+        let updated = try await AdventuresAPI.shared.rsvp(eventId: eventId, status: status)
+        if let idx = events.firstIndex(where: { $0.id == eventId }) {
+            events[idx] = updated
+        }
+        return updated
+    }
+
+    func deleteEvent(_ eventId: Int) async throws {
+        try await AdventuresAPI.shared.deleteEvent(eventId)
+        events.removeAll { $0.id == eventId }
     }
 }

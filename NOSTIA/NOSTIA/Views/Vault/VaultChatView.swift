@@ -41,7 +41,8 @@ struct VaultChatView: View {
                 Text(err).font(.caption).foregroundColor(Color.nostriaDanger)
                     .padding(.horizontal, 16).padding(.vertical, 4)
             }
-
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if isKicked {
                 HStack {
                     Image(systemName: "lock.fill").foregroundColor(Color.nostiaTextMuted).font(.caption)

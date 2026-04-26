@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git ls-tree *)",
+      "Bash(grep \"\\\\.swift$\")",
+      "Bash(xcodebuild clean *)",
+      "Bash(xcodebuild build *)",
+      "Bash(cp -r /Users/willchadwick/Documents/nostia-ios/NostiaApp/Auth /Users/willchadwick/Documents/nostia-ios/NOSTIA/NOSTIA/)",
+      "Bash(cp -r /Users/willchadwick/Documents/nostia-ios/NostiaApp/Config /Users/willchadwick/Documents/nostia-ios/NOSTIA/NOSTIA/)",
+      "Bash(cp -r /Users/willchadwick/Documents/nostia-ios/NostiaApp/Extensions /Users/willchadwick/Documents/nostia-ios/NOSTIA/NOSTIA/)",
+      "Bash(cp -r /Users/willchadwick/Documents/nostia-ios/NostiaApp/Location /Users/willchadwick/Documents/nostia-ios/NOSTIA/NOSTIA/)",
+      "Bash(cp -r /Users/willchadwick/Documents/nostia-ios/NostiaApp/Models /Users/willchadwick/Documents/nostia-ios/NOSTIA/NOSTIA/)"
+    ]
+  }
+}

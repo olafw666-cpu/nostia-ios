@@ -52,6 +52,7 @@ struct VaultDetailView: View {
             }
         }
         .background(.clear)
+        .ignoresSafeArea(.keyboard)
         .navigationTitle(currentTrip.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
