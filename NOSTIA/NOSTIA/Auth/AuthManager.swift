@@ -11,7 +11,10 @@ final class AuthManager: ObservableObject {
     private let tokenKey = "nostia_jwt_token"
 
     private init() {
-        isAuthenticated = getToken() != nil
+        if let token = getToken() {
+            isAuthenticated = true
+            currentUserId = userIdFromToken(token)
+        }
     }
 
     // MARK: - Token Storage (Keychain)
@@ -29,6 +32,7 @@ final class AuthManager: ObservableObject {
 
         DispatchQueue.main.async {
             self.isAuthenticated = true
+            self.currentUserId = self.userIdFromToken(token)
         }
     }
 
@@ -71,6 +75,22 @@ final class AuthManager: ObservableObject {
         }
         deleteToken()
         NotificationCenter.default.post(name: .userDidLogout, object: nil)
+    }
+
+    // MARK: - JWT decode (extract user id without a library)
+
+    private func userIdFromToken(_ token: String) -> Int? {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let remainder = base64.count % 4
+        if remainder != 0 { base64 += String(repeating: "=", count: 4 - remainder) }
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = json["id"] as? Int else { return nil }
+        return id
     }
 }
 
