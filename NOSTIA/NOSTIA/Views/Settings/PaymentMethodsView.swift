@@ -1,5 +1,6 @@
 import SwiftUI
 import SafariServices
+import StripePaymentSheet
 
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
