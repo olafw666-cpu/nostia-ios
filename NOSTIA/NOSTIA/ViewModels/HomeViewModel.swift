@@ -15,11 +15,11 @@ final class HomeViewModel: ObservableObject {
     func loadAll() async {
         isLoading = true
         errorMessage = nil
-        // Load user first — failure means session is invalid
         do {
             user = try await AuthAPI.shared.getMe()
         } catch {
-            AuthManager.shared.logout()
+            // APIClient already calls logout() on 401/403 — don't double-logout on transient errors
+            errorMessage = error.localizedDescription
             isLoading = false
             return
         }
