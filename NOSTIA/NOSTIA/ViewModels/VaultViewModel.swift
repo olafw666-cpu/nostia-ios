@@ -19,6 +19,10 @@ final class VaultViewModel: ObservableObject {
         errorMessage = nil
         do {
             vaultData = try await VaultAPI.shared.getTripSummary(tripId)
+        } catch is CancellationError {
+            // Task cancelled (view dismissed) — not an error to show
+        } catch let urlErr as URLError where urlErr.code == .cancelled {
+            // URLSession task cancelled — not an error to show
         } catch {
             errorMessage = error.localizedDescription
         }
