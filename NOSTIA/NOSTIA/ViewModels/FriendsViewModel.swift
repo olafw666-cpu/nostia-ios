@@ -88,6 +88,7 @@ final class FriendsViewModel: ObservableObject {
             try await FriendsAPI.shared.acceptRequest(requestId)
         } catch {
             errorMessage = error.localizedDescription
+            await loadAll()
             return
         }
         successMessage = "Friend request accepted!"
