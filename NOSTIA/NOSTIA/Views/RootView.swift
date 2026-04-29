@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
+    @State private var showProfileBuilder = false
 
     var body: some View {
         ZStack {
@@ -25,11 +26,21 @@ struct RootView: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showProfileBuilder) {
+            ProfileBuilderView {
+                showProfileBuilder = false
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogin)) { _ in
             authManager.isAuthenticated = true
+            if UserDefaults.standard.bool(forKey: "nostia_pending_profile_setup") {
+                UserDefaults.standard.removeObject(forKey: "nostia_pending_profile_setup")
+                showProfileBuilder = true
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
+            showProfileBuilder = false
         }
     }
 }

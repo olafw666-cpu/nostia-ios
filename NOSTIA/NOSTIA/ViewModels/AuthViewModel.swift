@@ -44,6 +44,7 @@ final class AuthViewModel: ObservableObject {
                 locationConsent: locationConsent,
                 dataCollectionConsent: dataCollectionConsent
             )
+            UserDefaults.standard.set(true, forKey: "nostia_pending_profile_setup")
             NotificationCenter.default.post(name: .userDidLogin, object: nil)
             isLoading = false
             return true

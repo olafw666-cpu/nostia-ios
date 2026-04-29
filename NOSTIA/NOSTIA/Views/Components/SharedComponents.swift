@@ -1,4 +1,33 @@
 import SwiftUI
+import UIKit
+
+// MARK: - User Avatar View (shows profile picture or falls back to initials)
+
+struct UserAvatarView: View {
+    let imageData: String?
+    let initial: String
+    let color: Color
+    let size: CGFloat
+
+    private var uiImage: UIImage? {
+        guard let str = imageData, !str.isEmpty,
+              let data = Data(base64Encoded: str) else { return nil }
+        return UIImage(data: data)
+    }
+
+    var body: some View {
+        if let img = uiImage {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1))
+        } else {
+            AvatarView(initial: initial, color: color, size: size)
+        }
+    }
+}
 
 // MARK: - Avatar View
 
