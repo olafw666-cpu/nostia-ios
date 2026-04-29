@@ -31,6 +31,12 @@ final class FriendsViewModel: ObservableObject {
             let f = try await FriendsAPI.shared.getAll()
             guard loadVersion == myVersion else { isLoading = false; return }
             friends = f
+        } catch is CancellationError {
+            if loadVersion == myVersion { isLoading = false }
+            return
+        } catch let urlErr as URLError where urlErr.code == .cancelled {
+            if loadVersion == myVersion { isLoading = false }
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -40,6 +46,12 @@ final class FriendsViewModel: ObservableObject {
             guard loadVersion == myVersion else { isLoading = false; return }
             receivedRequests = r.received
             sentRequests = r.sent
+        } catch is CancellationError {
+            if loadVersion == myVersion { isLoading = false }
+            return
+        } catch let urlErr as URLError where urlErr.code == .cancelled {
+            if loadVersion == myVersion { isLoading = false }
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
