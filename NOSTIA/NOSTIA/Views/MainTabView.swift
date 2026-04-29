@@ -4,9 +4,9 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var unreadCount = 0
     @State private var showNotifications = false
-    @State private var showSettings = false
-    @State private var showAnalytics = false
-    @State private var userRole: String = "user"
+    @State private var showProfile = false
+    @State private var headerImageData: String?
+    @State private var headerInitial: String = "U"
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -62,7 +62,7 @@ struct MainTabView: View {
         .tint(Color.nostiaAccent)
         .onAppear {
             loadUnreadCount()
-            loadUserRole()
+            loadHeaderUser()
         }
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
@@ -79,35 +79,14 @@ struct MainTabView: View {
             }
             .presentationBackground(.ultraThinMaterial)
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $showProfile, onDismiss: { loadHeaderUser() }) {
             NavigationStack {
-                PrivacyView()
-                    .navigationTitle("Settings")
+                ProfileView()
+                    .navigationTitle("Profile")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showSettings = false }
-                                .foregroundColor(Color.nostiaAccent)
-                        }
-                        if userRole == "admin" {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Analytics") { showAnalytics = true }
-                                    .foregroundColor(Color.nostiaAccent)
-                            }
-                        }
-                    }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .presentationBackground(.ultraThinMaterial)
-        }
-        .sheet(isPresented: $showAnalytics) {
-            NavigationStack {
-                AnalyticsView()
-                    .navigationTitle("Analytics")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showAnalytics = false }
+                            Button("Close") { showProfile = false }
                                 .foregroundColor(Color.nostiaAccent)
                         }
                     }
@@ -120,7 +99,7 @@ struct MainTabView: View {
     @ToolbarContentBuilder
     var tabBarToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
                 Button {
                     showNotifications = true
                     loadUnreadCount()
@@ -139,8 +118,13 @@ struct MainTabView: View {
                         }
                     }
                 }
-                Button { showSettings = true } label: {
-                    Image(systemName: "gear").foregroundColor(.white)
+                Button { showProfile = true } label: {
+                    UserAvatarView(
+                        imageData: headerImageData,
+                        initial: headerInitial,
+                        color: Color.nostiaAccent,
+                        size: 30
+                    )
                 }
             }
         }
@@ -153,10 +137,13 @@ struct MainTabView: View {
         }
     }
 
-    func loadUserRole() {
+    func loadHeaderUser() {
         Task {
             let user = try? await AuthAPI.shared.getMe()
-            await MainActor.run { userRole = user?.role ?? "user" }
+            await MainActor.run {
+                headerImageData = user?.profilePictureUrl
+                headerInitial = user?.initial ?? "U"
+            }
         }
     }
 }
