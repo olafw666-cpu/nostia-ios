@@ -9,6 +9,7 @@ struct VaultChatView: View {
     @State private var isLoading = true
     @State private var isSending = false
     @State private var errorMessage: String?
+    @State private var keyboardHeight: CGFloat = 0
 
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
 
@@ -41,8 +42,7 @@ struct VaultChatView: View {
                 Text(err).font(.caption).foregroundColor(Color.nostriaDanger)
                     .padding(.horizontal, 16).padding(.vertical, 4)
             }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+
             if isKicked {
                 HStack {
                     Image(systemName: "lock.fill").foregroundColor(Color.nostiaTextMuted).font(.caption)
@@ -74,6 +74,19 @@ struct VaultChatView: View {
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             }
+        }
+        .padding(.bottom, keyboardHeight)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { n in
+            guard let frame = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            let safeBottom = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }.first?
+                .windows.first?.safeAreaInsets.bottom ?? 0
+            withAnimation(.easeOut(duration: 0.25)) {
+                keyboardHeight = frame.height - safeBottom
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) { keyboardHeight = 0 }
         }
         .task {
             await loadMessages()
