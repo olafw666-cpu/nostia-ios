@@ -197,12 +197,22 @@ struct CreateEventFromDiscoverSheet: View {
                             }
                         }
                     }
-                    VStack {
-                        Text(selectedCoord == nil ? "Tap to place event location" : "Tap again to move pin")
+                    VStack(spacing: 8) {
+                        AddressSearchField(locationName: $locationName) { coord, _ in
+                            selectedCoord = coord
+                            mapCameraPosition = .region(MKCoordinateRegion(
+                                center: coord,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            ))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+
+                        Text(selectedCoord == nil ? "Search or tap to place pin" : "Tap to move pin")
                             .font(.caption).foregroundColor(.white.opacity(0.8))
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             .glassEffect(in: Capsule())
-                            .padding(.top, 12)
+
                         Spacer()
                     }
                 }
