@@ -201,8 +201,8 @@ struct CreateEventSheet: View {
                     .frame(height: 140)
                     .cornerRadius(14)
                     .allowsHitTesting(false)
-                    .onChange(of: adjustedCoord) { _, coord in
-                        guard let coord else { return }
+                    .onChange(of: adjustedCoord?.latitude) { _, _ in
+                        guard let coord = adjustedCoord else { return }
                         previewPosition = .region(MKCoordinateRegion(
                             center: coord,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
