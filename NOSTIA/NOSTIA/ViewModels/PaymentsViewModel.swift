@@ -65,11 +65,14 @@ final class PaymentsViewModel: ObservableObject {
                 ephemeralKeySecret: intent.ephemeralKey
             )
             addCardSheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
+            isLoading = false
+            // Let SwiftUI render the .paymentSheet modifier with isPresented=false before we flip it
+            try? await Task.sleep(nanoseconds: 50_000_000)
             showAddCard = true
         } catch {
             errorMessage = error.localizedDescription
+            isLoading = false
         }
-        isLoading = false
     }
 
     func handleAddCardResult(_ result: PaymentSheetResult) async {
