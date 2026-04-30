@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import CoreImage.CIFilterBuiltins
 
 struct VaultQRView: View {
@@ -31,12 +32,22 @@ struct VaultQRView: View {
                             .font(.caption)
                             .foregroundColor(Color.nostiaTextSecond)
 
-                        Button {
-                            Task { await loadToken() }
-                        } label: {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                                .font(.footnote.bold())
-                                .foregroundColor(Color.nostiaAccent)
+                        HStack(spacing: 20) {
+                            Button {
+                                UIPasteboard.general.string = "nostia://invite/\(token)"
+                            } label: {
+                                Label("Copy Link", systemImage: "link")
+                                    .font(.footnote.bold())
+                                    .foregroundColor(Color.nostiaAccent)
+                            }
+
+                            Button {
+                                Task { await loadToken() }
+                            } label: {
+                                Label("Refresh", systemImage: "arrow.clockwise")
+                                    .font(.footnote.bold())
+                                    .foregroundColor(Color.nostiaAccent)
+                            }
                         }
                     }
                 } else if let err = errorMessage {

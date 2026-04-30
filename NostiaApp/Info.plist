@@ -18,5 +18,16 @@
     <string>UIStatusBarStyleLightContent</string>
     <key>UIUserInterfaceStyle</key>
     <string>Dark</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>nostia</string>
+            </array>
+            <key>CFBundleURLName</key>
+            <string>com.nostia.app</string>
+        </dict>
+    </array>
 </dict>
 </plist>
