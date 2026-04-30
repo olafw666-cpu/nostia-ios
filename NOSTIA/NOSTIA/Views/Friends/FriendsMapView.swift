@@ -162,7 +162,20 @@ struct CreateEventSheet: View {
     @State private var visibility = "public"
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var adjustedCoord: CLLocationCoordinate2D?
+    @State private var previewPosition: MapCameraPosition
     @Environment(\.dismiss) private var dismiss
+
+    private var activeCoord: CLLocationCoordinate2D { adjustedCoord ?? coordinate }
+
+    init(coordinate: CLLocationCoordinate2D, onSave: @escaping (Event) -> Void) {
+        self.coordinate = coordinate
+        self.onSave = onSave
+        self._previewPosition = State(initialValue: .region(MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )))
+    }
 
     let visibilityOptions = ["public", "friends", "private"]
 
@@ -177,11 +190,8 @@ struct CreateEventSheet: View {
             ScrollView {
                 VStack(spacing: 16) {
                     // Map preview showing pin location
-                    Map(initialPosition: .region(MKCoordinateRegion(
-                        center: coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    ))) {
-                        Annotation("", coordinate: coordinate) {
+                    Map(position: $previewPosition) {
+                        Annotation("", coordinate: activeCoord) {
                             Image(systemName: "mappin.circle.fill")
                                 .font(.system(size: 32))
                                 .foregroundColor(Color.nostiaAccent)
@@ -191,10 +201,24 @@ struct CreateEventSheet: View {
                     .frame(height: 140)
                     .cornerRadius(14)
                     .allowsHitTesting(false)
+                    .onChange(of: adjustedCoord) { _, coord in
+                        guard let coord else { return }
+                        previewPosition = .region(MKCoordinateRegion(
+                            center: coord,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        ))
+                    }
 
                     NostiaTextField(label: "Event Title *", placeholder: "What's happening?", text: $title)
 
-                    NostiaTextField(label: "Location Name", placeholder: "e.g. Central Park, Coffee Shop…", text: $locationName)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Location Name")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                        AddressSearchField(locationName: $locationName) { coord, _ in
+                            adjustedCoord = coord
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Date & Time *")
@@ -262,8 +286,8 @@ struct CreateEventSheet: View {
                                     description: description.isEmpty ? nil : description,
                                     location: locationName.isEmpty ? nil : locationName,
                                     eventDate: isoFormatter.string(from: eventDate),
-                                    lat: coordinate.latitude,
-                                    lng: coordinate.longitude,
+                                    lat: activeCoord.latitude,
+                                    lng: activeCoord.longitude,
                                     visibility: visibility
                                 )
                                 onSave(event)
