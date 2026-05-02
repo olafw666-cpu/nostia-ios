@@ -40,6 +40,10 @@ final class AdventuresAPI {
         return try await client.request("/events/\(eventId)/rsvp", method: "POST", body: ["status": status])
     }
 
+    func updateEvent(id: Int, flyerImage: String) async throws -> Event {
+        return try await client.request("/events/\(id)", method: "PUT", body: ["flyerImage": flyerImage])
+    }
+
     func deleteEvent(_ eventId: Int) async throws {
         try await client.requestVoid("/events/\(eventId)", method: "DELETE")
     }

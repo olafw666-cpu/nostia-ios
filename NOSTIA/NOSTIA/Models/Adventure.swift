@@ -29,6 +29,7 @@ struct Event: Codable, Identifiable {
     var createdAt: String?
     var goingCount: Int?
     var myRsvp: String?
+    var flyerImage: String?
 
     var formattedDate: String {
         let fmt = ISO8601DateFormatter()
