@@ -82,8 +82,8 @@ struct ProfileView: View {
                             .padding(.horizontal, 24)
                     }
 
-                    // Friends count
-                    Text("\(u.friendsCount ?? 0) Friends")
+                    // Follower count
+                    Text("\(u.followersCount ?? 0) Followers")
                         .font(.subheadline.bold())
                         .foregroundColor(Color.nostiaTextSecond)
 

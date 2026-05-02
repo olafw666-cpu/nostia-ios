@@ -8,7 +8,7 @@ final class HomeViewModel: ObservableObject {
     @Published var trips: [Trip] = []
     @Published var upcomingEvents: [Event] = []
     @Published var nearbyEvents: [Event] = []
-    @Published var friends: [Friend] = []
+    @Published var followers: [FollowUser] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -26,10 +26,10 @@ final class HomeViewModel: ObservableObject {
         // Load the rest concurrently, ignoring individual failures
         async let t = TripsAPI.shared.getAll()
         async let e = AdventuresAPI.shared.getUpcomingEvents(limit: 5)
-        async let f = FriendsAPI.shared.getAll()
+        async let f = FriendsAPI.shared.getFollowers()
         trips = (try? await t) ?? []
         upcomingEvents = (try? await e) ?? []
-        friends = (try? await f) ?? []
+        followers = (try? await f) ?? []
         isLoading = false
     }
 

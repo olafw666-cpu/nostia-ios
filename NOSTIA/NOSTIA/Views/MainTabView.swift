@@ -51,12 +51,12 @@ struct MainTabView: View {
 
             NavigationStack {
                 FriendsView()
-                    .navigationTitle("Friends")
+                    .navigationTitle("Following")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Friends", systemImage: selectedTab == 4 ? "person.2.fill" : "person.2") }
+            .tabItem { Label("Following", systemImage: selectedTab == 4 ? "person.2.fill" : "person.2") }
             .tag(4)
         }
         .tint(Color.nostiaAccent)

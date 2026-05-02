@@ -51,6 +51,18 @@ struct ChatView: View {
                 }
             }
 
+            // Lock banner (shown when mutual follow is lost)
+            if vm.isLocked {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.fill").foregroundColor(.white)
+                    Text("Read-only — mutual follow required to send messages")
+                        .font(.caption).foregroundColor(.white)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .background(Color.nostiaWarning.opacity(0.85))
+            }
+
             // Input bar
             VStack(spacing: 0) {
                 Divider().background(Color.white.opacity(0.08))
@@ -60,6 +72,7 @@ struct ChatView: View {
                         .padding(.horizontal, 16).padding(.vertical, 10)
                         .glassEffect(in: RoundedRectangle(cornerRadius: 20))
                         .foregroundColor(.white)
+                        .disabled(vm.isLocked)
 
                     Button {
                         Task { await vm.send(conversationId: conversationId) }
@@ -71,7 +84,7 @@ struct ChatView: View {
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
                                 .background(
-                                    vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty
+                                    (vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isLocked)
                                         ? AnyShapeStyle(Color.nostiaInput)
                                         : AnyShapeStyle(LinearGradient(
                                             colors: [Color.nostiaAccent, Color.nostriaPurple],
@@ -80,11 +93,11 @@ struct ChatView: View {
                                 )
                                 .clipShape(Circle())
                                 .shadow(color: Color.nostiaAccent.opacity(
-                                    vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty ? 0 : 0.4
+                                    (vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isLocked) ? 0 : 0.4
                                 ), radius: 8)
                         }
                     }
-                    .disabled(vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSending)
+                    .disabled(vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSending || vm.isLocked)
                 }
                 .padding(12)
                 .background(.ultraThinMaterial)

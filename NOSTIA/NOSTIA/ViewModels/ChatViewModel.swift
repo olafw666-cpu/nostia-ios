@@ -7,6 +7,7 @@ final class ChatViewModel: ObservableObject {
     @Published var newMessage = ""
     @Published var isLoading = false
     @Published var isSending = false
+    @Published var isLocked = false
     @Published var errorMessage: String?
 
     private var currentUserId: Int?
@@ -44,8 +45,14 @@ final class ChatViewModel: ObservableObject {
             let msg = try await MessagesAPI.shared.sendMessage(conversationId: conversationId, content: content)
             messages.append(msg)
         } catch {
-            errorMessage = error.localizedDescription
-            newMessage = content // Restore on failure
+            let msg = error.localizedDescription
+            if msg.localizedCaseInsensitiveContains("read-only") || msg.localizedCaseInsensitiveContains("locked") || msg.localizedCaseInsensitiveContains("mutually follow") {
+                isLocked = true
+                errorMessage = "This conversation is read-only. Mutual follow is required to send messages."
+            } else {
+                errorMessage = msg
+                newMessage = content // Restore on failure
+            }
         }
         isSending = false
     }

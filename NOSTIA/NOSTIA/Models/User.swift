@@ -12,7 +12,7 @@ struct User: Codable, Identifiable {
     var createdAt: String?
     var bio: String?
     var profilePictureUrl: String?
-    var friendsCount: Int?
+    var followersCount: Int?
 
     var isAdmin: Bool { role == "admin" }
     var isHomeOpen: Bool { homeStatus == "open" }
@@ -21,7 +21,7 @@ struct User: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
         case profilePictureUrl = "profile_picture_url"
-        case friendsCount
+        case followersCount
     }
 }
 

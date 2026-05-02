@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 
 struct FriendsMapView: View {
-    @State private var friendLocations: [FriendLocation] = []
+    @State private var friendLocations: [FollowLocation] = []
     @State private var events: [Event] = []
     @State private var isLoading = false
     @State private var cameraPosition = MapCameraPosition.automatic
@@ -105,7 +105,7 @@ struct FriendsMapView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "map").font(.system(size: 48)).foregroundColor(Color.nostiaAccent.opacity(0.8))
                     Text("Nothing on the map yet").font(.headline).foregroundColor(.white)
-                    Text("Friends who share location and nearby events appear here")
+                    Text("People you follow who share location appear here")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
                         .multilineTextAlignment(.center)
                 }
@@ -141,7 +141,7 @@ struct FriendsMapView: View {
 
     func loadAll() async {
         isLoading = true
-        async let locations = FriendsAPI.shared.getLocations()
+        async let locations = FriendsAPI.shared.getLocations()  // mutual-follow location feed
         async let allEvents = AdventuresAPI.shared.getAllEvents()
         friendLocations = (try? await locations) ?? []
         events = (try? await allEvents) ?? []

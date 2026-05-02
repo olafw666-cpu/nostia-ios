@@ -214,7 +214,7 @@ struct CreateTripSheet: View {
     @State private var step = 1
     @State private var title = ""
     @State private var description = ""
-    @State private var friends: [Friend] = []
+    @State private var followers: [FollowUser] = []
     @State private var selectedFriendIds: Set<Int> = []
     @State private var isLoadingFriends = false
     @State private var isSaving = false
@@ -269,39 +269,39 @@ struct CreateTripSheet: View {
     private var friendsStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("SELECT FRIENDS")
+                Text("SELECT FOLLOWERS")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
                     .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 10)
 
                 if isLoadingFriends {
                     ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
-                } else if friends.isEmpty {
-                    Text("No friends to add yet")
+                } else if followers.isEmpty {
+                    Text("No followers to add yet")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
                         .padding(.horizontal, 20)
                 } else {
-                    ForEach(friends) { friend in
+                    ForEach(followers) { follower in
                         HStack(spacing: 12) {
-                            AvatarView(initial: friend.initial, color: Color.nostiaAccent, size: 38)
+                            AvatarView(initial: follower.initial, color: Color.nostiaAccent, size: 38)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(friend.name).font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
-                                Text("@\(friend.username)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                                Text(follower.name).font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                Text("@\(follower.username)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
                             }
                             Spacer()
-                            Image(systemName: selectedFriendIds.contains(friend.id) ? "checkmark.circle.fill" : "circle")
+                            Image(systemName: selectedFriendIds.contains(follower.id) ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
-                                .foregroundColor(selectedFriendIds.contains(friend.id) ? Color.nostiaAccent : Color.nostiaTextMuted)
+                                .foregroundColor(selectedFriendIds.contains(follower.id) ? Color.nostiaAccent : Color.nostiaTextMuted)
                         }
                         .padding(14)
                         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                         .padding(.horizontal, 16).padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            if selectedFriendIds.contains(friend.id) {
-                                selectedFriendIds.remove(friend.id)
+                            if selectedFriendIds.contains(follower.id) {
+                                selectedFriendIds.remove(follower.id)
                             } else {
-                                selectedFriendIds.insert(friend.id)
+                                selectedFriendIds.insert(follower.id)
                             }
                         }
                     }
@@ -310,7 +310,7 @@ struct CreateTripSheet: View {
             }
         }
         .background(.clear)
-        .navigationTitle("Add Friends")
+        .navigationTitle("Add Followers")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
@@ -335,7 +335,7 @@ struct CreateTripSheet: View {
 
     private func loadFriends() async {
         isLoadingFriends = true
-        friends = (try? await FriendsAPI.shared.getAll()) ?? []
+        followers = (try? await FriendsAPI.shared.getFollowers()) ?? []
         isLoadingFriends = false
     }
 }
