@@ -250,6 +250,7 @@ struct CreateEventSheet: View {
                         Text("Description")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white.opacity(0.7))
+                        LinkInsertBar(text: $description)
                         TextEditor(text: $description)
                             .frame(minHeight: 72).padding(12)
                             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
