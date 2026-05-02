@@ -70,8 +70,8 @@ struct HomeView: View {
                         }
                     }
                     Text(vm.user?.isHomeOpen == true
-                         ? "Friends can see you're available to host"
-                         : "Toggle to let friends know your home is open")
+                         ? "Followers can see you're available to host"
+                         : "Toggle to let followers know your home is open")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
                 }
                 .padding(16)
@@ -84,7 +84,7 @@ struct HomeView: View {
                         selectedTab = 1
                     }
                     StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
-                             count: vm.friends.count, label: "Friends") {
+                             count: vm.followers.count, label: "Followers") {
                         selectedTab = 4
                     }
                     StatCard(icon: "calendar", color: Color.nostiaWarning,

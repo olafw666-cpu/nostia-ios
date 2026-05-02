@@ -6,20 +6,6 @@ struct FriendsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let msg = vm.successMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill").foregroundColor(Color.nostiaSuccess)
-                    Text(msg).font(.subheadline.bold()).foregroundColor(.white)
-                    Spacer()
-                    Button { vm.successMessage = nil } label: {
-                        Image(systemName: "xmark").font(.caption).foregroundColor(Color.nostiaTextMuted)
-                    }
-                }
-                .padding(12)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaSuccess.opacity(0.5), lineWidth: 1))
-                .padding(.horizontal, 16).padding(.top, 8)
-            }
             // Search bar
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
@@ -52,73 +38,67 @@ struct FriendsView: View {
                     EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
                 } else {
                     List(vm.searchResults) { user in
-                        UserSearchRow(
-                            user: user,
-                            isPending: vm.sentFriendIds.contains(user.id),
-                            onAdd: { Task { await vm.sendRequest(to: user.id) } }
-                        )
-                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        UserSearchRow(user: user, onFollow: { Task { await vm.follow(userId: user.id) } })
+                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 }
             } else {
                 // Tab selector
                 HStack(spacing: 8) {
-                    TabButton(title: "Friends (\(vm.friends.count))", isActive: vm.activeTab == .friends) {
-                        vm.activeTab = .friends
+                    TabButton(title: "Followers (\(vm.followers.count))", isActive: vm.activeTab == .followers) {
+                        vm.activeTab = .followers
                     }
-                    TabButton(title: "Requests (\(vm.receivedRequests.count + vm.sentRequests.count))", isActive: vm.activeTab == .requests) {
-                        vm.activeTab = .requests
+                    TabButton(title: "Following (\(vm.following.count))", isActive: vm.activeTab == .following) {
+                        vm.activeTab = .following
                     }
                 }
                 .padding(.horizontal, 16).padding(.bottom, 8)
 
                 if vm.isLoading { LoadingView() }
-                else if vm.activeTab == .friends {
-                    List(vm.friends) { friend in
-                        FriendRow(friend: friend,
-                                  onMessage: {
-                                      Task {
-                                          if let conv = try? await MessagesAPI.shared.getOrCreateConversation(withUserId: friend.id) {
-                                              chatTarget = (conv.id, friend.name, friend.id)
-                                          }
-                                      }
-                                  })
-                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                else if vm.activeTab == .followers {
+                    List(vm.followers) { user in
+                        FollowUserRow(
+                            user: user,
+                            trailingContent: {
+                                AnyView(HStack(spacing: 8) {
+                                    if vm.followingIds.contains(user.id) {
+                                        messageButton(for: user)
+                                    } else {
+                                        followBackButton(for: user)
+                                    }
+                                })
+                            }
+                        )
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                     .refreshable { await vm.loadAll() }
                     .overlay {
-                        if vm.friends.isEmpty {
-                            EmptyStateView(icon: "person.2", text: "No friends yet", sub: "Search for users to connect!")
+                        if vm.followers.isEmpty {
+                            EmptyStateView(icon: "person.2", text: "No one is following you yet.", sub: "Share your profile to gain followers")
                         }
                     }
                 } else {
-                    List {
-                        ForEach(vm.receivedRequests) { req in
-                            RequestRow(request: req,
-                                       onAccept: { Task { await vm.acceptRequest(req.id) } },
-                                       onReject: { Task { await vm.rejectRequest(req.id) } })
-                                .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        }
-                        if !vm.sentRequests.isEmpty {
-                            HStack {
-                                Text("Sent").font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
-                                Spacer()
+                    List(vm.following) { user in
+                        FollowUserRow(
+                            user: user,
+                            trailingContent: {
+                                AnyView(HStack(spacing: 8) {
+                                    if vm.followerIds.contains(user.id) {
+                                        messageButton(for: user)
+                                    }
+                                    unfollowButton(for: user)
+                                })
                             }
-                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                            .padding(.top, 8)
-                            ForEach(vm.sentRequests) { req in
-                                SentRequestRow(request: req)
-                                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                            }
-                        }
+                        )
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                     .refreshable { await vm.loadAll() }
                     .overlay {
-                        if vm.receivedRequests.isEmpty && vm.sentRequests.isEmpty {
-                            EmptyStateView(icon: "envelope", text: "No pending requests", sub: "")
+                        if vm.following.isEmpty {
+                            EmptyStateView(icon: "person.badge.plus", text: "You are not following anyone yet.", sub: "Search for users to follow them")
                         }
                     }
                 }
@@ -136,6 +116,46 @@ struct FriendsView: View {
             ChatView(conversationId: dest.id, friendName: dest.name)
         }
     }
+
+    @ViewBuilder
+    private func messageButton(for user: FollowUser) -> some View {
+        Button {
+            Task {
+                if let conv = try? await MessagesAPI.shared.getOrCreateConversation(withUserId: user.id) {
+                    chatTarget = (conv.id, user.name, user.id)
+                }
+            }
+        } label: {
+            Image(systemName: "bubble.left.fill")
+                .foregroundColor(.white).padding(8)
+                .background(Color.nostiaAccent).clipShape(Circle())
+                .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
+        }
+    }
+
+    @ViewBuilder
+    private func followBackButton(for user: FollowUser) -> some View {
+        Button {
+            Task { await vm.follow(userId: user.id) }
+        } label: {
+            Text("Follow")
+                .font(.caption.bold()).foregroundColor(.white)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Color.nostiaAccent).cornerRadius(8)
+        }
+    }
+
+    @ViewBuilder
+    private func unfollowButton(for user: FollowUser) -> some View {
+        Button {
+            Task { await vm.unfollow(userId: user.id) }
+        } label: {
+            Text("Unfollow")
+                .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
 }
 
 struct ChatDestination: Identifiable, Hashable {
@@ -144,68 +164,19 @@ struct ChatDestination: Identifiable, Hashable {
     let friendId: Int
 }
 
-struct FriendRow: View {
-    let friend: Friend
-    let onMessage: () -> Void
+struct FollowUserRow<Trailing: View>: View {
+    let user: FollowUser
+    let trailingContent: () -> Trailing
 
     var body: some View {
         HStack(spacing: 12) {
-            AvatarView(initial: friend.initial, color: Color.nostiaAccent, size: 50)
+            AvatarView(initial: user.initial, color: Color.nostiaAccent, size: 50)
             VStack(alignment: .leading, spacing: 2) {
-                Text(friend.name).font(.headline).foregroundColor(.white)
-                Text("@\(friend.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                Text(user.name).font(.headline).foregroundColor(.white)
+                Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
-            HStack(spacing: 8) {
-                Button { onMessage() } label: {
-                    Image(systemName: "bubble.left.fill")
-                        .foregroundColor(.white).padding(8)
-                        .background(Color.nostiaAccent).clipShape(Circle())
-                        .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
-                }
-                HStack(spacing: 5) {
-                        Image(systemName: friend.isHomeOpen ? "house" : "lock")
-                            .font(.system(size: 12))
-                        Text(friend.isHomeOpen ? "Open" : "Closed")
-                    }
-                    .font(.caption.bold()).foregroundColor(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .glassEffect(in: Capsule())
-                    .overlay(Capsule().stroke(
-                        friend.isHomeOpen ? Color.nostiaSuccess.opacity(0.6) : Color.nostriaBorder,
-                        lineWidth: 1
-                    ))
-            }
-        }
-        .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-        .padding(.vertical, 4)
-    }
-}
-
-struct RequestRow: View {
-    let request: FriendRequest
-    let onAccept: () -> Void
-    let onReject: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            AvatarView(initial: String(request.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(request.name).font(.headline).foregroundColor(.white)
-                Text("@\(request.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
-            }
-            Spacer()
-            HStack(spacing: 8) {
-                Button { onAccept() } label: {
-                    Image(systemName: "checkmark").foregroundColor(.white).padding(8)
-                        .background(Color.nostiaSuccess).clipShape(Circle())
-                }
-                Button { onReject() } label: {
-                    Image(systemName: "xmark").foregroundColor(.white).padding(8)
-                        .background(Color.nostriaDanger).clipShape(Circle())
-                }
-            }
+            trailingContent()
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
@@ -215,8 +186,8 @@ struct RequestRow: View {
 
 struct UserSearchRow: View {
     let user: UserSearchResult
-    let isPending: Bool
-    let onAdd: () -> Void
+    let onFollow: () -> Void
+
     var body: some View {
         HStack(spacing: 12) {
             AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
@@ -225,38 +196,11 @@ struct UserSearchRow: View {
                 Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
-            if isPending {
-                Image(systemName: "clock")
-                    .foregroundColor(Color.nostiaTextMuted).padding(8)
-                    .background(Color.nostiaTextMuted.opacity(0.2)).clipShape(Circle())
-            } else {
-                Button { onAdd() } label: {
-                    Image(systemName: "person.badge.plus").foregroundColor(.white).padding(8)
-                        .background(Color.nostiaAccent).clipShape(Circle())
-                        .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
-                }
+            Button { onFollow() } label: {
+                Image(systemName: "person.badge.plus").foregroundColor(.white).padding(8)
+                    .background(Color.nostiaAccent).clipShape(Circle())
+                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
             }
-        }
-        .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-        .padding(.vertical, 4)
-    }
-}
-
-struct SentRequestRow: View {
-    let request: FriendRequest
-    var body: some View {
-        HStack(spacing: 12) {
-            AvatarView(initial: String(request.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(request.name).font(.headline).foregroundColor(.white)
-                Text("@\(request.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
-            }
-            Spacer()
-            Text("Pending")
-                .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .glassEffect(in: Capsule())
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))

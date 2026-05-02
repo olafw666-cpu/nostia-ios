@@ -4,7 +4,10 @@ struct PublicProfileView: View {
     let userId: Int
 
     @State private var user: User?
+    @State private var followStatus: FollowStatus?
+    @State private var currentUserId: Int?
     @State private var isLoading = true
+    @State private var isFollowActionInProgress = false
 
     var body: some View {
         ScrollView {
@@ -31,9 +34,32 @@ struct PublicProfileView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
 
-                    Text("\(u.friendsCount ?? 0) Friends")
+                    Text("\(u.followersCount ?? 0) Followers")
                         .font(.subheadline.bold())
                         .foregroundColor(Color.nostiaTextSecond)
+
+                    if let status = followStatus, currentUserId != userId {
+                        Button {
+                            Task { await toggleFollow(status: status) }
+                        } label: {
+                            if isFollowActionInProgress {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text(status.isFollowing ? "Unfollow" : "Follow")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.white)
+                                    .frame(width: 120)
+                                    .padding(.vertical, 10)
+                                    .background(status.isFollowing ? Color.clear : Color.nostiaAccent)
+                                    .cornerRadius(10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(status.isFollowing ? Color.nostiaTextSecond : Color.clear, lineWidth: 1)
+                                    )
+                            }
+                        }
+                        .disabled(isFollowActionInProgress)
+                    }
                 }
             }
             .padding(.bottom, 40)
@@ -46,7 +72,26 @@ struct PublicProfileView: View {
 
     private func load() async {
         isLoading = true
-        user = try? await ProfileAPI.shared.getPublicProfile(userId: userId)
+        async let profileData = ProfileAPI.shared.getPublicProfile(userId: userId)
+        async let statusData = FriendsAPI.shared.getFollowStatus(userId: userId)
+        async let meData = AuthAPI.shared.getMe()
+        user = try? await profileData
+        followStatus = try? await statusData
+        currentUserId = try? await meData?.id
         isLoading = false
+    }
+
+    private func toggleFollow(status: FollowStatus) async {
+        isFollowActionInProgress = true
+        do {
+            if status.isFollowing {
+                try await FriendsAPI.shared.unfollow(userId: userId)
+            } else {
+                try await FriendsAPI.shared.follow(userId: userId)
+            }
+            followStatus = try? await FriendsAPI.shared.getFollowStatus(userId: userId)
+            user = try? await ProfileAPI.shared.getPublicProfile(userId: userId)
+        } catch {}
+        isFollowActionInProgress = false
     }
 }
