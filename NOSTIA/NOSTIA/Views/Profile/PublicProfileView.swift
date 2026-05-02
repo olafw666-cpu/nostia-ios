@@ -77,7 +77,7 @@ struct PublicProfileView: View {
         async let meData = AuthAPI.shared.getMe()
         user = try? await profileData
         followStatus = try? await statusData
-        currentUserId = try? await meData?.id
+        currentUserId = (try? await meData)?.id
         isLoading = false
     }
 
