@@ -31,7 +31,7 @@ final class VaultViewModel: ObservableObject {
 
     func addExpense(tripId: Int, description: String, amount: Double, category: String?, date: String) async -> Bool {
         do {
-            _ = try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date)
+            try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date)
             return true
         } catch {
             errorMessage = error.localizedDescription

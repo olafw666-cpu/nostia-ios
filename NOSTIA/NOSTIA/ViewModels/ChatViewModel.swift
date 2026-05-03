@@ -30,7 +30,7 @@ final class ChatViewModel: ObservableObject {
     func loadMessages(conversationId: Int) async {
         do {
             let data = try await MessagesAPI.shared.getMessages(conversationId: conversationId, limit: 100, offset: 0)
-            messages = data // oldest first (server returns newest first, reversed here)
+            messages = Array(data.reversed()) // server returns DESC, reverse to oldest-first
         } catch {
             print("Message load error: \(error.localizedDescription)")
         }

@@ -51,6 +51,7 @@ struct VaultDetailView: View {
                 VaultChatView(tripId: currentTrip.id, isKicked: isKicked)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(.clear)
         .ignoresSafeArea(.keyboard)
         .navigationTitle(currentTrip.title)
