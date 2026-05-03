@@ -93,15 +93,7 @@ struct HomeView: View {
                     }
                 }
 
-                // Upcoming vaults preview
-                if !vm.trips.isEmpty {
-                    SectionHeader(title: "Upcoming Vaults")
-                    ForEach(vm.trips.prefix(2)) { trip in
-                        TripPreviewCard(trip: trip)
-                    }
-                }
-
-                // Nearby events (location-based)
+                // Upcoming/nearby events
                 if !vm.nearbyEvents.isEmpty {
                     SectionHeader(title: "Nearby Events")
                     ForEach(vm.nearbyEvents.prefix(3)) { event in
