@@ -410,6 +410,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nostia uses your camera to scan QR codes to join vaults and take photos.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nostia accesses your photos to share images with friends.";
@@ -448,6 +449,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nostia uses your camera to scan QR codes to join vaults and take photos.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nostia accesses your photos to share images with friends.";
