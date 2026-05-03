@@ -9,7 +9,7 @@ final class VaultAPI {
         return try await client.request("/vault/trip/\(tripId)")
     }
 
-    func createEntry(tripId: Int, description: String, amount: Double, category: String?, date: String) async throws -> VaultEntry {
+    func createEntry(tripId: Int, description: String, amount: Double, category: String?, date: String) async throws {
         var body: [String: Any] = [
             "tripId": tripId,
             "description": description,
@@ -17,7 +17,7 @@ final class VaultAPI {
             "date": date
         ]
         if let cat = category { body["category"] = cat }
-        return try await client.request("/vault", method: "POST", body: body)
+        try await client.requestVoid("/vault", method: "POST", body: body)
     }
 
     func deleteEntry(_ id: Int) async throws {

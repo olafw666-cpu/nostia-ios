@@ -109,6 +109,9 @@ struct ChatView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .task { await vm.initialize(conversationId: conversationId) }
         .onDisappear { vm.stopPolling() }
+        .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
+            Button("OK") { vm.errorMessage = nil }
+        } message: { Text(vm.errorMessage ?? "") }
     }
 }
 

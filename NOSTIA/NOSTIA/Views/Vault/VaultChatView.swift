@@ -125,15 +125,22 @@ struct VaultChatBubble: View {
     let isMe: Bool
 
     private var timeString: String {
-        let fmt = ISO8601DateFormatter()
-        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fmt1 = ISO8601DateFormatter()
+        fmt1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let fmt2 = ISO8601DateFormatter()
         fmt2.formatOptions = [.withInternetDateTime]
-        let date = fmt.date(from: message.createdAt) ?? fmt2.date(from: message.createdAt)
-        guard let d = date else { return "" }
         let out = DateFormatter()
         out.dateFormat = "h:mm a"
-        return out.string(from: d)
+        if let d = fmt1.date(from: message.createdAt) ?? fmt2.date(from: message.createdAt) {
+            return out.string(from: d)
+        }
+        // SQLite CURRENT_TIMESTAMP format
+        let fmt3 = DateFormatter()
+        fmt3.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let d = fmt3.date(from: message.createdAt) {
+            return out.string(from: d)
+        }
+        return ""
     }
 
     var body: some View {
