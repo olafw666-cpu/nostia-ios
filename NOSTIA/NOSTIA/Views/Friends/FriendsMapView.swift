@@ -9,7 +9,7 @@ struct FriendsMapView: View {
     @State private var pendingCoordinate: CLLocationCoordinate2D?
     @State private var showCreateEvent = false
     @State private var selectedEvent: Event?
-    @StateObject private var adventuresVM = EventActionsViewModel()
+    @State private var adventuresVM = EventActionsViewModel()
 
     var body: some View {
         ZStack(alignment: .bottom) {
