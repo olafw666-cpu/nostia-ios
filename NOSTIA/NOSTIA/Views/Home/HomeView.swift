@@ -45,39 +45,6 @@ struct HomeView: View {
                     }
                     .shadow(color: Color.nostiaAccent.opacity(0.35), radius: 20, y: 8)
 
-                // Home status card
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Home Status").font(.headline).foregroundColor(.white)
-                        Spacer()
-                        Button {
-                            Task { await vm.toggleHomeStatus() }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Image(systemName: vm.user?.isHomeOpen == true ? "house" : "lock")
-                                    .font(.system(size: 13))
-                                Text(vm.user?.isHomeOpen == true ? "Open" : "Closed")
-                            }
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                .glassEffect(in: Capsule())
-                                .overlay(
-                                    Capsule().stroke(
-                                        vm.user?.isHomeOpen == true ? Color.nostiaSuccess : Color.nostriaBorder,
-                                        lineWidth: 1
-                                    )
-                                )
-                        }
-                    }
-                    Text(vm.user?.isHomeOpen == true
-                         ? "Followers can see you're available to host"
-                         : "Toggle to let followers know your home is open")
-                        .font(.footnote).foregroundColor(Color.nostiaTextSecond)
-                }
-                .padding(16)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-
                 // Quick stats
                 HStack(spacing: 12) {
                     StatCard(icon: "creditcard", color: Color.nostiaAccent,

@@ -50,14 +50,5 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func toggleHomeStatus() async {
-        guard let u = user else { return }
-        let newStatus = u.isHomeOpen ? "closed" : "open"
-        do {
-            let updated = try await AuthAPI.shared.updateMe(["homeStatus": newStatus])
-            user = updated
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
+
 }
