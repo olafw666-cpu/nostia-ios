@@ -5,7 +5,7 @@ import PhotosUI
 // Minimal view model — only the RSVP/delete/flyer actions needed by the map's EventDetailSheet.
 // Full AdventuresViewModel (search, list) lives in _disabled_features/adventures-ios.
 @MainActor
-final class EventActionsViewModel: ObservableObject {
+final class EventActionsViewModel {
     func rsvpEvent(eventId: Int, status: String) async throws -> Event {
         try await AdventuresAPI.shared.rsvp(eventId: eventId, status: status)
     }
@@ -23,7 +23,7 @@ final class EventActionsViewModel: ObservableObject {
 
 struct EventDetailSheet: View {
     let event: Event
-    @ObservedObject var vm: EventActionsViewModel
+    let vm: EventActionsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var currentEvent: Event
     @State private var isRsvping = false
@@ -210,7 +210,7 @@ struct EventDetailSheet: View {
 
 struct EventFlyerView: View {
     let event: Event
-    @ObservedObject var vm: EventActionsViewModel
+    let vm: EventActionsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var currentEvent: Event
     @State private var isRsvping = false
