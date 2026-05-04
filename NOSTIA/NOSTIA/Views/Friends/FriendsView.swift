@@ -182,10 +182,9 @@ struct FriendsView: View {
         Button {
             Task { await vm.unfollow(userId: user.id) }
         } label: {
-            Text("Unfollow")
-                .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+            Image(systemName: "person.badge.minus")
+                .foregroundColor(Color.nostiaTextSecond).padding(8)
+                .background(Color.white.opacity(0.1)).clipShape(Circle())
         }
     }
 }
