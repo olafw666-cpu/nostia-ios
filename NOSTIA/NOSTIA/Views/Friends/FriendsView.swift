@@ -6,6 +6,7 @@ struct FriendsView: View {
     @State private var chatTarget: (conversationId: Int, name: String, friendId: Int)?
     @State private var profileDestination: ProfileDestination?
     @State private var showContactsPicker = false
+    @State private var userToUnfollow: FollowUser?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -106,7 +107,7 @@ struct FriendsView: View {
                             user: user,
                             onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
                             trailingContent: {
-                                AnyView(HStack(spacing: 8) {
+                                AnyView(HStack(spacing: 16) {
                                     if vm.followerIds.contains(user.id) {
                                         messageButton(for: user)
                                     }
@@ -131,6 +132,17 @@ struct FriendsView: View {
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
+        .alert("Unfollow \(userToUnfollow?.name ?? "")?", isPresented: Binding(
+            get: { userToUnfollow != nil },
+            set: { if !$0 { userToUnfollow = nil } }
+        )) {
+            Button("Unfollow", role: .destructive) {
+                guard let u = userToUnfollow else { return }
+                userToUnfollow = nil
+                Task { await vm.unfollow(userId: u.id) }
+            }
+            Button("Cancel", role: .cancel) { userToUnfollow = nil }
+        }
         .navigationDestination(item: $profileDestination) { dest in
             PublicProfileView(userId: dest.id)
         }
@@ -180,7 +192,7 @@ struct FriendsView: View {
     @ViewBuilder
     private func unfollowButton(for user: FollowUser) -> some View {
         Button {
-            Task { await vm.unfollow(userId: user.id) }
+            userToUnfollow = user
         } label: {
             Image(systemName: "person.badge.minus")
                 .foregroundColor(Color.nostiaTextSecond).padding(8)
