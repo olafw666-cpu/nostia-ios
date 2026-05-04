@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @StateObject private var feedVM = FeedViewModel()
 
     var body: some View {
         ScrollView {
@@ -148,6 +149,19 @@ struct ProfileView: View {
                             .padding(.horizontal, 20)
 
                             Button {
+                                feedVM.showCreateSheet = true
+                            } label: {
+                                Label("Post", systemImage: "plus.square")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.nostiaAccent)
+                                    .cornerRadius(14)
+                            }
+                            .padding(.horizontal, 20)
+
+                            Button {
                                 showSettings = true
                             } label: {
                                 Label("Settings", systemImage: "gear")
@@ -160,12 +174,44 @@ struct ProfileView: View {
                             .padding(.horizontal, 20)
                         }
                     }
+
+                    // Posts section
+                    Divider()
+                        .background(Color.white.opacity(0.15))
+                        .padding(.horizontal, 20)
+
+                    SectionHeader(title: "Posts")
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+
+                    if feedVM.isLoading {
+                        ProgressView().tint(Color.nostiaAccent).padding(.vertical, 12)
+                    } else if feedVM.posts.isEmpty {
+                        Text("No posts yet.")
+                            .font(.subheadline)
+                            .foregroundColor(Color.nostiaTextMuted)
+                            .padding(.vertical, 12)
+                    } else {
+                        ForEach(feedVM.posts) { post in
+                            PostCard(
+                                post: post,
+                                currentUserId: authManager.currentUserId,
+                                onLike: { Task { await feedVM.toggleLike(post: post) } },
+                                onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                                onComment: { Task { await feedVM.loadComments(for: post) } }
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                    }
                 }
             }
             .padding(.bottom, 40)
         }
         .background(.clear)
-        .task { await loadProfile() }
+        .task {
+            await loadProfile()
+            await feedVM.loadUserPosts(userId: authManager.currentUserId ?? 0)
+        }
         .onChange(of: selectedPhoto) { _, item in
             Task {
                 if let data = try? await item?.loadTransferable(type: Data.self),
@@ -210,6 +256,23 @@ struct ProfileView: View {
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
             .presentationBackground(.ultraThinMaterial)
+        }
+        .sheet(isPresented: $feedVM.showCreateSheet, onDismiss: {
+            Task { await feedVM.loadUserPosts(userId: authManager.currentUserId ?? 0) }
+        }) {
+            CreatePostSheet(vm: feedVM)
+        }
+        .sheet(item: $feedVM.selectedPost) { post in
+            CommentsSheet(postId: post.id, vm: feedVM)
+                .onAppear { Task { await feedVM.loadComments(for: post) } }
+        }
+        .alert("Error", isPresented: Binding(
+            get: { feedVM.errorMessage != nil },
+            set: { if !$0 { feedVM.errorMessage = nil } }
+        )) {
+            Button("OK") { feedVM.errorMessage = nil }
+        } message: {
+            Text(feedVM.errorMessage ?? "")
         }
     }
 

@@ -8,6 +8,7 @@ struct PublicProfileView: View {
     @State private var currentUserId: Int?
     @State private var isLoading = true
     @State private var isFollowActionInProgress = false
+    @StateObject private var feedVM = FeedViewModel()
 
     var body: some View {
         ScrollView {
@@ -60,6 +61,33 @@ struct PublicProfileView: View {
                         }
                         .disabled(isFollowActionInProgress)
                     }
+
+                    // Posts section
+                    Divider()
+                        .background(Color.white.opacity(0.15))
+                        .padding(.horizontal, 20)
+
+                    SectionHeader(title: "Posts")
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+
+                    if feedVM.posts.isEmpty {
+                        Text("No posts yet.")
+                            .font(.subheadline)
+                            .foregroundColor(Color.nostiaTextMuted)
+                            .padding(.vertical, 12)
+                    } else {
+                        ForEach(feedVM.posts) { post in
+                            PostCard(
+                                post: post,
+                                currentUserId: currentUserId,
+                                onLike: { Task { await feedVM.toggleLike(post: post) } },
+                                onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                                onComment: { Task { await feedVM.loadComments(for: post) } }
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                    }
                 }
             }
             .padding(.bottom, 40)
@@ -68,6 +96,10 @@ struct PublicProfileView: View {
         .navigationTitle(user?.username ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .sheet(item: $feedVM.selectedPost) { post in
+            CommentsSheet(postId: post.id, vm: feedVM)
+                .onAppear { Task { await feedVM.loadComments(for: post) } }
+        }
     }
 
     private func load() async {
@@ -75,9 +107,11 @@ struct PublicProfileView: View {
         async let profileData = ProfileAPI.shared.getPublicProfile(userId: userId)
         async let statusData = FriendsAPI.shared.getFollowStatus(userId: userId)
         async let meData = AuthAPI.shared.getMe()
+        async let postsData = FeedAPI.shared.getUserPosts(userId: userId)
         user = try? await profileData
         followStatus = try? await statusData
         currentUserId = (try? await meData)?.id
+        feedVM.posts = (try? await postsData) ?? []
         isLoading = false
     }
 

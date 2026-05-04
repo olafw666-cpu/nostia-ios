@@ -29,6 +29,14 @@ final class FeedAPI {
         try await client.requestVoid("/feed/\(id)/like", method: "DELETE")
     }
 
+    func dislikePost(id: Int) async throws {
+        try await client.requestVoid("/feed/\(id)/dislike", method: "POST")
+    }
+
+    func undislikePost(id: Int) async throws {
+        try await client.requestVoid("/feed/\(id)/dislike", method: "DELETE")
+    }
+
     func getComments(postId: Int) async throws -> [FeedComment] {
         try await client.request("/feed/\(postId)/comments")
     }
@@ -39,5 +47,9 @@ final class FeedAPI {
 
     func deleteComment(id: Int) async throws {
         try await client.requestVoid("/feed/comments/\(id)", method: "DELETE")
+    }
+
+    func getUserPosts(userId: Int) async throws -> [FeedPost] {
+        try await client.request("/users/\(userId)/posts")
     }
 }

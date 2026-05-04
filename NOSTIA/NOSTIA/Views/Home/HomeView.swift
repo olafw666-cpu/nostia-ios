@@ -3,9 +3,10 @@ import SwiftUI
 struct HomeView: View {
     @Binding var selectedTab: Int
     @StateObject private var vm = HomeViewModel()
+    @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var locationManager: LocationManager
-    @State private var showLogoutAlert = false
     @EnvironmentObject var authManager: AuthManager
+    @State private var showLogoutAlert = false
 
     var body: some View {
         ScrollView {
@@ -105,17 +106,46 @@ struct HomeView: View {
                         EventPreviewCard(event: event)
                     }
                 }
+
+                // Post feed
+                SectionHeader(title: "Feed")
+
+                if feedVM.isLoading && feedVM.posts.isEmpty {
+                    ProgressView().tint(Color.nostiaAccent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                } else if feedVM.posts.isEmpty {
+                    EmptyStateView(
+                        icon: "photo.on.rectangle.angled",
+                        text: "Nothing to show yet",
+                        sub: "Follow users or check back later"
+                    )
+                } else {
+                    ForEach(feedVM.posts) { post in
+                        PostCard(
+                            post: post,
+                            currentUserId: authManager.currentUserId,
+                            onLike: { Task { await feedVM.toggleLike(post: post) } },
+                            onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                            onComment: { Task { await feedVM.loadComments(for: post) } }
+                        )
+                    }
+                }
             }
             .padding(16)
             .padding(.bottom, 40)
         }
         .background(.clear)
-        .refreshable { await vm.loadAll() }
+        .refreshable {
+            await vm.loadAll()
+            await feedVM.loadFeed()
+        }
         .navigationTitle("Nostia")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await vm.loadAll()
             locationManager.requestLocationOnce()
+            await feedVM.loadFeed()
         }
         .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }
@@ -126,6 +156,10 @@ struct HomeView: View {
             Button("Logout", role: .destructive) { authManager.logout() }
         } message: {
             Text("Are you sure you want to logout?")
+        }
+        .sheet(item: $feedVM.selectedPost) { post in
+            CommentsSheet(postId: post.id, vm: feedVM)
+                .onAppear { Task { await feedVM.loadComments(for: post) } }
         }
     }
 }
