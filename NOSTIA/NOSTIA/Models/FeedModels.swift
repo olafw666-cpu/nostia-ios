@@ -12,8 +12,10 @@ struct FeedPost: Codable, Identifiable {
     let tripTitle: String?
     let eventTitle: String?
     let likeCount: Int
+    let dislikeCount: Int
     let commentCount: Int
     let isLiked: Bool?
+    let isDisliked: Bool?
     let createdAt: String
 
     var timeAgo: String {
@@ -27,6 +29,12 @@ struct FeedPost: Codable, Identifiable {
         if date == nil {
             let f3 = DateFormatter(); f3.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
             date = f3.date(from: createdAt)
+        }
+        if date == nil {
+            let f4 = DateFormatter()
+            f4.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            f4.locale = Locale(identifier: "en_US_POSIX")
+            date = f4.date(from: createdAt)
         }
         guard let d = date else { return "" }
         let diff = Int(Date().timeIntervalSince(d))
@@ -52,6 +60,12 @@ struct FeedComment: Codable, Identifiable {
         if date == nil {
             let f2 = DateFormatter(); f2.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
             date = f2.date(from: createdAt)
+        }
+        if date == nil {
+            let f3 = DateFormatter()
+            f3.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            f3.locale = Locale(identifier: "en_US_POSIX")
+            date = f3.date(from: createdAt)
         }
         guard let d = date else { return "" }
         let diff = Int(Date().timeIntervalSince(d))

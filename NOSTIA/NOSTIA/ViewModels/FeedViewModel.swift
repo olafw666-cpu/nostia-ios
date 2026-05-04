@@ -32,15 +32,25 @@ final class FeedViewModel: ObservableObject {
         isLoading = false
     }
 
+    func loadUserPosts(userId: Int) async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            posts = try await FeedAPI.shared.getUserPosts(userId: userId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
     func createPost() async {
-        guard !newPostContent.trimmingCharacters(in: .whitespaces).isEmpty || newPostImageData != nil else { return }
+        guard newPostImageData != nil else { return }
         isSubmitting = true
         do {
             _ = try await FeedAPI.shared.createPost(
                 content: newPostContent.isEmpty ? nil : newPostContent,
                 imageData: newPostImageData
             )
-            // Reload to get full post data (with username, etc.)
             await loadFeed()
             newPostContent = ""
             newPostImageData = nil
@@ -66,10 +76,16 @@ final class FeedViewModel: ObservableObject {
         }
     }
 
-    func deletePost(id: Int) async {
+    func toggleDislike(post: FeedPost) async {
+        guard let idx = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let wasDisliked = posts[idx].isDisliked == true
         do {
-            try await FeedAPI.shared.deletePost(id: id)
-            posts.removeAll { $0.id == id }
+            if wasDisliked {
+                try await FeedAPI.shared.undislikePost(id: post.id)
+            } else {
+                try await FeedAPI.shared.dislikePost(id: post.id)
+            }
+            await loadFeed()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -94,7 +110,6 @@ final class FeedViewModel: ObservableObject {
             let comment = try await FeedAPI.shared.addComment(postId: postId, content: text)
             comments.append(comment)
             newComment = ""
-            // Update comment count in post list
             if posts.firstIndex(where: { $0.id == postId }) != nil {
                 await loadFeed()
             }

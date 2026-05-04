@@ -4,26 +4,28 @@ struct PostCard: View {
     let post: FeedPost
     let currentUserId: Int?
     var onLike: () -> Void = {}
+    var onDislike: () -> Void = {}
     var onComment: () -> Void = {}
-    var onDelete: () -> Void = {}
+    var onProfileTap: ((Int) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack(spacing: 10) {
-                AvatarView(initial: String(post.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 40)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(post.name).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
-                    Text("@\(post.username) · \(post.timeAgo)")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                }
-                Spacer()
-                if post.userId == currentUserId {
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.footnote).foregroundColor(Color.nostriaDanger)
+                Button {
+                    onProfileTap?(post.userId)
+                } label: {
+                    HStack(spacing: 10) {
+                        AvatarView(initial: String(post.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 40)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(post.name).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                            Text("@\(post.username) · \(post.timeAgo)")
+                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
+                Spacer()
             }
             .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 10)
 
@@ -60,6 +62,11 @@ struct PostCard: View {
                     Label("\(post.likeCount)", systemImage: post.isLiked == true ? "heart.fill" : "heart")
                         .font(.system(size: 14))
                         .foregroundColor(post.isLiked == true ? Color.nostriaDanger : Color.nostiaTextMuted)
+                }
+                Button(action: onDislike) {
+                    Label("\(post.dislikeCount)", systemImage: post.isDisliked == true ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                        .font(.system(size: 14))
+                        .foregroundColor(post.isDisliked == true ? Color.nostiaWarning : Color.nostiaTextMuted)
                 }
                 Button(action: onComment) {
                     Label("\(post.commentCount)", systemImage: "bubble.right")
