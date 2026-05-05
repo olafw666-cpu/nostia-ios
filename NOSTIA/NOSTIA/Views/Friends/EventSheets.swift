@@ -352,6 +352,62 @@ struct LinkInsertBar: View {
     }
 }
 
+// MARK: - EventCard
+
+struct EventCard: View {
+    let event: Event
+    var onCreatorTap: ((Int) -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(event.title).font(.headline).foregroundColor(.white)
+                Spacer()
+                if let vis = event.visibility, vis != "public" {
+                    Label(vis == "friends" ? "Friends" : "Private",
+                          systemImage: vis == "friends" ? "person.2" : "lock")
+                        .font(.caption.bold()).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(vis == "friends" ? Color.blue.opacity(0.7) : Color.nostriaDanger)
+                        .cornerRadius(12)
+                }
+                if let dist = event.formattedDistance {
+                    Text(dist).font(.caption.bold()).foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.nostiaAccent).cornerRadius(12)
+                }
+            }
+            if let desc = event.description, !desc.isEmpty {
+                Text(desc).font(.footnote).foregroundColor(Color.nostiaTextSecond).lineLimit(2)
+            }
+            if let loc = event.location {
+                Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+            }
+            HStack {
+                Label(event.formattedDate, systemImage: "calendar")
+                    .font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
+                if let going = event.goingCount, going > 0 {
+                    Label("\(going) going", systemImage: "checkmark.circle")
+                        .font(.caption).foregroundColor(Color.nostiaSuccess)
+                }
+                Spacer()
+                if let name = event.creatorName {
+                    if let userId = event.createdBy, let onCreatorTap {
+                        Button { onCreatorTap(userId) } label: {
+                            Text("by \(name)").font(.caption).foregroundColor(Color.nostiaAccent.opacity(0.8))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text("by \(name)").font(.caption).foregroundColor(Color.nostiaTextMuted)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
 struct LinkInsertSheet: View {
     let onInsert: (String) -> Void
     @State private var displayText = ""

@@ -53,10 +53,12 @@ struct HomeView: View {
                     }
                     StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
                              count: vm.followers.count, label: "Followers") {
-                        selectedTab = 3
+                        selectedTab = 4
                     }
                     StatCard(icon: "calendar", color: Color.nostiaWarning,
-                             count: vm.upcomingEvents.count, label: "Events")
+                             count: vm.upcomingEvents.count, label: "Events") {
+                        selectedTab = 3
+                    }
                 }
 
                 // Upcoming/nearby events
