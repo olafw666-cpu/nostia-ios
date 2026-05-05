@@ -40,14 +40,24 @@ struct MainTabView: View {
             .tag(2)
 
             NavigationStack {
+                EventsView()
+                    .navigationTitle("Events")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { tabBarToolbar }
+                    .toolbarBackground(.hidden, for: .navigationBar)
+            }
+            .tabItem { Label("Events", systemImage: selectedTab == 3 ? "calendar.badge.clock" : "calendar") }
+            .tag(3)
+
+            NavigationStack {
                 FriendsView()
                     .navigationTitle("Following")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Following", systemImage: selectedTab == 3 ? "person.2.fill" : "person.2") }
-            .tag(3)
+            .tabItem { Label("Following", systemImage: selectedTab == 4 ? "person.2.fill" : "person.2") }
+            .tag(4)
         }
         .tint(Color.nostiaAccent)
         .onAppear {

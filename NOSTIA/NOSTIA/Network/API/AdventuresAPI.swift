@@ -26,6 +26,10 @@ final class AdventuresAPI {
         return try await client.request("/events")
     }
 
+    func getMyGoingEvents() async throws -> [Event] {
+        return try await client.request("/events/mine")
+    }
+
     func createEvent(title: String, description: String?, location: String?, eventDate: String?, lat: Double?, lng: Double?, visibility: String = "public") async throws -> Event {
         var body: [String: Any] = ["title": title, "visibility": visibility]
         if let d = description { body["description"] = d }

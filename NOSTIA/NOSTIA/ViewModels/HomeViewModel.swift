@@ -25,7 +25,7 @@ final class HomeViewModel: ObservableObject {
         }
         // Load the rest concurrently, ignoring individual failures
         async let t = TripsAPI.shared.getAll()
-        async let e = AdventuresAPI.shared.getUpcomingEvents(limit: 5)
+        async let e = AdventuresAPI.shared.getMyGoingEvents()
         async let f = FriendsAPI.shared.getFollowers()
         trips = (try? await t) ?? []
         upcomingEvents = (try? await e) ?? []
