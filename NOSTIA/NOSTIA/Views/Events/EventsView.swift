@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import Combine
+import PhotosUI
 
 @MainActor
 final class EventsViewModel: ObservableObject {
@@ -92,6 +93,8 @@ struct CreateEventFromDiscoverSheet: View {
     @State private var visibility = "public"
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var coverImageData: String?
+    @State private var selectedCoverPhoto: PhotosPickerItem?
 
     let visibilityOptions = ["public", "friends", "private"]
 
@@ -168,6 +171,24 @@ struct CreateEventFromDiscoverSheet: View {
                         .frame(height: 120).cornerRadius(14)
                         .allowsHitTesting(false)
 
+                        if let imgData = coverImageData,
+                           let data = Data(base64Encoded: imgData),
+                           let uiImage = UIImage(data: data) {
+                            Image(uiImage: uiImage)
+                                .resizable().scaledToFill()
+                                .frame(maxWidth: .infinity).frame(height: 160)
+                                .clipped().cornerRadius(14)
+                        }
+
+                        PhotosPicker(selection: $selectedCoverPhoto, matching: .images) {
+                            Label(coverImageData == nil ? "Add Cover Photo" : "Change Cover Photo",
+                                  systemImage: "photo.badge.plus")
+                                .font(.subheadline.bold())
+                                .foregroundColor(Color.nostiaAccent)
+                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
+                        }
+
                         NostiaTextField(label: "Event Title *", placeholder: "What's happening?", text: $title)
                         NostiaTextField(label: "Location Name", placeholder: "e.g. Central Park…", text: $locationName)
 
@@ -223,7 +244,8 @@ struct CreateEventFromDiscoverSheet: View {
                                         eventDate: fmt.string(from: eventDate),
                                         lat: coord.latitude,
                                         lng: coord.longitude,
-                                        visibility: visibility
+                                        visibility: visibility,
+                                        flyerImage: coverImageData
                                     )
                                     onCreated(event)
                                     dismiss()
@@ -260,5 +282,14 @@ struct CreateEventFromDiscoverSheet: View {
             }
         }
         .presentationBackground(.ultraThinMaterial)
+        .onChange(of: selectedCoverPhoto) { _, item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data),
+                   let compressed = img.resizedForUpload().jpegData(compressionQuality: 0.6) {
+                    coverImageData = compressed.base64EncodedString()
+                }
+            }
+        }
     }
 }
