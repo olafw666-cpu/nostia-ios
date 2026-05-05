@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import Combine
 
 @MainActor
 final class EventsViewModel: ObservableObject {
