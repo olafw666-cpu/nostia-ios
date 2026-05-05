@@ -102,16 +102,20 @@ struct ProfileView: View {
                     // Buttons
                     if isEditing {
                         HStack(spacing: 12) {
-                            Button("Cancel") {
+                            Button {
                                 isEditing = false
                                 editBio = u.bio ?? ""
                                 editImageData = u.profilePictureUrl
                                 errorMessage = nil
+                            } label: {
+                                Text("Cancel")
+                                    .foregroundColor(Color.nostiaTextSecond)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                    .contentShape(RoundedRectangle(cornerRadius: 14))
                             }
-                            .foregroundColor(Color.nostiaTextSecond)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .buttonStyle(.plain)
 
                             Button {
                                 Task { await saveProfile() }
@@ -145,6 +149,7 @@ struct ProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                    .contentShape(RoundedRectangle(cornerRadius: 14))
                             }
                             .padding(.horizontal, 20)
 
@@ -170,6 +175,7 @@ struct ProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                    .contentShape(RoundedRectangle(cornerRadius: 14))
                             }
                             .padding(.horizontal, 20)
                         }

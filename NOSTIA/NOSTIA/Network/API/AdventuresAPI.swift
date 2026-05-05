@@ -30,13 +30,14 @@ final class AdventuresAPI {
         return try await client.request("/events/mine")
     }
 
-    func createEvent(title: String, description: String?, location: String?, eventDate: String?, lat: Double?, lng: Double?, visibility: String = "public") async throws -> Event {
+    func createEvent(title: String, description: String?, location: String?, eventDate: String?, lat: Double?, lng: Double?, visibility: String = "public", flyerImage: String? = nil) async throws -> Event {
         var body: [String: Any] = ["title": title, "visibility": visibility]
         if let d = description { body["description"] = d }
         if let l = location { body["location"] = l }
         if let d = eventDate { body["eventDate"] = d }
         if let la = lat { body["latitude"] = la }
         if let lo = lng { body["longitude"] = lo }
+        if let fi = flyerImage { body["flyerImage"] = fi }
         return try await client.request("/events", method: "POST", body: body)
     }
 
