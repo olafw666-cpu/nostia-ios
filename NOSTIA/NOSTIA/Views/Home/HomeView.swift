@@ -109,12 +109,15 @@ struct HomeView: View {
         }
         .navigationTitle("Nostia")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            Task { await vm.loadAll() }
-        }
         .task {
+            await vm.loadAll()
             locationManager.requestLocationOnce()
             await feedVM.loadFeed()
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == 0 {
+                Task { await vm.loadAll() }
+            }
         }
         .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }
@@ -149,8 +152,7 @@ struct StatCard: View {
             }
             .frame(maxWidth: .infinity)
             .padding(16)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
