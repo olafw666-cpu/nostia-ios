@@ -453,7 +453,7 @@ struct FilterChip: View {
                 .font(.caption.bold())
                 .foregroundColor(isActive ? .white : Color.nostiaTextSecond)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .glassEffect(in: Capsule())
+                .background(.ultraThinMaterial, in: Capsule())
                 .overlay(isActive ? Capsule().stroke(Color.nostiaAccent, lineWidth: 1) : nil)
         }
     }

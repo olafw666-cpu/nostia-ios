@@ -112,8 +112,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
 
@@ -148,8 +147,7 @@ struct ProfileView: View {
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .padding(.horizontal, 20)
 
@@ -174,8 +172,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .padding(.horizontal, 20)
                         }
