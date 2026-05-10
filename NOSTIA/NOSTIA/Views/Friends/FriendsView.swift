@@ -47,7 +47,7 @@ struct FriendsView: View {
                 .foregroundColor(Color.nostiaTextSecond)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)

@@ -144,7 +144,7 @@ struct ConsentSheet: View {
                             Text("Decline")
                                 .font(.headline).foregroundColor(Color.nostiaTextSecond)
                                 .frame(maxWidth: .infinity).padding(16)
-                                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                         }
                     }
                 }

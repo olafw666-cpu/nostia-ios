@@ -149,6 +149,7 @@ struct ProfileView: View {
                                     .padding()
                                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 20)
 
                             Button {
@@ -162,6 +163,7 @@ struct ProfileView: View {
                                     .background(Color.nostiaAccent)
                                     .cornerRadius(14)
                             }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 20)
 
                             Button {
@@ -174,6 +176,7 @@ struct ProfileView: View {
                                     .padding()
                                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 20)
                         }
                     }

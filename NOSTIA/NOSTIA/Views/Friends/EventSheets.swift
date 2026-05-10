@@ -340,7 +340,7 @@ struct LinkInsertBar: View {
                 Label("Add Link", systemImage: "link")
                     .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .glassEffect(in: Capsule())
+                    .background(.ultraThinMaterial, in: Capsule())
             }
             Spacer()
         }

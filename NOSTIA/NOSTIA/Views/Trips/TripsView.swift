@@ -160,7 +160,7 @@ struct TripCard: View {
                 }
             }
             .padding(16)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
     }
