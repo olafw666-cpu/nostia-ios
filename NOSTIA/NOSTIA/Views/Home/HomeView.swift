@@ -38,7 +38,7 @@ struct HomeView: View {
                                     .frame(width: 20, height: 20)
                                     .foregroundColor(.white)
                                     .padding(12)
-                                    .glassEffect(in: Circle())
+                                    .background(Color.white.opacity(0.2), in: Circle())
                             }
                         }
                         .padding(20)
