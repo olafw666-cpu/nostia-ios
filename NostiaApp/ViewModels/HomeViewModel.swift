@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import CoreLocation
+import Darwin
 
 @MainActor
 final class HomeViewModel: ObservableObject {
@@ -37,15 +38,19 @@ final class HomeViewModel: ObservableObject {
     }
 
     func updateLocation(_ location: CLLocation) async {
+        let lat = location.coordinate.latitude
+        let lng = location.coordinate.longitude
         do {
             _ = try await AuthAPI.shared.updateMe([
-                "latitude": location.coordinate.latitude,
-                "longitude": location.coordinate.longitude
+                "latitude": lat,
+                "longitude": lng
             ])
-            let nearby = try await AdventuresAPI.shared.getNearbyEvents(
-                lat: location.coordinate.latitude,
-                lng: location.coordinate.longitude,
-                radius: 50
+            let latDelta = 50.0 / 111.0
+            let lngDelta = 50.0 / (111.0 * cos(lat * .pi / 180.0))
+            let nearby = try await AdventuresAPI.shared.getMapEvents(
+                minLat: lat - latDelta, maxLat: lat + latDelta,
+                minLng: lng - lngDelta, maxLng: lng + lngDelta,
+                viewportRadiusMiles: 31
             )
             nearbyEvents = nearby
         } catch {

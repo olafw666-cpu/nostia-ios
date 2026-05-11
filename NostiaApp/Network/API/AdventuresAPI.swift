@@ -18,8 +18,8 @@ final class AdventuresAPI {
         return try await client.request("/events/upcoming?limit=\(limit)")
     }
 
-    func getNearbyEvents(lat: Double, lng: Double, radius: Double = 50) async throws -> [Event] {
-        return try await client.request("/events/nearby?lat=\(lat)&lng=\(lng)&radius=\(radius)")
+    func getMapEvents(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double, viewportRadiusMiles: Double = 20) async throws -> [Event] {
+        return try await client.request("/events/map?minLat=\(minLat)&maxLat=\(maxLat)&minLng=\(minLng)&maxLng=\(maxLng)&viewportRadiusMiles=\(viewportRadiusMiles)")
     }
 
     func getAllEvents() async throws -> [Event] {
