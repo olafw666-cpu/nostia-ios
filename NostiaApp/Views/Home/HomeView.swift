@@ -102,6 +102,14 @@ struct HomeView: View {
                     }
                 }
 
+                // Events I'm Going To
+                if !vm.goingEvents.isEmpty {
+                    SectionHeader(title: "Events I'm Going To")
+                    ForEach(vm.goingEvents.prefix(3)) { event in
+                        EventGoingCard(event: event)
+                    }
+                }
+
                 // Recent feed posts
                 if !vm.feed.isEmpty {
                     SectionHeader(title: "Recent Posts")
@@ -201,6 +209,33 @@ struct EventPreviewCard: View {
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+struct EventGoingCard: View {
+    let event: Event
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(event.title).font(.headline).foregroundColor(.white)
+                Spacer()
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill").font(.caption).foregroundColor(Color.nostiaSuccess)
+                    Text("Going").font(.caption.bold()).foregroundColor(Color.nostiaSuccess)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(Color.nostiaSuccess.opacity(0.15))
+                .cornerRadius(12)
+            }
+            if let loc = event.location {
+                Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+            }
+            Text(event.formattedDate).font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
+        }
+        .padding(16)
+        .background(Color(hex: "052E16"))
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "065F46"), lineWidth: 1))
     }
 }
 
