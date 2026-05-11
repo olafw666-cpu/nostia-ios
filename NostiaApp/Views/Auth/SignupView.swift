@@ -50,7 +50,7 @@ struct SignupView: View {
                     NostiaTextField(label: "Email (optional)", placeholder: "your@email.com", text: $email)
                         .keyboardType(.emailAddress).textInputAutocapitalization(.never)
 
-                    NostiaSecureField(label: "Password *", placeholder: "At least 8 characters", text: $password)
+                    NostiaSecureField(label: "Password *", placeholder: "At least 4 characters", text: $password)
 
                     if consentGranted {
                         HStack(spacing: 8) {
@@ -126,7 +126,7 @@ struct SignupView: View {
         if !trimUser.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) {
             return "Username can only contain letters, numbers, and underscores"
         }
-        if password.count < 8 { return "Password must be at least 8 characters" }
+        if password.count < 4 { return "Password must be at least 4 characters" }
         return nil
     }
 

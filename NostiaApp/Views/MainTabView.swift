@@ -76,16 +76,19 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
-                NotificationsView()
-                    .navigationTitle("Notifications")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showNotifications = false }
-                                .foregroundColor(Color.nostiaAccent)
-                        }
+                NotificationsView(onNavigate: { tab in
+                    showNotifications = false
+                    selectedTab = tab
+                })
+                .navigationTitle("Notifications")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close") { showNotifications = false }
+                            .foregroundColor(Color.nostiaAccent)
                     }
-                    .toolbarBackground(.hidden, for: .navigationBar)
+                }
+                .toolbarBackground(.hidden, for: .navigationBar)
             }
             .presentationBackground(.ultraThinMaterial)
         }

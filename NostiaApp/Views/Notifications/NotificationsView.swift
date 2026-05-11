@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotificationsView: View {
     @StateObject private var vm = NotificationsViewModel()
+    var onNavigate: ((Int) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,6 +24,9 @@ struct NotificationsView: View {
                 List(vm.notifications) { notif in
                     NotificationRow(notification: notif) {
                         Task { await vm.markAsRead(notif.id) }
+                        if let tab = tabIndex(for: notif.type) {
+                            onNavigate?(tab)
+                        }
                     }
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
@@ -38,6 +42,15 @@ struct NotificationsView: View {
         }
         .background(.clear)
         .task { await vm.load() }
+    }
+
+    func tabIndex(for type: String) -> Int? {
+        switch type {
+        case "trip_invite", "vault_payment", "payment_received": return 1
+        case "event_rsvp", "event_invite", "rsvp": return 3
+        case "friend_request", "new_follower", "follow_request", "message", "new_message": return 4
+        default: return nil
+        }
     }
 }
 
