@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import Darwin
 
 @MainActor
 final class AdventuresViewModel: ObservableObject {
@@ -19,15 +20,24 @@ final class AdventuresViewModel: ObservableObject {
 
     func loadAll() async {
         isLoading = true
-        async let advsData = AdventuresAPI.shared.getAll()
-        async let eventsData = AdventuresAPI.shared.getAllEvents()
-        do {
-            let (a, e) = try await (advsData, eventsData)
-            adventures = a
-            events = e
-        } catch {
-            errorMessage = error.localizedDescription
+        errorMessage = nil
+        async let advsTask = AdventuresAPI.shared.getAll()
+        // Use radius-based map endpoint if location is available
+        let loc = LocationManager.shared.location
+        if let loc = loc {
+            let lat = loc.coordinate.latitude
+            let lng = loc.coordinate.longitude
+            let latDelta = 50.0 / 111.0
+            let lngDelta = 50.0 / (111.0 * cos(lat * .pi / 180.0))
+            events = (try? await AdventuresAPI.shared.getMapEvents(
+                minLat: lat - latDelta, maxLat: lat + latDelta,
+                minLng: lng - lngDelta, maxLng: lng + lngDelta,
+                viewportRadiusMiles: 31
+            )) ?? []
+        } else {
+            events = (try? await AdventuresAPI.shared.getAllEvents()) ?? []
         }
+        adventures = (try? await advsTask) ?? []
         isLoading = false
     }
 
