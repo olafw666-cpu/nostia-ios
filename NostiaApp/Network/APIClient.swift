@@ -3,7 +3,12 @@ import Foundation
 final class APIClient {
     static let shared = APIClient()
     private let baseURL = AppConfig.apiBaseURL
-    private let session = URLSession.shared
+    private let session: URLSession = {
+        let cfg = URLSessionConfiguration.default
+        cfg.timeoutIntervalForRequest  = 30
+        cfg.timeoutIntervalForResource = 60
+        return URLSession(configuration: cfg)
+    }()
 
     private init() {}
 
@@ -46,6 +51,10 @@ final class APIClient {
                 throw APIError.httpError(statusCode: 403, message: "Session expired. Please log in again.")
             }
             throw APIError.httpError(statusCode: 403, message: errMsg.isEmpty ? "Access denied" : errMsg)
+        }
+
+        if http.statusCode >= 500 {
+            throw APIError.httpError(statusCode: http.statusCode, message: "Server error. Please try again.")
         }
 
         guard (200..<300).contains(http.statusCode) else {

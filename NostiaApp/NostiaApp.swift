@@ -16,6 +16,7 @@ struct NostiaApp: App {
                 .environmentObject(authManager)
                 .environmentObject(locationManager)
                 .preferredColorScheme(.dark)
+                .onOpenURL { _ in }
         }
     }
 }

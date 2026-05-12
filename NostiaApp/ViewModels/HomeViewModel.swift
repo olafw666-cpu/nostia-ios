@@ -57,7 +57,6 @@ final class HomeViewModel: ObservableObject {
             )
             nearbyEvents = nearby
         } catch {
-            print("Location update failed: \(error.localizedDescription)")
         }
     }
 

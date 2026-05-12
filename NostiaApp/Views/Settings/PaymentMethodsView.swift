@@ -98,7 +98,9 @@ struct PaymentMethodsView: View {
         .task { await vm.load() }
         .refreshable { await vm.load() }
         .sheet(isPresented: $vm.showOnboarding) {
-            if let url = vm.onboardingURL {
+            if let url = vm.onboardingURL,
+               url.scheme == "https",
+               url.host?.hasSuffix("stripe.com") == true {
                 SafariView(url: url)
             }
         }
