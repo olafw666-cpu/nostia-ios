@@ -24,6 +24,22 @@ struct Event: Codable, Identifiable {
     var longitude: Double?
     var distance: Double?
     var createdAt: String?
+    var visibility: String?
+    var type: String?
+    var goingCount: Int?
+    var myRsvp: String?
+    var eventRadiusMiles: Double?
+    var isGlobal: Int?
+    var creatorUsername: String?
+    var creatorName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, location, eventDate, latitude, longitude
+        case distance, createdAt, visibility, type, goingCount, myRsvp
+        case creatorUsername, creatorName
+        case eventRadiusMiles = "event_radius_miles"
+        case isGlobal = "is_global"
+    }
 
     var formattedDate: String {
         let fmt = ISO8601DateFormatter()
