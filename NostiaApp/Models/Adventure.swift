@@ -32,11 +32,12 @@ struct Event: Codable, Identifiable {
     var isGlobal: Int?
     var creatorUsername: String?
     var creatorName: String?
+    var flyerImage: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, location, eventDate, latitude, longitude
         case distance, createdAt, visibility, type, goingCount, myRsvp
-        case creatorUsername, creatorName
+        case creatorUsername, creatorName, flyerImage
         case eventRadiusMiles = "event_radius_miles"
         case isGlobal = "is_global"
     }
