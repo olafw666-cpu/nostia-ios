@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct HomeView: View {
     @Binding var selectedTab: Int
@@ -6,13 +7,31 @@ struct HomeView: View {
     @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var authManager: AuthManager
-    @State private var showLogoutAlert = false
+
+    @State private var backgroundImage: UIImage?
+    @State private var showBackgroundMenu = false
+    @State private var showBackgroundPicker = false
+    @State private var backgroundPickerItem: PhotosPickerItem?
+
+    private var backgroundImageURL: URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("home_background.jpg")
+    }
 
     var body: some View {
+        ZStack {
+            if let bgImage = backgroundImage {
+                Image(uiImage: bgImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+
         ScrollView {
             LazyVStack(spacing: 16) {
                 // Welcome header
-                LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
+                LinearGradient(colors: [Color.nostiaAccent.opacity(0.85), Color.nostriaPurple.opacity(0.85)],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
                     .cornerRadius(20)
                     .frame(height: 150)
@@ -30,15 +49,16 @@ struct HomeView: View {
                                     .foregroundColor(Color(hex: "E0E7FF"))
                             }
                             Spacer()
-                            Button {
-                                showLogoutAlert = true
+                            NavigationLink {
+                                ProfileView()
+                                    .navigationBarTitleDisplayMode(.inline)
+                                    .toolbarBackground(.hidden, for: .navigationBar)
                             } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .font(.system(size: 18))
-                                    .frame(width: 20, height: 20)
-                                    .foregroundColor(.white)
-                                    .padding(12)
-                                    .background(Color.white.opacity(0.2), in: Circle())
+                                ProfilePictureView(
+                                    urlString: vm.user?.profilePictureUrl,
+                                    initial: vm.user?.initial ?? "?",
+                                    size: 44
+                                )
                             }
                         }
                         .padding(20)
@@ -100,19 +120,22 @@ struct HomeView: View {
                 }
             }
             .padding(16)
-            .padding(.bottom, 40)
-        }
-        .background(.clear)
-        .refreshable {
-            await vm.loadAll()
-            await feedVM.loadFeed()
-        }
-        .navigationTitle("Nostia")
-        .navigationBarTitleDisplayMode(.inline)
+                .padding(.bottom, 40)
+            }
+            .background(.clear)
+            .refreshable {
+                await vm.loadAll()
+                await feedVM.loadFeed()
+            }
+            .navigationTitle("Nostia")
+            .navigationBarTitleDisplayMode(.inline)
+            .onTapGesture(count: 2) { showBackgroundMenu = true }
+        } // ZStack
         .task {
             await vm.loadAll()
             locationManager.requestLocationOnce()
             await feedVM.loadFeed()
+            loadBackgroundFromDisk()
         }
         .onChange(of: selectedTab) { _, newTab in
             if newTab == 0 {
@@ -123,16 +146,52 @@ struct HomeView: View {
             guard let loc = newLoc else { return }
             Task { await vm.updateLocation(loc) }
         }
-        .alert("Logout", isPresented: $showLogoutAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Logout", role: .destructive) { authManager.logout() }
-        } message: {
-            Text("Are you sure you want to logout?")
+        .onChange(of: backgroundPickerItem) { _, item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data) {
+                    saveBackgroundToDisk(img)
+                    backgroundImage = img
+                }
+                backgroundPickerItem = nil
+            }
         }
+        .confirmationDialog("Home Screen Background", isPresented: $showBackgroundMenu, titleVisibility: .visible) {
+            Button("Choose Photo") { showBackgroundPicker = true }
+            if backgroundImage != nil {
+                Button("Remove Background", role: .destructive) {
+                    removeBackgroundFromDisk()
+                    backgroundImage = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showBackgroundPicker,
+                      selection: $backgroundPickerItem,
+                      matching: .images,
+                      photoLibrary: .shared())
         .sheet(item: $feedVM.selectedPost) { post in
             CommentsSheet(postId: post.id, vm: feedVM)
                 .onAppear { Task { await feedVM.loadComments(for: post) } }
         }
+    }
+
+    private func loadBackgroundFromDisk() {
+        guard let url = backgroundImageURL,
+              let data = try? Data(contentsOf: url),
+              let img = UIImage(data: data) else { return }
+        backgroundImage = img
+    }
+
+    private func saveBackgroundToDisk(_ image: UIImage) {
+        guard let url = backgroundImageURL,
+              let data = image.jpegData(compressionQuality: 0.8) else { return }
+        try? data.write(to: url)
+    }
+
+    private func removeBackgroundFromDisk() {
+        guard let url = backgroundImageURL else { return }
+        try? FileManager.default.removeItem(at: url)
     }
 }
 
