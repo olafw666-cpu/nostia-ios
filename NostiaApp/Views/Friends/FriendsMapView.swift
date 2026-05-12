@@ -38,15 +38,7 @@ struct FriendsMapView: View {
                         Annotation(event.title, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng), anchor: .bottom) {
                             Button { selectedEvent = event } label: {
                                 VStack(spacing: 4) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(event.myRsvp == "going" ? Color.nostiaSuccess : Color.nostiaWarning)
-                                            .frame(width: 40, height: 40)
-                                            .shadow(color: .black.opacity(0.4), radius: 4)
-                                        Image(systemName: event.myRsvp == "going" ? "checkmark.calendar" : "calendar")
-                                            .font(.system(size: 17, weight: .semibold))
-                                            .foregroundColor(.white)
-                                    }
+                                    EventMapPin(event: event)
                                     Text(event.title)
                                         .font(.caption.bold()).foregroundColor(.white)
                                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -118,6 +110,14 @@ struct FriendsMapView: View {
         )
     }
 
+    private func eventTypeColor(for event: Event) -> Color {
+        switch event.visibility {
+        case "private": return Color.nostriaDanger
+        case "follower": return Color.nostriaPurple
+        default: return Color.nostiaAccent
+        }
+    }
+
     private func loadLocations() async {
         if let locations = try? await FriendsAPI.shared.getLocations() {
             friendLocations = locations
@@ -137,6 +137,71 @@ struct FriendsMapView: View {
             minLng: minLng, maxLng: maxLng,
             viewportRadiusMiles: viewportRadiusMiles
         )) ?? []
+    }
+}
+
+struct EventMapPin: View {
+    let event: Event
+
+    private var typeColor: Color {
+        switch event.visibility {
+        case "private": return Color.nostriaDanger
+        case "follower": return Color.nostriaPurple
+        default: return Color.nostiaAccent
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            if let flyerString = event.flyerImage, !flyerString.isEmpty {
+                flyerPinView(flyerString: flyerString)
+            } else {
+                defaultPin
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func flyerPinView(flyerString: String) -> some View {
+        if flyerString.hasPrefix("data:image"),
+           let base64 = flyerString.components(separatedBy: "base64,").last,
+           let data = Data(base64Encoded: base64),
+           let uiImg = UIImage(data: data) {
+            Image(uiImage: uiImg)
+                .resizable().scaledToFill()
+                .frame(width: 40, height: 40)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(typeColor, lineWidth: 2.5))
+                .shadow(color: .black.opacity(0.4), radius: 4)
+        } else if let url = URL(string: flyerString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFill()
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(typeColor, lineWidth: 2.5))
+                        .shadow(color: .black.opacity(0.4), radius: 4)
+                default:
+                    defaultPin
+                }
+            }
+            .frame(width: 40, height: 40)
+        } else {
+            defaultPin
+        }
+    }
+
+    private var defaultPin: some View {
+        ZStack {
+            Circle()
+                .fill(event.myRsvp == "going" ? Color.nostiaSuccess : Color.nostiaWarning)
+                .frame(width: 40, height: 40)
+                .shadow(color: .black.opacity(0.4), radius: 4)
+            Image(systemName: event.myRsvp == "going" ? "checkmark.calendar" : "calendar")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+        }
     }
 }
 

@@ -1,144 +1,206 @@
 import SwiftUI
+import PhotosUI
 
 struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @EnvironmentObject var locationManager: LocationManager
-    @State private var showLogoutAlert = false
     @EnvironmentObject var authManager: AuthManager
 
+    @State private var backgroundImage: UIImage?
+    @State private var showBackgroundMenu = false
+    @State private var showBackgroundPicker = false
+    @State private var backgroundPickerItem: PhotosPickerItem?
+
+    private var backgroundImageURL: URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("home_background.jpg")
+    }
+
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                // Welcome header
-                LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .cornerRadius(20)
-                    .frame(height: 150)
-                    .overlay {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Welcome back,")
-                                    .font(.subheadline)
-                                    .foregroundColor(Color(hex: "E0E7FF"))
-                                Text(vm.user?.name ?? "Adventurer")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.white)
-                                Text("Your next adventure awaits")
-                                    .font(.subheadline)
-                                    .foregroundColor(Color(hex: "E0E7FF"))
+        ZStack {
+            // Background image layer (non-interactive)
+            if let bgImage = backgroundImage {
+                Image(uiImage: bgImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+
+            // Scrollable content with double-tap gesture on background
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    // Welcome header
+                    LinearGradient(colors: [Color.nostiaAccent.opacity(0.85), Color.nostriaPurple.opacity(0.85)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .cornerRadius(20)
+                        .frame(height: 150)
+                        .overlay {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Welcome back,")
+                                        .font(.subheadline)
+                                        .foregroundColor(Color(hex: "E0E7FF"))
+                                    Text(vm.user?.name ?? "Adventurer")
+                                        .font(.system(size: 28, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Text("Your next adventure awaits")
+                                        .font(.subheadline)
+                                        .foregroundColor(Color(hex: "E0E7FF"))
+                                }
+                                Spacer()
+                                NavigationLink {
+                                    ProfileView()
+                                        .navigationBarTitleDisplayMode(.inline)
+                                        .toolbarBackground(.hidden, for: .navigationBar)
+                                } label: {
+                                    ProfilePictureView(
+                                        urlString: vm.user?.profilePictureUrl,
+                                        initial: vm.user?.initial ?? "?",
+                                        size: 44
+                                    )
+                                }
                             }
+                            .padding(20)
+                        }
+                        .shadow(color: Color.nostiaAccent.opacity(0.35), radius: 20, y: 8)
+
+                    // Home status card
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Home Status").font(.headline).foregroundColor(.white)
                             Spacer()
                             Button {
-                                showLogoutAlert = true
+                                Task { await vm.toggleHomeStatus() }
                             } label: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .font(.title2)
+                                Text(vm.user?.isHomeOpen == true ? "🏠 Open" : "🔒 Closed")
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
-                                    .padding(10)
-                                    .glassEffect(in: Circle())
+                                    .padding(.horizontal, 16).padding(.vertical, 8)
+                                    .glassEffect(in: Capsule())
+                                    .overlay(
+                                        Capsule().stroke(
+                                            vm.user?.isHomeOpen == true ? Color.nostiaSuccess : Color.nostriaBorder,
+                                            lineWidth: 1
+                                        )
+                                    )
                             }
                         }
-                        .padding(20)
+                        Text(vm.user?.isHomeOpen == true
+                             ? "Friends can see you're available to host"
+                             : "Toggle to let friends know your home is open")
+                            .font(.footnote).foregroundColor(Color.nostiaTextSecond)
                     }
-                    .shadow(color: Color.nostiaAccent.opacity(0.35), radius: 20, y: 8)
+                    .padding(16)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 16))
 
-                // Home status card
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Home Status").font(.headline).foregroundColor(.white)
-                        Spacer()
-                        Button {
-                            Task { await vm.toggleHomeStatus() }
-                        } label: {
-                            Text(vm.user?.isHomeOpen == true ? "🏠 Open" : "🔒 Closed")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                .glassEffect(in: Capsule())
-                                .overlay(
-                                    Capsule().stroke(
-                                        vm.user?.isHomeOpen == true ? Color.nostiaSuccess : Color.nostriaBorder,
-                                        lineWidth: 1
-                                    )
-                                )
+                    // Quick stats
+                    HStack(spacing: 12) {
+                        StatCard(icon: "airplane", color: Color.nostiaAccent,
+                                 count: vm.trips.count, label: "Trips")
+                        StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
+                                 count: vm.friends.count, label: "Friends")
+                        StatCard(icon: "calendar", color: Color.nostiaWarning,
+                                 count: vm.upcomingEvents.count, label: "Events")
+                    }
+
+                    // Upcoming trips preview
+                    if !vm.trips.isEmpty {
+                        SectionHeader(title: "Upcoming Trips")
+                        ForEach(vm.trips.prefix(2)) { trip in
+                            TripPreviewCard(trip: trip)
                         }
                     }
-                    Text(vm.user?.isHomeOpen == true
-                         ? "Friends can see you're available to host"
-                         : "Toggle to let friends know your home is open")
-                        .font(.footnote).foregroundColor(Color.nostiaTextSecond)
+
+                    // Nearby events (location-based)
+                    if !vm.nearbyEvents.isEmpty {
+                        SectionHeader(title: "Nearby Events")
+                        ForEach(vm.nearbyEvents.prefix(3)) { event in
+                            EventPreviewCard(event: event)
+                        }
+                    } else if !vm.upcomingEvents.isEmpty {
+                        SectionHeader(title: "Upcoming Events")
+                        ForEach(vm.upcomingEvents.prefix(2)) { event in
+                            EventPreviewCard(event: event)
+                        }
+                    }
+
+                    // Events I'm Going To
+                    if !vm.goingEvents.isEmpty {
+                        SectionHeader(title: "Events I'm Going To")
+                        ForEach(vm.goingEvents.prefix(3)) { event in
+                            EventGoingCard(event: event)
+                        }
+                    }
+
+                    // Recent feed posts
+                    if !vm.feed.isEmpty {
+                        SectionHeader(title: "Recent Posts")
+                        ForEach(vm.feed.prefix(3)) { post in
+                            FeedPreviewCard(post: post)
+                        }
+                    }
                 }
                 .padding(16)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
-
-                // Quick stats
-                HStack(spacing: 12) {
-                    StatCard(icon: "airplane", color: Color.nostiaAccent,
-                             count: vm.trips.count, label: "Trips")
-                    StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
-                             count: vm.friends.count, label: "Friends")
-                    StatCard(icon: "calendar", color: Color.nostiaWarning,
-                             count: vm.upcomingEvents.count, label: "Events")
-                }
-
-                // Upcoming trips preview
-                if !vm.trips.isEmpty {
-                    SectionHeader(title: "Upcoming Trips")
-                    ForEach(vm.trips.prefix(2)) { trip in
-                        TripPreviewCard(trip: trip)
-                    }
-                }
-
-                // Nearby events (location-based)
-                if !vm.nearbyEvents.isEmpty {
-                    SectionHeader(title: "Nearby Events")
-                    ForEach(vm.nearbyEvents.prefix(3)) { event in
-                        EventPreviewCard(event: event)
-                    }
-                } else if !vm.upcomingEvents.isEmpty {
-                    SectionHeader(title: "Upcoming Events")
-                    ForEach(vm.upcomingEvents.prefix(2)) { event in
-                        EventPreviewCard(event: event)
-                    }
-                }
-
-                // Events I'm Going To
-                if !vm.goingEvents.isEmpty {
-                    SectionHeader(title: "Events I'm Going To")
-                    ForEach(vm.goingEvents.prefix(3)) { event in
-                        EventGoingCard(event: event)
-                    }
-                }
-
-                // Recent feed posts
-                if !vm.feed.isEmpty {
-                    SectionHeader(title: "Recent Posts")
-                    ForEach(vm.feed.prefix(3)) { post in
-                        FeedPreviewCard(post: post)
-                    }
-                }
+                .padding(.bottom, 40)
             }
-            .padding(16)
-            .padding(.bottom, 40)
+            .background(.clear)
+            .refreshable { await vm.loadAll() }
+            .navigationTitle("Nostia")
+            .navigationBarTitleDisplayMode(.inline)
+            .onTapGesture(count: 2) { showBackgroundMenu = true }
         }
-        .background(.clear)
-        .refreshable { await vm.loadAll() }
-        .navigationTitle("Nostia")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             await vm.loadAll()
             locationManager.requestLocationOnce()
+            loadBackgroundFromDisk()
         }
         .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }
             Task { await vm.updateLocation(loc) }
         }
-        .alert("Logout", isPresented: $showLogoutAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Logout", role: .destructive) { authManager.logout() }
-        } message: {
-            Text("Are you sure you want to logout?")
+        .onChange(of: backgroundPickerItem) { _, item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data) {
+                    saveBackgroundToDisk(img)
+                    backgroundImage = img
+                }
+                backgroundPickerItem = nil
+            }
         }
+        .confirmationDialog("Home Screen Background", isPresented: $showBackgroundMenu, titleVisibility: .visible) {
+            Button("Choose Photo") { showBackgroundPicker = true }
+            if backgroundImage != nil {
+                Button("Remove Background", role: .destructive) {
+                    removeBackgroundFromDisk()
+                    backgroundImage = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showBackgroundPicker,
+                      selection: $backgroundPickerItem,
+                      matching: .images,
+                      photoLibrary: .shared())
+    }
+
+    private func loadBackgroundFromDisk() {
+        guard let url = backgroundImageURL,
+              let data = try? Data(contentsOf: url),
+              let img = UIImage(data: data) else { return }
+        backgroundImage = img
+    }
+
+    private func saveBackgroundToDisk(_ image: UIImage) {
+        guard let url = backgroundImageURL,
+              let data = image.jpegData(compressionQuality: 0.8) else { return }
+        try? data.write(to: url)
+    }
+
+    private func removeBackgroundFromDisk() {
+        guard let url = backgroundImageURL else { return }
+        try? FileManager.default.removeItem(at: url)
     }
 }
 
