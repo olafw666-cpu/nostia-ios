@@ -7,7 +7,12 @@ final class AdventuresAPI {
 
     func getAll(search: String? = nil, category: String? = nil, difficulty: String? = nil) async throws -> [Adventure] {
         var params: [String] = []
-        if let s = search, !s.isEmpty { params.append("search=\(s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? s)") }
+        if let s = search, !s.isEmpty {
+            guard let encoded = s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+                throw APIError.invalidURL
+            }
+            params.append("search=\(encoded)")
+        }
         if let c = category { params.append("category=\(c)") }
         if let d = difficulty { params.append("difficulty=\(d)") }
         let qs = params.isEmpty ? "" : "?" + params.joined(separator: "&")
@@ -38,6 +43,10 @@ final class AdventuresAPI {
         if let la = lat { body["latitude"] = la }
         if let lo = lng { body["longitude"] = lo }
         return try await client.request("/events", method: "POST", body: body)
+    }
+
+    func rsvp(eventId: Int, status: String) async throws -> Event {
+        return try await client.request("/events/\(eventId)/rsvp", method: "POST", body: ["status": status])
     }
 
     func createAdventure(title: String, location: String, description: String?, category: String?, difficulty: String?) async throws -> Adventure {
