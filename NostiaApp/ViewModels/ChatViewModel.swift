@@ -31,13 +31,12 @@ final class ChatViewModel: ObservableObject {
             let data = try await MessagesAPI.shared.getMessages(conversationId: conversationId, limit: 100, offset: 0)
             messages = data // oldest first (server returns newest first, reversed here)
         } catch {
-            print("Message load error: \(error.localizedDescription)")
         }
     }
 
     func send(conversationId: Int) async {
         let content = newMessage.trimmingCharacters(in: .whitespaces)
-        guard !content.isEmpty else { return }
+        guard !content.isEmpty, content.count <= 2000 else { return }
         isSending = true
         newMessage = ""
         do {

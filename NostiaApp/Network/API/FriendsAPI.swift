@@ -14,7 +14,9 @@ final class FriendsAPI {
     }
 
     func searchUsers(_ query: String) async throws -> [UserSearchResult] {
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            throw APIError.invalidURL
+        }
         return try await client.request("/users/search?query=\(encoded)")
     }
 

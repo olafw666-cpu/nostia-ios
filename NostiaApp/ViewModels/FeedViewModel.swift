@@ -34,6 +34,7 @@ final class FeedViewModel: ObservableObject {
 
     func createPost() async {
         guard !newPostContent.trimmingCharacters(in: .whitespaces).isEmpty || newPostImageData != nil else { return }
+        guard newPostContent.count <= 5000 else { return }
         isSubmitting = true
         do {
             _ = try await FeedAPI.shared.createPost(
@@ -88,7 +89,7 @@ final class FeedViewModel: ObservableObject {
 
     func submitComment(postId: Int) async {
         let text = newComment.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, text.count <= 1000 else { return }
         isSubmittingComment = true
         do {
             let comment = try await FeedAPI.shared.addComment(postId: postId, content: text)

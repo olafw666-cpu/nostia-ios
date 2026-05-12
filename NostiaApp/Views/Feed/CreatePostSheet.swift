@@ -49,6 +49,10 @@ struct CreatePostSheet: View {
                             if let data = try? await item?.loadTransferable(type: Data.self) {
                                 let img = UIImage(data: data)
                                 let compressed = img?.jpegData(compressionQuality: 0.6) ?? data
+                                guard compressed.count <= 5 * 1024 * 1024 else {
+                                    selectedPhoto = nil
+                                    return
+                                }
                                 vm.newPostImageData = compressed.base64EncodedString()
                             }
                         }

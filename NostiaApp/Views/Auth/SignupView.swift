@@ -127,6 +127,10 @@ struct SignupView: View {
             return "Username can only contain letters, numbers, and underscores"
         }
         if password.count < 4 { return "Password must be at least 4 characters" }
+        let trimEmail = email.trimmingCharacters(in: .whitespaces)
+        if !trimEmail.isEmpty && (!trimEmail.contains("@") || !trimEmail.contains(".")) {
+            return "Please enter a valid email address"
+        }
         return nil
     }
 
