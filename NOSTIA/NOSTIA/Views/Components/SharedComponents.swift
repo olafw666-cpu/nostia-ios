@@ -1,6 +1,47 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Profile Picture View (handles base64, remote URL, or fallback)
+
+struct ProfilePictureView: View {
+    let urlString: String?
+    let initial: String
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let s = urlString, !s.isEmpty {
+                if s.hasPrefix("data:image"),
+                   let base64 = s.components(separatedBy: "base64,").last,
+                   let data = Data(base64Encoded: base64),
+                   let img = UIImage(data: data) {
+                    Image(uiImage: img)
+                        .resizable().scaledToFill()
+                } else if let url = URL(string: s) {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let img) = phase {
+                            img.resizable().scaledToFill()
+                        } else {
+                            avatarFallback
+                        }
+                    }
+                } else {
+                    avatarFallback
+                }
+            } else {
+                avatarFallback
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+    }
+
+    private var avatarFallback: some View {
+        AvatarView(initial: initial, color: Color.nostiaAccent, size: size)
+    }
+}
+
 // MARK: - User Avatar View (shows profile picture or falls back to initials)
 
 struct UserAvatarView: View {

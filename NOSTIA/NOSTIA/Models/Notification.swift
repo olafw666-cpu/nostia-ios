@@ -1,6 +1,6 @@
 import Foundation
 
-struct NostiaNotification: Codable, Identifiable {
+struct NostiaNotification: Identifiable, Decodable {
     let id: Int
     let type: String
     let title: String
@@ -8,6 +8,27 @@ struct NostiaNotification: Codable, Identifiable {
     let data: NotificationData?
     var read: Bool
     let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, title, body, data, read, createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        type = try c.decode(String.self, forKey: .type)
+        title = try c.decode(String.self, forKey: .title)
+        body = try c.decode(String.self, forKey: .body)
+        data = try? c.decode(NotificationData.self, forKey: .data)
+        createdAt = try c.decode(String.self, forKey: .createdAt)
+        if let b = try? c.decode(Bool.self, forKey: .read) {
+            read = b
+        } else if let i = try? c.decode(Int.self, forKey: .read) {
+            read = i != 0
+        } else {
+            read = false
+        }
+    }
 
     var iconName: String {
         switch type {
