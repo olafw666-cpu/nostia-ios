@@ -72,7 +72,7 @@ struct NotificationData: Codable {
     var requestId: Int?
 }
 
-struct NotificationsResponse: Codable {
+struct NotificationsResponse: Decodable {
     let notifications: [NostiaNotification]?
 }
 
