@@ -5,11 +5,18 @@ struct FriendsMapView: View {
     @State private var friendLocations: [FollowLocation] = []
     @State private var events: [Event] = []
     @State private var isLoading = false
-    @State private var cameraPosition = MapCameraPosition.automatic
+    @State private var cameraPosition = MapCameraPosition.userLocation(
+        followsHeading: false,
+        fallback: .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+            span: MKCoordinateSpan(latitudeDelta: 0.6, longitudeDelta: 0.6)
+        ))
+    )
     @State private var pendingCoordinate: CLLocationCoordinate2D?
     @State private var showCreateEvent = false
     @State private var selectedEvent: Event?
     @State private var adventuresVM = EventActionsViewModel()
+    @State private var viewportTask: Task<Void, Never>?
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -72,6 +79,11 @@ struct FriendsMapView: View {
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
+                .onMapCameraChange(frequency: .onEnd) { context in
+                    let region = context.region
+                    viewportTask?.cancel()
+                    viewportTask = Task { await loadEventsForRegion(region) }
+                }
                 .gesture(
                     LongPressGesture(minimumDuration: 0.5)
                         .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
@@ -133,11 +145,21 @@ struct FriendsMapView: View {
 
     func loadAll() async {
         isLoading = true
-        async let locations = FriendsAPI.shared.getLocations()  // mutual-follow location feed
-        async let allEvents = AdventuresAPI.shared.getAllEvents()
-        friendLocations = (try? await locations) ?? []
-        events = (try? await allEvents) ?? []
+        friendLocations = (try? await FriendsAPI.shared.getLocations()) ?? []
         isLoading = false
+    }
+
+    func loadEventsForRegion(_ region: MKCoordinateRegion) async {
+        let half = region.span
+        let minLat = region.center.latitude - half.latitudeDelta / 2
+        let maxLat = region.center.latitude + half.latitudeDelta / 2
+        let minLng = region.center.longitude - half.longitudeDelta / 2
+        let maxLng = region.center.longitude + half.longitudeDelta / 2
+        let viewportRadiusMiles = half.latitudeDelta / 2 * 69.0
+        events = (try? await AdventuresAPI.shared.getMapEvents(
+            minLat: minLat, maxLat: maxLat, minLng: minLng, maxLng: maxLng,
+            viewportRadiusMiles: viewportRadiusMiles
+        )) ?? []
     }
 }
 
@@ -164,19 +186,28 @@ struct EventMapPin: View {
         }
     }
 
+    private func decodeFlyer(_ str: String) -> UIImage? {
+        if str.hasPrefix("data:image"),
+           let base64 = str.components(separatedBy: "base64,").last,
+           let data = Data(base64Encoded: base64) {
+            return UIImage(data: data)
+        }
+        if let data = Data(base64Encoded: str) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+
     @ViewBuilder
     private func flyerPinView(flyerString: String) -> some View {
-        if flyerString.hasPrefix("data:image"),
-           let base64 = flyerString.components(separatedBy: "base64,").last,
-           let data = Data(base64Encoded: base64),
-           let uiImg = UIImage(data: data) {
+        if let uiImg = decodeFlyer(flyerString) {
             Image(uiImage: uiImg)
                 .resizable().scaledToFill()
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(typeColor, lineWidth: 2.5))
                 .shadow(color: .black.opacity(0.4), radius: 4)
-        } else if let url = URL(string: flyerString) {
+        } else if flyerString.hasPrefix("http"), let url = URL(string: flyerString) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):

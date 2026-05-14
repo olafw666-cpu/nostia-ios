@@ -3,7 +3,7 @@ import Contacts
 
 struct FriendsView: View {
     @StateObject private var vm = FriendsViewModel()
-    @State private var chatTarget: (conversationId: Int, name: String, friendId: Int)?
+    @State private var chatDestination: ChatDestination?
     @State private var profileDestination: ProfileDestination?
     @State private var showContactsPicker = false
     @State private var userToUnfollow: FollowUser?
@@ -146,10 +146,7 @@ struct FriendsView: View {
         .navigationDestination(item: $profileDestination) { dest in
             PublicProfileView(userId: dest.id)
         }
-        .navigationDestination(item: Binding(
-            get: { chatTarget.map { t in ChatDestination(id: t.conversationId, name: t.name, friendId: t.friendId) } },
-            set: { if $0 == nil { chatTarget = nil } }
-        )) { dest in
+        .navigationDestination(item: $chatDestination) { dest in
             ChatView(conversationId: dest.id, friendName: dest.name)
         }
         .sheet(isPresented: $showContactsPicker) {
@@ -166,7 +163,7 @@ struct FriendsView: View {
         Button {
             Task {
                 if let conv = try? await MessagesAPI.shared.getOrCreateConversation(withUserId: user.id) {
-                    chatTarget = (conv.id, user.name, user.id)
+                    chatDestination = ChatDestination(id: conv.id, name: user.name, friendId: user.id)
                 }
             }
         } label: {

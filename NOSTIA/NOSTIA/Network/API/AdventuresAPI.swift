@@ -26,6 +26,11 @@ final class AdventuresAPI {
         return try await client.request("/events")
     }
 
+    func getMapEvents(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double, viewportRadiusMiles: Double = 20) async throws -> [Event] {
+        let path = "/events/map?minLat=\(minLat)&maxLat=\(maxLat)&minLng=\(minLng)&maxLng=\(maxLng)&viewportRadiusMiles=\(viewportRadiusMiles)"
+        return try await client.request(path)
+    }
+
     func getMyGoingEvents() async throws -> [Event] {
         return try await client.request("/events/mine")
     }
