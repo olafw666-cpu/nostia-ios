@@ -24,6 +24,8 @@ struct HomeView: View {
                 Image(uiImage: bgImage)
                     .resizable()
                     .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             }
@@ -141,6 +143,9 @@ struct HomeView: View {
             if newTab == 0 {
                 Task { await vm.loadAll() }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .profileUpdated)) { _ in
+            Task { await vm.loadAll() }
         }
         .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }

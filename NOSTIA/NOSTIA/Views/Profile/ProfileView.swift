@@ -314,6 +314,7 @@ struct ProfileView: View {
             let updated = try await ProfileAPI.shared.updateProfile(bio: trimmed, profilePictureData: editImageData)
             user = updated
             isEditing = false
+            NotificationCenter.default.post(name: .profileUpdated, object: nil)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -455,4 +456,8 @@ private extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
+}
+
+extension Notification.Name {
+    static let profileUpdated = Notification.Name("com.nostia.profileUpdated")
 }
