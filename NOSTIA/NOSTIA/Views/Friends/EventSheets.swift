@@ -47,7 +47,7 @@ struct EventDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     if let imgData = currentEvent.flyerImage,
-                       let data = Data(base64Encoded: imgData),
+                       let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
                         Image(uiImage: uiImage)
                             .resizable().scaledToFill()
@@ -226,7 +226,7 @@ struct EventFlyerView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     if let imgData = currentEvent.flyerImage,
-                       let data = Data(base64Encoded: imgData),
+                       let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
                         Image(uiImage: uiImage)
                             .resizable().scaledToFill()

@@ -13,11 +13,15 @@ struct ProfilePictureView: View {
             if let s = urlString, !s.isEmpty {
                 if s.hasPrefix("data:image"),
                    let base64 = s.components(separatedBy: "base64,").last,
-                   let data = Data(base64Encoded: base64),
+                   let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
                    let img = UIImage(data: data) {
                     Image(uiImage: img)
                         .resizable().scaledToFill()
-                } else if let url = URL(string: s) {
+                } else if let data = Data(base64Encoded: s, options: .ignoreUnknownCharacters),
+                          let img = UIImage(data: data) {
+                    Image(uiImage: img)
+                        .resizable().scaledToFill()
+                } else if s.hasPrefix("http"), let url = URL(string: s) {
                     AsyncImage(url: url) { phase in
                         if case .success(let img) = phase {
                             img.resizable().scaledToFill()

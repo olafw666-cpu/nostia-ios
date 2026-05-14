@@ -19,17 +19,6 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ZStack {
-            if let bgImage = backgroundImage {
-                Image(uiImage: bgImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
-
         ScrollView {
             LazyVStack(spacing: 16) {
                 // Welcome header
@@ -124,7 +113,14 @@ struct HomeView: View {
             .padding(16)
                 .padding(.bottom, 40)
             }
-            .background(.clear)
+            .background {
+                if let bgImage = backgroundImage {
+                    Image(uiImage: bgImage)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                }
+            }
             .refreshable {
                 await vm.loadAll()
                 await feedVM.loadFeed()
@@ -132,7 +128,6 @@ struct HomeView: View {
             .navigationTitle("Nostia")
             .navigationBarTitleDisplayMode(.inline)
             .onTapGesture(count: 2) { showBackgroundMenu = true }
-        } // ZStack
         .task {
             await vm.loadAll()
             locationManager.requestLocationOnce()
