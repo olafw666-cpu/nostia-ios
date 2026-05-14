@@ -189,10 +189,10 @@ struct EventMapPin: View {
     private func decodeFlyer(_ str: String) -> UIImage? {
         if str.hasPrefix("data:image"),
            let base64 = str.components(separatedBy: "base64,").last,
-           let data = Data(base64Encoded: base64) {
+           let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters) {
             return UIImage(data: data)
         }
-        if let data = Data(base64Encoded: str) {
+        if let data = Data(base64Encoded: str, options: .ignoreUnknownCharacters) {
             return UIImage(data: data)
         }
         return nil
