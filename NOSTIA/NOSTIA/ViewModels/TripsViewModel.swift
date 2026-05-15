@@ -9,12 +9,18 @@ final class TripsViewModel: ObservableObject {
     @Published var successMessage: String?
 
     func loadTrips() async {
-        isLoading = true
+        if let cached: [Trip] = await CacheManager.shared.get(CacheKey.vaultList) {
+            trips = cached
+        } else {
+            isLoading = true
+        }
         errorMessage = nil
         do {
-            trips = try await TripsAPI.shared.getAll()
+            let fresh = try await TripsAPI.shared.getAll()
+            trips = fresh
+            await CacheManager.shared.set(CacheKey.vaultList, value: fresh)
         } catch {
-            errorMessage = error.localizedDescription
+            if trips.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -26,6 +32,7 @@ final class TripsViewModel: ObservableObject {
                 trip = try await TripsAPI.shared.addParticipant(tripId: trip.id, userId: friendId)
             }
             trips.insert(trip, at: 0)
+            await CacheManager.shared.invalidate(CacheKey.vaultList)
             return trip
         } catch {
             errorMessage = error.localizedDescription
@@ -50,6 +57,7 @@ final class TripsViewModel: ObservableObject {
         do {
             try await TripsAPI.shared.delete(id)
             trips.removeAll { $0.id == id }
+            await CacheManager.shared.invalidate(CacheKey.vaultList)
             return true
         } catch {
             errorMessage = error.localizedDescription

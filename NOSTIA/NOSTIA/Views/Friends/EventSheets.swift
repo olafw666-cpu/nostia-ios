@@ -101,8 +101,7 @@ struct EventDetailSheet: View {
                         HStack(spacing: 12) {
                             Button { Task { await rsvp("going") } } label: {
                                 HStack {
-                                    if isRsvping { ProgressView().tint(.white).scaleEffect(0.8) }
-                                    else { Image(systemName: "checkmark.circle.fill") }
+                                    Image(systemName: "checkmark.circle.fill")
                                     Text("Going")
                                 }
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
@@ -113,8 +112,7 @@ struct EventDetailSheet: View {
 
                             Button { Task { await rsvp("not_going") } } label: {
                                 HStack {
-                                    if isRsvping { ProgressView().tint(.white).scaleEffect(0.8) }
-                                    else { Image(systemName: "xmark.circle.fill") }
+                                    Image(systemName: "xmark.circle.fill")
                                     Text("Not Going")
                                 }
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
@@ -184,9 +182,28 @@ struct EventDetailSheet: View {
     }
 
     private func rsvp(_ status: String) async {
+        guard !isRsvping else { return }
+
+        let previousRsvp = currentEvent.myRsvp
+        let previousCount = currentEvent.goingCount ?? 0
+
+        if status == "going" && currentEvent.myRsvp != "going" {
+            currentEvent.myRsvp = "going"
+            currentEvent.goingCount = previousCount + 1
+        } else if status == "not_going" {
+            if currentEvent.myRsvp == "going" {
+                currentEvent.goingCount = max(0, previousCount - 1)
+            }
+            currentEvent.myRsvp = "not_going"
+        }
+
         isRsvping = true
-        if let updated = try? await vm.rsvpEvent(eventId: currentEvent.id, status: status) {
+        do {
+            let updated = try await vm.rsvpEvent(eventId: currentEvent.id, status: status)
             currentEvent = updated
+        } catch {
+            currentEvent.myRsvp = previousRsvp
+            currentEvent.goingCount = previousCount
         }
         isRsvping = false
     }

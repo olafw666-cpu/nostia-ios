@@ -19,19 +19,26 @@ final class FriendsViewModel: ObservableObject {
     var followerIds: Set<Int> { Set(followers.map(\.id)) }
 
     func loadAll() async {
-        isLoading = true
+        let cachedFollowers: [FollowUser]? = await CacheManager.shared.get(CacheKey.followersList)
+        let cachedFollowing: [FollowUser]? = await CacheManager.shared.get(CacheKey.followingList)
+        if let f = cachedFollowers, let g = cachedFollowing {
+            followers = f; following = g
+        } else {
+            isLoading = true
+        }
         async let followersData = FriendsAPI.shared.getFollowers()
         async let followingData = FriendsAPI.shared.getFollowing()
         do {
             let (flrs, flng) = try await (followersData, followingData)
-            followers = flrs
-            following = flng
+            followers = flrs; following = flng
+            await CacheManager.shared.set(CacheKey.followersList, value: flrs)
+            await CacheManager.shared.set(CacheKey.followingList, value: flng)
         } catch is CancellationError {
             isLoading = false; return
         } catch let urlErr as URLError where urlErr.code == .cancelled {
             isLoading = false; return
         } catch {
-            errorMessage = error.localizedDescription
+            if followers.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -58,6 +65,9 @@ final class FriendsViewModel: ObservableObject {
     func follow(userId: Int) async -> Bool {
         do {
             try await FriendsAPI.shared.follow(userId: userId)
+            await CacheManager.shared.invalidate(CacheKey.followersList)
+            await CacheManager.shared.invalidate(CacheKey.followingList)
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
             clearSearch()
             await loadAll()
             return true
@@ -70,6 +80,9 @@ final class FriendsViewModel: ObservableObject {
     func unfollow(userId: Int) async {
         do {
             try await FriendsAPI.shared.unfollow(userId: userId)
+            await CacheManager.shared.invalidate(CacheKey.followersList)
+            await CacheManager.shared.invalidate(CacheKey.followingList)
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
             await loadAll()
         } catch {
             errorMessage = error.localizedDescription

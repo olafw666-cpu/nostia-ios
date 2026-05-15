@@ -503,3 +503,319 @@ struct FilterChip: View {
         }
     }
 }
+
+// MARK: - Shimmer
+
+private struct ShimmerModifier: ViewModifier {
+    @State private var start = UnitPoint(x: -1, y: 0.5)
+    @State private var end   = UnitPoint(x:  0, y: 0.5)
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    colors: [.clear, Color.white.opacity(0.35), .clear],
+                    startPoint: start,
+                    endPoint: end
+                )
+                .allowsHitTesting(false)
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.3).repeatForever(autoreverses: false)) {
+                    start = UnitPoint(x: 1, y: 0.5)
+                    end   = UnitPoint(x: 2, y: 0.5)
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmer() -> some View { modifier(ShimmerModifier()) }
+}
+
+// MARK: - Skeleton Primitives
+
+struct SkeletonBar: View {
+    var width: CGFloat? = nil
+    var height: CGFloat = 14
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: height / 2)
+            .fill(Color(uiColor: .systemGray5))
+            .frame(width: width, height: height)
+            .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
+            .shimmer()
+    }
+}
+
+struct SkeletonRect: View {
+    var width: CGFloat? = nil
+    var height: CGFloat
+    var cornerRadius: CGFloat = 8
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(Color(uiColor: .systemGray5))
+            .frame(width: width, height: height)
+            .frame(maxWidth: width == nil ? .infinity : nil)
+            .shimmer()
+    }
+}
+
+struct SkeletonCircle: View {
+    var size: CGFloat
+
+    var body: some View {
+        Circle()
+            .fill(Color(uiColor: .systemGray5))
+            .frame(width: size, height: size)
+            .shimmer()
+    }
+}
+
+// MARK: - Skeleton Composites
+
+struct FeedPostCardSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                SkeletonCircle(size: 36)
+                VStack(alignment: .leading, spacing: 6) {
+                    SkeletonBar(width: 140, height: 12)
+                    SkeletonBar(width: 90, height: 10)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 10)
+
+            SkeletonRect(height: 200, cornerRadius: 0)
+
+            VStack(alignment: .leading, spacing: 8) {
+                SkeletonBar(height: 12)
+                SkeletonBar(width: 200, height: 12)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+
+            SkeletonBar(width: 110, height: 10)
+                .padding(.horizontal, 14).padding(.bottom, 14)
+        }
+        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+struct FeedSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(0..<4, id: \.self) { _ in
+                    FeedPostCardSkeleton()
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct ProfileSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 12) {
+                    SkeletonCircle(size: 80)
+                    SkeletonBar(width: 160, height: 16)
+                    SkeletonBar(width: 220, height: 12)
+                    SkeletonBar(width: 100, height: 11)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(20)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+
+                ForEach(0..<2, id: \.self) { _ in
+                    FeedPostCardSkeleton()
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct NotificationSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(0..<6, id: \.self) { i in
+                    HStack(spacing: 12) {
+                        SkeletonCircle(size: 40)
+                        VStack(alignment: .leading, spacing: 6) {
+                            SkeletonBar(width: i % 2 == 0 ? 200 : 160, height: 12)
+                            SkeletonBar(width: i % 2 == 0 ? 140 : 180, height: 11)
+                        }
+                        Spacer()
+                    }
+                    .padding(14)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct FollowSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(0..<6, id: \.self) { i in
+                    HStack(spacing: 12) {
+                        SkeletonCircle(size: 40)
+                        SkeletonBar(width: i % 3 == 0 ? 140 : 110, height: 13)
+                        Spacer()
+                        SkeletonBar(width: 70, height: 28)
+                    }
+                    .padding(14)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct SearchSkeletonView: View {
+    var body: some View {
+        LazyVStack(spacing: 10) {
+            ForEach(0..<5, id: \.self) { i in
+                HStack(spacing: 12) {
+                    SkeletonCircle(size: 40)
+                    SkeletonBar(width: i % 2 == 0 ? 150 : 120, height: 13)
+                    Spacer()
+                }
+                .padding(14)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .padding(.horizontal, 16)
+        .disabled(true)
+    }
+}
+
+struct VaultListSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(0..<4, id: \.self) { i in
+                    VStack(alignment: .leading, spacing: 8) {
+                        SkeletonBar(height: 15)
+                        SkeletonBar(width: i % 2 == 0 ? 130 : 100, height: 12)
+                    }
+                    .padding(18)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct VaultDetailSkeletonView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SkeletonBar(height: 16)
+            SkeletonBar(width: 180, height: 13)
+
+            ForEach(0..<4, id: \.self) { i in
+                HStack(spacing: 10) {
+                    if i % 2 == 0 { Spacer() }
+                    SkeletonCircle(size: 32)
+                    SkeletonBar(width: 150, height: 12)
+                    if i % 2 != 0 { Spacer() }
+                }
+                .padding(12)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct VaultExpenseSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(0..<4, id: \.self) { i in
+                    HStack(spacing: 12) {
+                        SkeletonBar(width: i % 2 == 0 ? 160 : 130, height: 13)
+                        Spacer()
+                        SkeletonBar(width: 60, height: 13)
+                    }
+                    .padding(14)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct EventListSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(0..<4, id: \.self) { i in
+                    HStack(spacing: 12) {
+                        SkeletonRect(width: 60, height: 60, cornerRadius: 10)
+                        VStack(alignment: .leading, spacing: 8) {
+                            SkeletonBar(height: 14)
+                            SkeletonBar(width: i % 2 == 0 ? 140 : 110, height: 11)
+                        }
+                        Spacer()
+                    }
+                    .padding(14)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}
+
+struct CommentSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                ForEach(0..<4, id: \.self) { i in
+                    HStack(alignment: .top, spacing: 10) {
+                        SkeletonCircle(size: 34)
+                        VStack(alignment: .leading, spacing: 6) {
+                            SkeletonBar(width: i % 2 == 0 ? 100 : 130, height: 11)
+                            SkeletonBar(width: i % 2 == 0 ? 200 : 170, height: 12)
+                        }
+                        Spacer()
+                    }
+                    .padding(12)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                }
+            }
+            .padding(16)
+        }
+        .disabled(true)
+        .background(.clear)
+    }
+}

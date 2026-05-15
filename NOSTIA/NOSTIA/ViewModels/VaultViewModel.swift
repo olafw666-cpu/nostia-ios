@@ -15,16 +15,21 @@ final class VaultViewModel: ObservableObject {
     @Published var pendingPaymentMessage: String?
 
     func loadVault(tripId: Int) async {
-        isLoading = true
+        let key = CacheKey.vaultDetail(tripId)
+        if let cached: VaultSummary = await CacheManager.shared.get(key) {
+            vaultData = cached
+        } else {
+            isLoading = true
+        }
         errorMessage = nil
         do {
-            vaultData = try await VaultAPI.shared.getTripSummary(tripId)
+            let fresh = try await VaultAPI.shared.getTripSummary(tripId)
+            vaultData = fresh
+            await CacheManager.shared.set(key, value: fresh)
         } catch is CancellationError {
-            // Task cancelled (view dismissed) — not an error to show
         } catch let urlErr as URLError where urlErr.code == .cancelled {
-            // URLSession task cancelled — not an error to show
         } catch {
-            errorMessage = error.localizedDescription
+            if vaultData == nil { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -32,6 +37,7 @@ final class VaultViewModel: ObservableObject {
     func addExpense(tripId: Int, description: String, amount: Double, category: String?, date: String) async -> Bool {
         do {
             try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date)
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -42,6 +48,7 @@ final class VaultViewModel: ObservableObject {
     func deleteEntry(_ id: Int, tripId: Int) async {
         do {
             try await VaultAPI.shared.deleteEntry(id)
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
         } catch {
             errorMessage = error.localizedDescription
@@ -51,6 +58,7 @@ final class VaultViewModel: ObservableObject {
     func markPaid(splitId: Int, tripId: Int) async {
         do {
             try await VaultAPI.shared.markSplitPaid(splitId)
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
         } catch {
             errorMessage = error.localizedDescription

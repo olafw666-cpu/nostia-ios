@@ -73,6 +73,7 @@ final class AuthManager: ObservableObject {
                 _ = try? await URLSession.shared.data(for: req)
             }
         }
+        Task { await CacheManager.shared.clearAll() }
         deleteToken()
         NotificationCenter.default.post(name: .userDidLogout, object: nil)
     }
