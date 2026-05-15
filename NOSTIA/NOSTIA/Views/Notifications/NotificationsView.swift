@@ -17,8 +17,8 @@ struct NotificationsView: View {
                 .overlay(Divider().background(Color.white.opacity(0.1)), alignment: .bottom)
             }
 
-            if vm.isLoading {
-                LoadingView()
+            if vm.isLoading && vm.notifications.isEmpty {
+                NotificationSkeletonView()
             } else {
                 List(vm.notifications) { notif in
                     NotificationRow(notification: notif) {

@@ -14,8 +14,8 @@ struct VaultContentView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                if vm.isLoading {
-                    ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
+                if vm.isLoading && vm.vaultData == nil {
+                    VaultExpenseSkeletonView()
                 } else if let data = vm.vaultData {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {

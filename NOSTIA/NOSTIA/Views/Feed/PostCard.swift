@@ -7,6 +7,8 @@ struct PostCard: View {
     var onDislike: () -> Void = {}
     var onComment: () -> Void = {}
     var onProfileTap: ((Int) -> Void)? = nil
+    var isLikeProcessing: Bool = false
+    var isDislikeProcessing: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -63,11 +65,13 @@ struct PostCard: View {
                         .font(.system(size: 14))
                         .foregroundColor(post.isLiked == true ? Color.nostriaDanger : Color.nostiaTextMuted)
                 }
+                .disabled(isLikeProcessing || isDislikeProcessing)
                 Button(action: onDislike) {
                     Label("\(post.dislikeCount)", systemImage: post.isDisliked == true ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                         .font(.system(size: 14))
                         .foregroundColor(post.isDisliked == true ? Color.nostiaWarning : Color.nostiaTextMuted)
                 }
+                .disabled(isLikeProcessing || isDislikeProcessing)
                 Button(action: onComment) {
                     Label("\(post.commentCount)", systemImage: "bubble.right")
                         .font(.system(size: 14)).foregroundColor(Color.nostiaTextMuted)

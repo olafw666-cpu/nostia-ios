@@ -14,7 +14,7 @@ struct PublicProfileView: View {
         ScrollView {
             VStack(spacing: 20) {
                 if isLoading {
-                    ProgressView().tint(Color.nostiaAccent).padding(60)
+                    ProfileSkeletonView()
                 } else if let u = user {
                     UserAvatarView(
                         imageData: u.profilePictureUrl,

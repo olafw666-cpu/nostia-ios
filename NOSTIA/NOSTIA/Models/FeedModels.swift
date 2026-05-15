@@ -11,11 +11,11 @@ struct FeedPost: Codable, Identifiable {
     let relatedEventId: Int?
     let tripTitle: String?
     let eventTitle: String?
-    let likeCount: Int
-    let dislikeCount: Int
-    let commentCount: Int
-    let isLiked: Bool?
-    let isDisliked: Bool?
+    var likeCount: Int
+    var dislikeCount: Int
+    var commentCount: Int
+    var isLiked: Bool?
+    var isDisliked: Bool?
     let createdAt: String
 
     var timeAgo: String {

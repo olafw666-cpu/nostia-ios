@@ -16,8 +16,8 @@ struct TripsView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            if vm.isLoading {
-                LoadingView()
+            if vm.isLoading && vm.trips.isEmpty {
+                VaultListSkeletonView()
             } else {
                 List {
                     ForEach(vm.trips) { trip in

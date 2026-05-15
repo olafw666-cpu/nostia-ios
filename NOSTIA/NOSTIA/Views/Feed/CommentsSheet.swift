@@ -10,7 +10,7 @@ struct CommentsSheet: View {
         NavigationStack {
             Group {
                 if vm.isLoadingComments {
-                    ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity, maxHeight: .infinity)
+                    CommentSkeletonView()
                 } else if vm.comments.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "bubble.right")

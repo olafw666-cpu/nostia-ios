@@ -12,8 +12,16 @@ final class EventsViewModel: ObservableObject {
     @Published var selectedCreatorId: Int?
 
     func loadAll() async {
-        isLoading = true
-        events = (try? await AdventuresAPI.shared.getAllEvents()) ?? []
+        if let cached: [Event] = await CacheManager.shared.get(CacheKey.eventList) {
+            events = cached
+        } else {
+            isLoading = true
+        }
+        let fresh = (try? await AdventuresAPI.shared.getAllEvents()) ?? []
+        if !fresh.isEmpty {
+            events = fresh
+            await CacheManager.shared.set(CacheKey.eventList, value: fresh)
+        }
         isLoading = false
     }
 }
@@ -26,7 +34,7 @@ struct EventsView: View {
         ZStack(alignment: .bottomTrailing) {
             Group {
                 if vm.isLoading && vm.events.isEmpty {
-                    LoadingView()
+                    EventListSkeletonView()
                 } else if vm.events.isEmpty {
                     EmptyStateView(icon: "calendar", text: "No events yet", sub: "Tap + to create one!")
                 } else {
@@ -60,6 +68,7 @@ struct EventsView: View {
         .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
             CreateEventFromDiscoverSheet { newEvent in
                 vm.events.insert(newEvent, at: 0)
+                Task { await CacheManager.shared.invalidate(CacheKey.eventList) }
             }
         }
         .sheet(item: $vm.selectedEvent, onDismiss: { Task { await vm.loadAll() } }) { event in

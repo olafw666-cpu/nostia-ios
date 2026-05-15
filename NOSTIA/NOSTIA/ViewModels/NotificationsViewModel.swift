@@ -10,11 +10,17 @@ final class NotificationsViewModel: ObservableObject {
     var unreadCount: Int { notifications.filter { !$0.read }.count }
 
     func load() async {
-        isLoading = true
+        if let cached: [NostiaNotification] = await CacheManager.shared.get(CacheKey.notifications) {
+            notifications = cached
+        } else {
+            isLoading = true
+        }
         do {
-            notifications = try await NotificationsAPI.shared.getAll(limit: 50)
+            let fresh = try await NotificationsAPI.shared.getAll(limit: 50)
+            notifications = fresh
+            await CacheManager.shared.set(CacheKey.notifications, value: fresh)
         } catch {
-            errorMessage = error.localizedDescription
+            if notifications.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }

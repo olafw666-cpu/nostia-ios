@@ -7,8 +7,7 @@ struct FeedView: View {
     var body: some View {
         Group {
             if vm.isLoading && vm.posts.isEmpty {
-                ProgressView().tint(Color.nostiaAccent)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                FeedSkeletonView()
             } else if vm.posts.isEmpty {
                 EmptyStateView(icon: "photo.on.rectangle.angled", text: "No posts yet", sub: "Be the first to share something!")
             } else {
@@ -20,7 +19,9 @@ struct FeedView: View {
                                 currentUserId: authManager.currentUserId,
                                 onLike: { Task { await vm.toggleLike(post: post) } },
                                 onDislike: { Task { await vm.toggleDislike(post: post) } },
-                                onComment: { Task { await vm.loadComments(for: post) } }
+                                onComment: { Task { await vm.loadComments(for: post) } },
+                                isLikeProcessing: vm.likingPostIds.contains(post.id),
+                                isDislikeProcessing: vm.dislikingPostIds.contains(post.id)
                             )
                         }
                     }

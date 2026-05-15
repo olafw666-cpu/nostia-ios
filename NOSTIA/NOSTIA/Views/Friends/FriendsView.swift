@@ -53,7 +53,7 @@ struct FriendsView: View {
             .padding(.bottom, 8)
 
             if vm.isSearching {
-                LoadingView()
+                SearchSkeletonView()
             } else if vm.searchPerformed {
                 if vm.searchResults.isEmpty {
                     EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
@@ -76,7 +76,7 @@ struct FriendsView: View {
                 }
                 .padding(.horizontal, 16).padding(.bottom, 8)
 
-                if vm.isLoading { LoadingView() }
+                if vm.isLoading && vm.followers.isEmpty && vm.following.isEmpty { FollowSkeletonView() }
                 else if vm.activeTab == .followers {
                     List(vm.followers) { user in
                         FollowUserRow(
