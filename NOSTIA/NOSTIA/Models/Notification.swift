@@ -32,21 +32,23 @@ struct NostiaNotification: Identifiable, Decodable {
 
     var iconName: String {
         switch type {
-        case "trip_invite":     return "airplane"
-        case "friend_request":  return "person.badge.plus"
+        case "trip_invite":      return "airplane"
+        case "friend_request":   return "person.badge.plus"
         case "payment_received": return "creditcard"
-        case "message":         return "bubble.left"
-        default:                return "bell"
+        case "message":          return "bubble.left"
+        case "vault_reminder":   return "bell.badge"
+        default:                 return "bell"
         }
     }
 
     var iconColorHex: String {
         switch type {
-        case "trip_invite":     return "3B82F6"
-        case "friend_request":  return "10B981"
+        case "trip_invite":      return "3B82F6"
+        case "friend_request":   return "10B981"
         case "payment_received": return "F59E0B"
-        case "message":         return "8B5CF6"
-        default:                return "6B7280"
+        case "message":          return "8B5CF6"
+        case "vault_reminder":   return "EF4444"
+        default:                 return "6B7280"
         }
     }
 

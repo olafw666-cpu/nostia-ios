@@ -31,4 +31,14 @@ final class VaultAPI {
     func createPaymentIntent(splitId: Int) async throws -> PaymentIntentResponse {
         return try await client.request("/vault/splits/\(splitId)/payment-intent", method: "POST")
     }
+
+    func createBulkPaymentIntent(splitIds: [Int], tripId: Int) async throws -> BulkPaymentIntentResponse {
+        let body: [String: Any] = ["splitIds": splitIds, "tripId": tripId]
+        return try await client.request("/vault/bulk-payment-intent", method: "POST", body: body)
+    }
+
+    func sendReminder(targetUserId: Int, tripId: Int) async throws {
+        let body: [String: Any] = ["targetUserId": targetUserId, "tripId": tripId]
+        try await client.requestVoid("/vault/remind", method: "POST", body: body)
+    }
 }
