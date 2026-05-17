@@ -16,7 +16,6 @@ final class FriendsViewModel: ObservableObject {
     enum FollowTab { case followers, following }
 
     var followingIds: Set<Int> { Set(following.map(\.id)) }
-    var followerIds: Set<Int> { Set(followers.map(\.id)) }
 
     func loadAll() async {
         let cachedFollowers: [FollowUser]? = await CacheManager.shared.get(CacheKey.followersList)

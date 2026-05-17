@@ -107,12 +107,7 @@ struct FriendsView: View {
                             user: user,
                             onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
                             trailingContent: {
-                                AnyView(HStack(spacing: 16) {
-                                    if vm.followerIds.contains(user.id) {
-                                        messageButton(for: user)
-                                    }
-                                    unfollowButton(for: user)
-                                })
+                                AnyView(unfollowButton(for: user))
                             }
                         )
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
