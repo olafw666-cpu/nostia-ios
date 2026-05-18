@@ -2,6 +2,7 @@ import SwiftUI
 import MapKit
 
 struct FriendsMapView: View {
+    @EnvironmentObject private var locationManager: LocationManager
     @State private var friendLocations: [FollowLocation] = []
     @State private var events: [Event] = []
     @State private var isLoading = false
@@ -127,7 +128,15 @@ struct FriendsMapView: View {
                 .glassEffect(in: Capsule())
                 .padding(.bottom, 12)
         }
-        .task { await loadAll() }
+        .task {
+            await loadAll()
+            if let loc = locationManager.location {
+                cameraPosition = .region(MKCoordinateRegion(
+                    center: loc.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.2, longitudeDelta: 0.2)
+                ))
+            }
+        }
         .sheet(isPresented: $showCreateEvent, onDismiss: {
             if !showCreateEvent { pendingCoordinate = nil }
         }) {
