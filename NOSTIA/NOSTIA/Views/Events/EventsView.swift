@@ -6,6 +6,7 @@ import PhotosUI
 @MainActor
 final class EventsViewModel: ObservableObject {
     @Published var events: [Event] = []
+    @Published var goingEvents: [Event] = []
     @Published var isLoading = false
     @Published var selectedEvent: Event?
     @Published var showCreate = false
@@ -17,11 +18,15 @@ final class EventsViewModel: ObservableObject {
         } else {
             isLoading = true
         }
-        let fresh = (try? await AdventuresAPI.shared.getAllEvents()) ?? []
+        async let allTask = AdventuresAPI.shared.getAllEvents()
+        async let goingTask = AdventuresAPI.shared.getMyGoingEvents()
+        let fresh = (try? await allTask) ?? []
+        let freshGoing = (try? await goingTask) ?? []
         if !fresh.isEmpty {
             events = fresh
             await CacheManager.shared.set(CacheKey.eventList, value: fresh)
         }
+        goingEvents = freshGoing
         isLoading = false
     }
 }
@@ -30,22 +35,57 @@ struct EventsView: View {
     @StateObject private var vm = EventsViewModel()
     @State private var actionsVM = EventActionsViewModel()
 
+    // All events minus any that are already in goingEvents (avoid duplicates)
+    private var otherEvents: [Event] {
+        let goingIds = Set(vm.goingEvents.map { $0.id })
+        return vm.events.filter { !goingIds.contains($0.id) }
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Group {
                 if vm.isLoading && vm.events.isEmpty {
                     EventListSkeletonView()
-                } else if vm.events.isEmpty {
+                } else if vm.events.isEmpty && vm.goingEvents.isEmpty {
                     EmptyStateView(icon: "calendar", text: "No events yet", sub: "Tap + to create one!")
                 } else {
-                    List(vm.events) { event in
-                        Button { vm.selectedEvent = event } label: {
-                            EventCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
+                    List {
+                        if !vm.goingEvents.isEmpty {
+                            Section {
+                                ForEach(vm.goingEvents) { event in
+                                    Button { vm.selectedEvent = event } label: {
+                                        EventCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
+                                    }
+                                    .buttonStyle(.plain)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                }
+                            } header: {
+                                Text("Going")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(Color.nostiaSuccess)
+                                    .textCase(nil)
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        if !otherEvents.isEmpty {
+                            Section {
+                                ForEach(otherEvents) { event in
+                                    Button { vm.selectedEvent = event } label: {
+                                        EventCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
+                                    }
+                                    .buttonStyle(.plain)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                }
+                            } header: {
+                                Text(vm.goingEvents.isEmpty ? "All Events" : "Nearby Events")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(Color.nostiaTextSecond)
+                                    .textCase(nil)
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .background(.clear)
@@ -91,6 +131,7 @@ private struct ProfileNavTarget: Identifiable { let id: Int }
 struct CreateEventFromDiscoverSheet: View {
     let onCreated: (Event) -> Void
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var locationManager: LocationManager
 
     @State private var step = 0
     @State private var selectedCoord: CLLocationCoordinate2D?
@@ -163,6 +204,14 @@ struct CreateEventFromDiscoverSheet: View {
                             .foregroundColor(selectedCoord == nil ? Color.nostiaTextMuted : Color.nostiaAccent)
                             .fontWeight(.semibold)
                             .disabled(selectedCoord == nil)
+                    }
+                }
+                .task {
+                    if let loc = locationManager.location {
+                        mapCameraPosition = .region(MKCoordinateRegion(
+                            center: loc.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                        ))
                     }
                 }
             } else if let coord = selectedCoord {

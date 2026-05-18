@@ -14,6 +14,8 @@ struct HomeView: View {
     @State private var showBackgroundMenu = false
     @State private var showBackgroundPicker = false
     @State private var backgroundPickerItem: PhotosPickerItem?
+    @State private var selectedHomeEvent: Event?
+    @State private var eventActionsVM = EventActionsViewModel()
 
     private var backgroundImageURL: URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
@@ -74,16 +76,25 @@ struct HomeView: View {
                     }
                 }
 
-                // Upcoming/nearby events
+                // Nearby events
                 if !vm.nearbyEvents.isEmpty {
                     SectionHeader(title: "Nearby Events")
                     ForEach(vm.nearbyEvents.prefix(3)) { event in
-                        EventPreviewCard(event: event)
+                        Button { selectedHomeEvent = event } label: {
+                            EventPreviewCard(event: event)
+                        }
+                        .buttonStyle(.plain)
                     }
-                } else if !vm.upcomingEvents.isEmpty {
-                    SectionHeader(title: "Upcoming Events")
-                    ForEach(vm.upcomingEvents.prefix(2)) { event in
-                        EventPreviewCard(event: event)
+                }
+
+                // Events you're going to
+                if !vm.upcomingEvents.isEmpty {
+                    SectionHeader(title: "Events You're Going To")
+                    ForEach(vm.upcomingEvents.prefix(3)) { event in
+                        Button { selectedHomeEvent = event } label: {
+                            EventPreviewCard(event: event)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
 
@@ -182,6 +193,9 @@ struct HomeView: View {
         .sheet(item: $feedVM.selectedPost) { post in
             CommentsSheet(postId: post.id, vm: feedVM)
                 .onAppear { Task { await feedVM.loadComments(for: post) } }
+        }
+        .sheet(item: $selectedHomeEvent) { event in
+            EventDetailSheet(event: event, vm: eventActionsVM)
         }
     }
 
