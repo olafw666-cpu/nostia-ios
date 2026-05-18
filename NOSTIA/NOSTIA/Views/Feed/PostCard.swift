@@ -35,9 +35,13 @@ struct PostCard: View {
             if let imgData = post.imageData,
                let data = Data(base64Encoded: imgData),
                let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable().scaledToFill()
-                    .frame(maxWidth: .infinity).frame(height: 200)
+                Color.clear
+                    .frame(maxWidth: .infinity, height: 200)
+                    .overlay(
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                    )
                     .clipped()
             }
 

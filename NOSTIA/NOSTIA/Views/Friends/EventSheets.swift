@@ -50,11 +50,17 @@ struct EventDetailSheet: View {
                     if let imgData = currentEvent.flyerImage,
                        let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable().scaledToFill()
-                            .frame(maxWidth: .infinity).frame(height: 200)
-                            .clipped().cornerRadius(14)
-                            .padding(.horizontal, 20).padding(.top, 16)
+                        Color.clear
+                            .frame(maxWidth: .infinity, height: 200)
+                            .overlay(
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFill()
+                            )
+                            .clipped()
+                            .cornerRadius(14)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
                     }
 
                     VStack(alignment: .leading, spacing: 16) {
@@ -260,9 +266,14 @@ struct EventFlyerView: View {
                     if let imgData = currentEvent.flyerImage,
                        let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable().scaledToFill()
-                            .frame(maxWidth: .infinity).frame(height: 340).clipped()
+                        Color.clear
+                            .frame(maxWidth: .infinity, height: 340)
+                            .overlay(
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFill()
+                            )
+                            .clipped()
                     } else {
                         LinearGradient(
                             colors: [Color.nostiaAccent.opacity(0.7), Color.nostriaPurple.opacity(0.7)],
