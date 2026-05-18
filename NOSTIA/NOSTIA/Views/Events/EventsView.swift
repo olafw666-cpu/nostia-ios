@@ -104,8 +104,9 @@ struct CreateEventFromDiscoverSheet: View {
     @State private var errorMessage: String?
     @State private var coverImageData: String?
     @State private var selectedCoverPhoto: PhotosPickerItem?
+    @State private var isCoverPhotoLoading = false
 
-    let visibilityOptions = ["public", "friends", "private"]
+    let visibilityOptions = ["public", "followers", "private"]
 
     var body: some View {
         NavigationStack {
@@ -190,13 +191,20 @@ struct CreateEventFromDiscoverSheet: View {
                         }
 
                         PhotosPicker(selection: $selectedCoverPhoto, matching: .images) {
-                            Label(coverImageData == nil ? "Add Cover Photo" : "Change Cover Photo",
-                                  systemImage: "photo.badge.plus")
-                                .font(.subheadline.bold())
-                                .foregroundColor(Color.nostiaAccent)
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                                .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
+                            HStack {
+                                if isCoverPhotoLoading {
+                                    ProgressView().tint(Color.nostiaAccent).scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "photo.badge.plus")
+                                }
+                                Text(coverImageData == nil ? "Add Cover Photo" : "Change Cover Photo")
+                                    .font(.subheadline.bold())
+                            }
+                            .foregroundColor(Color.nostiaAccent)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
                         }
+                        .disabled(isCoverPhotoLoading)
 
                         NostiaTextField(label: "Event Title *", placeholder: "What's happening?", text: $title)
                         NostiaTextField(label: "Location Name", placeholder: "e.g. Central Park…", text: $locationName)
@@ -219,7 +227,7 @@ struct CreateEventFromDiscoverSheet: View {
                                 }
                             }
                             Text(visibility == "public" ? "Anyone can see this" :
-                                 visibility == "friends" ? "Only your friends" : "Only you")
+                                 visibility == "followers" ? "Only your followers" : "Only you")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
 
@@ -275,7 +283,7 @@ struct CreateEventFromDiscoverSheet: View {
                                                                startPoint: .leading, endPoint: .trailing)))
                             .foregroundColor(.white).cornerRadius(14)
                         }
-                        .disabled(isLoading || title.isEmpty)
+                        .disabled(isLoading || title.isEmpty || isCoverPhotoLoading)
                     }
                     .padding(20)
                 }
@@ -292,12 +300,24 @@ struct CreateEventFromDiscoverSheet: View {
         }
         .presentationBackground(.ultraThinMaterial)
         .onChange(of: selectedCoverPhoto) { _, item in
+            guard let item else { return }
+            isCoverPhotoLoading = true
+            errorMessage = nil
             Task {
-                if let data = try? await item?.loadTransferable(type: Data.self),
-                   let img = UIImage(data: data),
-                   let compressed = img.resizedForUpload().jpegData(compressionQuality: 0.6) {
-                    coverImageData = compressed.base64EncodedString()
+                defer { isCoverPhotoLoading = false }
+                guard let data = try? await item.loadTransferable(type: Data.self),
+                      let img = UIImage(data: data),
+                      let compressed = img.resizedForUpload().jpegData(compressionQuality: 0.6) else {
+                    coverImageData = nil
+                    errorMessage = "Failed to load photo. Please try again."
+                    return
                 }
+                if compressed.count > 4 * 1024 * 1024 {
+                    coverImageData = nil
+                    errorMessage = "Image is too large. Please choose a smaller file."
+                    return
+                }
+                coverImageData = compressed.base64EncodedString()
             }
         }
     }

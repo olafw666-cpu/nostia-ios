@@ -8,6 +8,8 @@ struct HomeView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var authManager: AuthManager
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var backgroundImage: UIImage?
     @State private var showBackgroundMenu = false
     @State private var showBackgroundPicker = false
@@ -48,7 +50,7 @@ struct HomeView: View {
                                 ProfilePictureView(
                                     urlString: vm.user?.profilePictureUrl,
                                     initial: vm.user?.initial ?? "?",
-                                    size: 44
+                                    size: 88
                                 )
                             }
                         }
@@ -130,9 +132,16 @@ struct HomeView: View {
             .onTapGesture(count: 2) { showBackgroundMenu = true }
         .task {
             await vm.loadAll()
-            locationManager.requestLocationOnce()
+            locationManager.startPeriodicSync()
             await feedVM.loadFeed()
             loadBackgroundFromDisk()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                locationManager.startPeriodicSync()
+            } else if newPhase == .background {
+                locationManager.stopPeriodicSync()
+            }
         }
         .onChange(of: selectedTab) { _, newTab in
             if newTab == 0 {

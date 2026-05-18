@@ -171,7 +171,7 @@ struct EventMapPin: View {
     private var typeColor: Color {
         switch event.visibility {
         case "private": return Color.nostriaDanger
-        case "friends": return Color.nostriaPurple
+        case "friends", "followers": return Color.nostriaPurple
         default: return Color.nostiaAccent
         }
     }
@@ -267,7 +267,7 @@ struct CreateEventSheet: View {
         )))
     }
 
-    let visibilityOptions = ["public", "friends", "private"]
+    let visibilityOptions = ["public", "followers", "private"]
 
     private var isoFormatter: ISO8601DateFormatter {
         let f = ISO8601DateFormatter()
@@ -332,7 +332,7 @@ struct CreateEventSheet: View {
                             }
                         }
                         Text(visibility == "public" ? "Anyone can see this" :
-                             visibility == "friends" ? "Only your friends" : "Only you")
+                             visibility == "followers" ? "Only your followers" : "Only you")
                             .font(.caption).foregroundColor(Color.nostiaTextMuted)
                     }
 
