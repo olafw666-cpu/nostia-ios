@@ -14,8 +14,19 @@ struct HomeView: View {
     @State private var showBackgroundMenu = false
     @State private var showBackgroundPicker = false
     @State private var backgroundPickerItem: PhotosPickerItem?
-    @State private var selectedHomeEvent: Event?
+    @State private var activeSheet: HomeSheet?
     @State private var eventActionsVM = EventActionsViewModel()
+
+    private enum HomeSheet: Identifiable {
+        case comments(FeedPost)
+        case eventDetail(Event)
+        var id: String {
+            switch self {
+            case .comments(let p): return "c\(p.id)"
+            case .eventDetail(let e): return "e\(e.id)"
+            }
+        }
+    }
 
     private var backgroundImageURL: URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
@@ -80,7 +91,7 @@ struct HomeView: View {
                 if !vm.nearbyEvents.isEmpty {
                     SectionHeader(title: "Nearby Events")
                     ForEach(vm.nearbyEvents.prefix(3)) { event in
-                        Button { selectedHomeEvent = event } label: {
+                        Button { activeSheet = .eventDetail(event) } label: {
                             EventPreviewCard(event: event)
                         }
                         .buttonStyle(.plain)
@@ -91,7 +102,7 @@ struct HomeView: View {
                 if !vm.upcomingEvents.isEmpty {
                     SectionHeader(title: "Events You're Going To")
                     ForEach(vm.upcomingEvents.prefix(3)) { event in
-                        Button { selectedHomeEvent = event } label: {
+                        Button { activeSheet = .eventDetail(event) } label: {
                             EventPreviewCard(event: event)
                         }
                         .buttonStyle(.plain)
@@ -118,7 +129,9 @@ struct HomeView: View {
                             currentUserId: authManager.currentUserId,
                             onLike: { Task { await feedVM.toggleLike(post: post) } },
                             onDislike: { Task { await feedVM.toggleDislike(post: post) } },
-                            onComment: { Task { await feedVM.loadComments(for: post) } }
+                            onComment: { activeSheet = .comments(post) },
+                            isLikeProcessing: feedVM.likingPostIds.contains(post.id),
+                            isDislikeProcessing: feedVM.dislikingPostIds.contains(post.id)
                         )
                     }
                 }
@@ -190,12 +203,14 @@ struct HomeView: View {
                       selection: $backgroundPickerItem,
                       matching: .images,
                       photoLibrary: .shared())
-        .sheet(item: $feedVM.selectedPost) { post in
-            CommentsSheet(postId: post.id, vm: feedVM)
-                .onAppear { Task { await feedVM.loadComments(for: post) } }
-        }
-        .sheet(item: $selectedHomeEvent) { event in
-            EventDetailSheet(event: event, vm: eventActionsVM)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .comments(let post):
+                CommentsSheet(postId: post.id, vm: feedVM)
+                    .onAppear { Task { await feedVM.loadComments(for: post) } }
+            case .eventDetail(let event):
+                EventDetailSheet(event: event, vm: eventActionsVM)
+            }
         }
     }
 
