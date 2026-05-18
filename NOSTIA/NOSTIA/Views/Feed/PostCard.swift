@@ -36,7 +36,8 @@ struct PostCard: View {
                let data = Data(base64Encoded: imgData),
                let uiImage = UIImage(data: data) {
                 Color.clear
-                    .frame(maxWidth: .infinity, height: 200)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 200)
                     .overlay(
                         Image(uiImage: uiImage)
                             .resizable()
