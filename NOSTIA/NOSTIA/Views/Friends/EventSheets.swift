@@ -32,6 +32,7 @@ struct EventDetailSheet: View {
     @State private var showFlyer = false
     @State private var selectedFlyerItem: PhotosPickerItem?
     @State private var isFlyerUploading = false
+    @State private var flyerError: String?
 
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
     private var isCreator: Bool { currentEvent.createdBy != nil && currentEvent.createdBy == currentUserId }
@@ -138,6 +139,11 @@ struct EventDetailSheet: View {
                             }
                             .disabled(isFlyerUploading)
 
+                            if let err = flyerError {
+                                Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
                             Button(role: .destructive) { showDeleteConfirm = true } label: {
                                 Label("Delete Event", systemImage: "trash")
                                     .frame(maxWidth: .infinity).padding(.vertical, 12)
@@ -210,14 +216,23 @@ struct EventDetailSheet: View {
 
     private func uploadFlyer(_ item: PhotosPickerItem) async {
         isFlyerUploading = true
+        flyerError = nil
         guard let data = try? await item.loadTransferable(type: Data.self),
               let uiImage = UIImage(data: data),
               let compressed = uiImage.resizedForUpload().jpegData(compressionQuality: 0.6) else {
+            flyerError = "Failed to load image. Please try again."
             isFlyerUploading = false
             return
         }
-        if let updated = try? await vm.updateEventFlyer(id: currentEvent.id, flyerImage: compressed.base64EncodedString()) {
-            currentEvent = updated
+        if compressed.count > 4 * 1024 * 1024 {
+            flyerError = "Image is too large. Please choose a smaller file."
+            isFlyerUploading = false
+            return
+        }
+        do {
+            currentEvent = try await vm.updateEventFlyer(id: currentEvent.id, flyerImage: compressed.base64EncodedString())
+        } catch {
+            flyerError = "Failed to upload flyer. Please try again."
         }
         isFlyerUploading = false
     }
@@ -381,11 +396,12 @@ struct EventCard: View {
                 Text(event.title).font(.headline).foregroundColor(.white)
                 Spacer()
                 if let vis = event.visibility, vis != "public" {
-                    Label(vis == "friends" ? "Friends" : "Private",
-                          systemImage: vis == "friends" ? "person.2" : "lock")
+                    let isFollower = vis == "friends" || vis == "followers"
+                    Label(isFollower ? "Followers" : "Private",
+                          systemImage: isFollower ? "person.2" : "lock")
                         .font(.caption.bold()).foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(vis == "friends" ? Color.blue.opacity(0.7) : Color.nostriaDanger)
+                        .background(isFollower ? Color.blue.opacity(0.7) : Color.nostriaDanger)
                         .cornerRadius(12)
                 }
                 if let dist = event.formattedDistance {

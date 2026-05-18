@@ -11,6 +11,8 @@ final class LocationManager: NSObject, ObservableObject {
     @Published var permissionDenied = false
 
     private let manager = CLLocationManager()
+    private var periodicTimer: Timer?
+    private let syncInterval: TimeInterval = 600 // 10 minutes
 
     private override init() {
         super.init()
@@ -31,6 +33,30 @@ final class LocationManager: NSObject, ObservableObject {
             manager.requestWhenInUseAuthorization()
         default:
             permissionDenied = true
+        }
+    }
+
+    func startPeriodicSync() {
+        requestLocationIfAuthorized()
+        periodicTimer?.invalidate()
+        let timer = Timer(timeInterval: syncInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.requestLocationIfAuthorized() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        periodicTimer = timer
+    }
+
+    func stopPeriodicSync() {
+        periodicTimer?.invalidate()
+        periodicTimer = nil
+    }
+
+    private func requestLocationIfAuthorized() {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            manager.requestLocation()
+        default:
+            break
         }
     }
 
