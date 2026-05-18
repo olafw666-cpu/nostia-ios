@@ -51,7 +51,8 @@ struct EventDetailSheet: View {
                        let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
                         Color.clear
-                            .frame(maxWidth: .infinity, height: 200)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
                             .overlay(
                                 Image(uiImage: uiImage)
                                     .resizable()
@@ -267,7 +268,8 @@ struct EventFlyerView: View {
                        let data = Data(base64Encoded: imgData, options: .ignoreUnknownCharacters),
                        let uiImage = UIImage(data: data) {
                         Color.clear
-                            .frame(maxWidth: .infinity, height: 340)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 340)
                             .overlay(
                                 Image(uiImage: uiImage)
                                     .resizable()
