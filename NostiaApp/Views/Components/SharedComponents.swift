@@ -118,14 +118,14 @@ struct ConsentSheet: View {
                     ConsentToggle(
                         icon: "location.fill",
                         title: "Location Services",
-                        description: "Nostia uses your location to show nearby events and share your position with friends. You can change this at any time.",
+                        description: "Nostia uses your location to show nearby events and share your position with friends.",
                         isOn: $locationConsent
                     )
 
                     ConsentToggle(
                         icon: "chart.bar.fill",
                         title: "Data Collection",
-                        description: "We collect usage data to improve the app experience. All data is anonymized and never sold to third parties.",
+                        description: "We collect usage data to improve the app experience. All data is anonymized.",
                         isOn: $dataCollectionConsent
                     )
 
