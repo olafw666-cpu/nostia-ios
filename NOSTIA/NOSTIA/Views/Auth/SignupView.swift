@@ -1,12 +1,18 @@
 import SwiftUI
 
+private enum SignupSheet: Identifiable {
+    case tos, consent
+    var id: String { switch self { case .tos: return "tos"; case .consent: return "consent" } }
+}
+
 struct SignupView: View {
     @StateObject private var vm = AuthViewModel()
     @State private var username = ""
     @State private var password = ""
     @State private var name = ""
     @State private var email = ""
-    @State private var showConsent = false
+    @State private var activeSheet: SignupSheet?
+    @State private var tosAgreed = false
     @State private var consentGranted = false
     @State private var pendingConsent: (location: Bool, data: Bool)?
     @Environment(\.dismiss) private var dismiss
@@ -67,7 +73,8 @@ struct SignupView: View {
                     Button {
                         let validationError = validate()
                         if let err = validationError { vm.errorMessage = err; return }
-                        if !consentGranted { showConsent = true; return }
+                        if !tosAgreed { activeSheet = .tos; return }
+                        if !consentGranted { activeSheet = .consent; return }
                         if let c = pendingConsent {
                             Task { await submitSignup(locationConsent: c.location, dataConsent: c.data) }
                         }
@@ -76,7 +83,7 @@ struct SignupView: View {
                             if vm.isLoading { ProgressView().tint(.white) }
                             else {
                                 Image(systemName: consentGranted ? "person.badge.plus" : "checkmark.shield")
-                                Text(consentGranted ? "Create Account" : "Continue to Consent")
+                                Text(consentGranted ? "Create Account" : "Continue")
                             }
                         }
                         .font(.system(size: responsive.fontSize(18), weight: .bold)).foregroundColor(.white)
@@ -105,19 +112,33 @@ struct SignupView: View {
         }
         .background(.clear)
         .navigationBarHidden(true)
-        .sheet(isPresented: $showConsent) {
-            ConsentSheet(
-                onConsent: { location, data in
-                    consentGranted = true
-                    pendingConsent = (location, data)
-                    showConsent = false
-                    Task { await submitSignup(locationConsent: location, dataConsent: data) }
-                },
-                onDecline: {
-                    showConsent = false
-                    vm.errorMessage = "Consent is required to create a Nostia account."
-                }
-            )
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .tos:
+                TermsAgreementView(
+                    onAgree: {
+                        tosAgreed = true
+                        activeSheet = .consent
+                    },
+                    onDecline: {
+                        activeSheet = nil
+                        dismiss()
+                    }
+                )
+            case .consent:
+                ConsentSheet(
+                    onConsent: { location, data in
+                        consentGranted = true
+                        pendingConsent = (location, data)
+                        activeSheet = nil
+                        Task { await submitSignup(locationConsent: location, dataConsent: data) }
+                    },
+                    onDecline: {
+                        activeSheet = nil
+                        vm.errorMessage = "Consent is required to create a Nostia account."
+                    }
+                )
+            }
         }
     }
 
@@ -135,6 +156,7 @@ struct SignupView: View {
 
     func submitSignup(locationConsent: Bool, dataConsent: Bool) async {
         _ = await vm.register(username: username, password: password, name: name, email: email,
-                              locationConsent: locationConsent, dataCollectionConsent: dataConsent)
+                              locationConsent: locationConsent, dataCollectionConsent: dataConsent,
+                              tosVersion: LegalDocuments.tosVersion)
     }
 }

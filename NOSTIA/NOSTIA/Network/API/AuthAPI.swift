@@ -22,14 +22,16 @@ final class AuthAPI {
         name: String,
         email: String?,
         locationConsent: Bool,
-        dataCollectionConsent: Bool
+        dataCollectionConsent: Bool,
+        tosVersion: String
     ) async throws -> AuthResponse {
         var body: [String: Any] = [
             "username": username,
             "password": password,
             "name": name,
             "locationConsent": locationConsent,
-            "dataCollectionConsent": dataCollectionConsent
+            "dataCollectionConsent": dataCollectionConsent,
+            "tosVersion": tosVersion
         ]
         if let email, !email.isEmpty { body["email"] = email }
         let res: AuthResponse = try await client.request(
