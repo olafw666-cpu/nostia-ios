@@ -60,6 +60,17 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
+    func adminDeleteEvent(id: Int) async {
+        do {
+            try await AdventuresAPI.shared.adminDeleteEvent(id: id)
+            upcomingEvents.removeAll { $0.id == id }
+            nearbyEvents.removeAll { $0.id == id }
+            goingEvents.removeAll { $0.id == id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func toggleHomeStatus() async {
         guard let u = user else { return }
         let newStatus = u.isHomeOpen ? "closed" : "open"

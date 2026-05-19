@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FriendsView: View {
     @StateObject private var vm = FriendsViewModel()
+    @EnvironmentObject var authManager: AuthManager
     @State private var chatTarget: (conversationId: Int, name: String, friendId: Int)?
 
     var body: some View {
@@ -38,7 +39,10 @@ struct FriendsView: View {
                     EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
                 } else {
                     List(vm.searchResults) { user in
-                        UserSearchRow(user: user, onAdd: { Task { await vm.sendRequest(to: user.id) } })
+                        UserSearchRow(user: user,
+                                      onAdd: { Task { await vm.sendRequest(to: user.id) } },
+                                      isCurrentUserDev: authManager.isDev,
+                                      onDelete: { Task { await vm.adminDeleteUser(id: user.id) } })
                             .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
@@ -65,7 +69,9 @@ struct FriendsView: View {
                                               chatTarget = (conv.id, friend.name, friend.id)
                                           }
                                       }
-                                  })
+                                  },
+                                  isCurrentUserDev: authManager.isDev,
+                                  onDelete: { Task { await vm.adminDeleteUser(id: friend.id) } })
                             .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
@@ -115,6 +121,8 @@ struct ChatDestination: Identifiable, Hashable {
 struct FriendRow: View {
     let friend: Friend
     let onMessage: () -> Void
+    var isCurrentUserDev: Bool = false
+    var onDelete: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 12) {
@@ -144,6 +152,13 @@ struct FriendRow: View {
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
+        .contextMenu {
+            if isCurrentUserDev {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                }
+            }
+        }
     }
 }
 
@@ -180,6 +195,8 @@ struct RequestRow: View {
 struct UserSearchRow: View {
     let user: UserSearchResult
     let onAdd: () -> Void
+    var isCurrentUserDev: Bool = false
+    var onDelete: () -> Void = {}
     var body: some View {
         HStack(spacing: 12) {
             AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
@@ -197,6 +214,13 @@ struct UserSearchRow: View {
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
+        .contextMenu {
+            if isCurrentUserDev {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                }
+            }
+        }
     }
 }
 

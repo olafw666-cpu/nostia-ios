@@ -3,6 +3,7 @@ import SwiftUI
 struct PostCard: View {
     let post: FeedPost
     let currentUserId: Int?
+    var isCurrentUserDev: Bool = false
     var onLike: () -> Void = {}
     var onComment: () -> Void = {}
     var onDelete: () -> Void = {}
@@ -18,7 +19,7 @@ struct PostCard: View {
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 Spacer()
-                if post.userId == currentUserId {
+                if post.userId == currentUserId || isCurrentUserDev {
                     Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.footnote).foregroundColor(Color.nostriaDanger)
