@@ -76,6 +76,15 @@ final class FeedViewModel: ObservableObject {
         }
     }
 
+    func adminDeletePost(id: Int) async {
+        do {
+            try await FeedAPI.shared.adminDeletePost(id: id)
+            posts.removeAll { $0.id == id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func loadComments(for post: FeedPost) async {
         selectedPost = post
         isLoadingComments = true

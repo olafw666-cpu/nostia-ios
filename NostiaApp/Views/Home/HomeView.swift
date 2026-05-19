@@ -116,12 +116,16 @@ struct HomeView: View {
                     if !vm.nearbyEvents.isEmpty {
                         SectionHeader(title: "Nearby Events")
                         ForEach(vm.nearbyEvents.prefix(3)) { event in
-                            EventPreviewCard(event: event)
+                            EventPreviewCard(event: event,
+                                            isCurrentUserDev: vm.user?.isDev ?? false,
+                                            onDelete: { Task { await vm.adminDeleteEvent(id: event.id) } })
                         }
                     } else if !vm.upcomingEvents.isEmpty {
                         SectionHeader(title: "Upcoming Events")
                         ForEach(vm.upcomingEvents.prefix(2)) { event in
-                            EventPreviewCard(event: event)
+                            EventPreviewCard(event: event,
+                                            isCurrentUserDev: vm.user?.isDev ?? false,
+                                            onDelete: { Task { await vm.adminDeleteEvent(id: event.id) } })
                         }
                     }
 
@@ -129,7 +133,9 @@ struct HomeView: View {
                     if !vm.goingEvents.isEmpty {
                         SectionHeader(title: "Events I'm Going To")
                         ForEach(vm.goingEvents.prefix(3)) { event in
-                            EventGoingCard(event: event)
+                            EventGoingCard(event: event,
+                                          isCurrentUserDev: vm.user?.isDev ?? false,
+                                          onDelete: { Task { await vm.adminDeleteEvent(id: event.id) } })
                         }
                     }
 
@@ -253,6 +259,8 @@ struct TripPreviewCard: View {
 
 struct EventPreviewCard: View {
     let event: Event
+    var isCurrentUserDev: Bool = false
+    var onDelete: () -> Void = {}
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -271,11 +279,20 @@ struct EventPreviewCard: View {
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .contextMenu {
+            if isCurrentUserDev {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Event", systemImage: "trash")
+                }
+            }
+        }
     }
 }
 
 struct EventGoingCard: View {
     let event: Event
+    var isCurrentUserDev: Bool = false
+    var onDelete: () -> Void = {}
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -298,6 +315,13 @@ struct EventGoingCard: View {
         .background(Color(hex: "052E16"))
         .cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: "065F46"), lineWidth: 1))
+        .contextMenu {
+            if isCurrentUserDev {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Event", systemImage: "trash")
+                }
+            }
+        }
     }
 }
 

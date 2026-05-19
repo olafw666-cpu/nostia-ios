@@ -49,6 +49,14 @@ final class AdventuresAPI {
         return try await client.request("/events/\(eventId)/rsvp", method: "POST", body: ["status": status])
     }
 
+    func adminDeleteEvent(id: Int) async throws {
+        try await client.requestVoid("/admin/events/\(id)", method: "DELETE")
+    }
+
+    func adminDeleteUser(id: Int) async throws {
+        try await client.requestVoid("/admin/users/\(id)", method: "DELETE")
+    }
+
     func createAdventure(title: String, location: String, description: String?, category: String?, difficulty: String?) async throws -> Adventure {
         var body: [String: Any] = ["title": title, "location": location]
         if let d = description, !d.isEmpty { body["description"] = d }

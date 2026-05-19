@@ -169,7 +169,10 @@ struct MainTabView: View {
     func loadUserRole() {
         Task {
             let user = try? await AuthAPI.shared.getMe()
-            await MainActor.run { userRole = user?.role ?? "user" }
+            await MainActor.run {
+                userRole = user?.role ?? "user"
+                AuthManager.shared.isDev = user?.isDev ?? false
+            }
         }
     }
 }
