@@ -88,6 +88,11 @@ struct BulkPaymentIntentResponse: Codable {
     let splitIds: [Int]
 }
 
+struct ExpenseSplitInput: Codable {
+    let userId: Int
+    let amount: Double
+}
+
 // Stripe fee passthrough: mirrors server-side calculateChargedAmount
 func calculateChargedAmount(_ owed: Double) -> Double {
     return (ceil(((owed + 0.30) / (1.0 - 0.029)) * 100) / 100)

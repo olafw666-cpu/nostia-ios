@@ -47,7 +47,7 @@ struct VaultDetailView: View {
             .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
 
             if selectedTab == 0 {
-                VaultContentView(tripId: currentTrip.id, isKicked: isKicked)
+                VaultContentView(tripId: currentTrip.id, isKicked: isKicked, participants: currentTrip.activeParticipants)
             } else {
                 VaultChatView(tripId: currentTrip.id, isKicked: isKicked)
             }

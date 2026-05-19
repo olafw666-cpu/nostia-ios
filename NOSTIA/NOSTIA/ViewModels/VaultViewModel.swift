@@ -44,9 +44,9 @@ final class VaultViewModel: ObservableObject {
         isLoading = false
     }
 
-    func addExpense(tripId: Int, description: String, amount: Double, category: String?, date: String) async -> Bool {
+    func addExpense(tripId: Int, description: String, amount: Double, category: String?, date: String, splits: [ExpenseSplitInput]) async -> Bool {
         do {
-            try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date)
+            try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date, splits: splits)
             await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             return true
         } catch {
