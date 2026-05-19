@@ -4,15 +4,16 @@ import PhotosUI
 struct CreatePostSheet: View {
     @ObservedObject var vm: FeedViewModel
     @State private var selectedPhoto: PhotosPickerItem?
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: responsive.spacing(16)) {
                     // Text input
                     TextField("What's on your mind?", text: $vm.newPostContent, axis: .vertical)
                         .lineLimit(4...10)
-                        .padding(14)
+                        .padding(responsive.spacing(14))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                         .foregroundColor(.white)
 
@@ -23,7 +24,7 @@ struct CreatePostSheet: View {
                         ZStack(alignment: .topTrailing) {
                             Image(uiImage: uiImage)
                                 .resizable().scaledToFill()
-                                .frame(maxWidth: .infinity).frame(height: 180)
+                                .frame(maxWidth: .infinity).frame(height: responsive.spacing(180))
                                 .clipped().cornerRadius(14)
                             Button {
                                 vm.newPostImageData = nil
@@ -41,7 +42,7 @@ struct CreatePostSheet: View {
                         Label("Add Photo", systemImage: "photo.on.rectangle")
                             .foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity)
-                            .padding(14)
+                            .padding(responsive.spacing(14))
                             .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                     }
                     .onChange(of: selectedPhoto) { _, item in
@@ -54,7 +55,9 @@ struct CreatePostSheet: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(responsive.spacing(16))
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("New Post")

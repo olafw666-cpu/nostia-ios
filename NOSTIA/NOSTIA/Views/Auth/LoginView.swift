@@ -4,6 +4,7 @@ struct LoginView: View {
     @StateObject private var vm = AuthViewModel()
     @State private var username = ""
     @State private var password = ""
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         ScrollView {
@@ -15,15 +16,15 @@ struct LoginView: View {
                     endPoint: .bottomTrailing
                 )
                 .frame(maxWidth: .infinity)
-                .frame(height: 300)
+                .frame(height: responsive.spacing(300))
                 .overlay {
-                    VStack(spacing: 16) {
+                    VStack(spacing: responsive.spacing(16)) {
                         Image(systemName: "safari.fill")
-                            .font(.system(size: 72))
+                            .font(.system(size: responsive.fontSize(72)))
                             .foregroundColor(.white)
                             .shadow(color: .white.opacity(0.3), radius: 20)
                         Text("Welcome Back")
-                            .font(.system(size: 34, weight: .bold))
+                            .font(.system(size: responsive.fontSize(34), weight: .bold))
                             .foregroundColor(.white)
                         Text("Sign in to continue your adventure")
                             .font(.subheadline)
@@ -33,7 +34,7 @@ struct LoginView: View {
                 .ignoresSafeArea(edges: .top)
 
                 // Form
-                VStack(spacing: 20) {
+                VStack(spacing: responsive.spacing(20)) {
                     if let err = vm.errorMessage {
                         Text(err)
                             .font(.footnote)
@@ -64,10 +65,10 @@ struct LoginView: View {
                                 Text("Login")
                             }
                         }
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: responsive.fontSize(18), weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(18)
+                        .padding(responsive.spacing(18))
                         .background(
                             LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                            startPoint: .leading, endPoint: .trailing)
@@ -87,7 +88,9 @@ struct LoginView: View {
                         .font(.subheadline)
                     }
                 }
-                .padding(24)
+                .padding(responsive.spacing(24))
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
         }
         .background(.clear)
@@ -103,15 +106,16 @@ struct NostiaTextField: View {
     let placeholder: String
     @Binding var text: String
     var keyboardType: UIKeyboardType = .default
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: responsive.fontSize(14), weight: .semibold))
                 .foregroundColor(.white.opacity(0.7))
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
-                .padding(16)
+                .padding(responsive.spacing(16))
                 .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                 .foregroundColor(.white)
         }
@@ -123,11 +127,12 @@ struct NostiaSecureField: View {
     let placeholder: String
     @Binding var text: String
     @State private var show = false
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: responsive.fontSize(14), weight: .semibold))
                 .foregroundColor(.white.opacity(0.7))
             HStack {
                 Group {
@@ -140,7 +145,7 @@ struct NostiaSecureField: View {
                         .foregroundColor(Color.nostiaTextMuted)
                 }
             }
-            .padding(16)
+            .padding(responsive.spacing(16))
             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
         }
     }

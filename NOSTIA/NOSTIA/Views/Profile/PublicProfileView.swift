@@ -9,10 +9,11 @@ struct PublicProfileView: View {
     @State private var isLoading = true
     @State private var isFollowActionInProgress = false
     @StateObject private var feedVM = FeedViewModel()
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: responsive.spacing(20)) {
                 if isLoading {
                     ProfileSkeletonView()
                 } else if let u = user {
@@ -20,9 +21,9 @@ struct PublicProfileView: View {
                         imageData: u.profilePictureUrl,
                         initial: u.initial,
                         color: Color.nostiaAccent,
-                        size: 100
+                        size: responsive.spacing(100)
                     )
-                    .padding(.top, 20)
+                    .padding(.top, responsive.spacing(20))
 
                     Text("@\(u.username)")
                         .font(.title2.bold())
@@ -33,7 +34,7 @@ struct PublicProfileView: View {
                         .font(.body)
                         .foregroundColor(bioText != nil ? .white : Color.nostiaTextMuted)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, responsive.spacing(24))
 
                     Text("\(u.followersCount ?? 0) Followers")
                         .font(.subheadline.bold())
@@ -65,10 +66,10 @@ struct PublicProfileView: View {
                     // Posts section
                     Divider()
                         .background(Color.white.opacity(0.15))
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
 
                     SectionHeader(title: "Posts")
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
                         .padding(.top, 4)
 
                     if feedVM.posts.isEmpty {
@@ -85,12 +86,14 @@ struct PublicProfileView: View {
                                 onDislike: { Task { await feedVM.toggleDislike(post: post) } },
                                 onComment: { Task { await feedVM.loadComments(for: post) } }
                             )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, responsive.spacing(16))
                         }
                     }
                 }
             }
             .padding(.bottom, 40)
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .navigationTitle(user?.username ?? "Profile")

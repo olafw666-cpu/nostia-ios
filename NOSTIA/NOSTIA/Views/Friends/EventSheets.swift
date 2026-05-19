@@ -25,6 +25,7 @@ struct EventDetailSheet: View {
     let event: Event
     let vm: EventActionsViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var currentEvent: Event
     @State private var isRsvping = false
     @State private var showDeleteConfirm = false
@@ -52,7 +53,7 @@ struct EventDetailSheet: View {
                        let uiImage = UIImage(data: data) {
                         Color.clear
                             .frame(maxWidth: .infinity)
-                            .frame(height: 200)
+                            .frame(height: responsive.spacing(200))
                             .overlay(
                                 Image(uiImage: uiImage)
                                     .resizable()
@@ -60,11 +61,11 @@ struct EventDetailSheet: View {
                             )
                             .clipped()
                             .cornerRadius(14)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
+                            .padding(.horizontal, responsive.spacing(20))
+                            .padding(.top, responsive.spacing(16))
                     }
 
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: responsive.spacing(16)) {
                         Label(currentEvent.formattedDate, systemImage: "calendar")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
 
@@ -159,7 +160,9 @@ struct EventDetailSheet: View {
                             }
                         }
                     }
-                    .padding(20)
+                    .padding(responsive.spacing(20))
+                    .frame(maxWidth: responsive.sheetMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .background(.clear)
@@ -251,6 +254,7 @@ struct EventFlyerView: View {
     let event: Event
     let vm: EventActionsViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var currentEvent: Event
     @State private var isRsvping = false
 
@@ -291,7 +295,7 @@ struct EventFlyerView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: responsive.spacing(16)) {
                         Text(currentEvent.title).font(.title.bold()).foregroundColor(.white)
                         Label(currentEvent.formattedDate, systemImage: "calendar")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
@@ -326,7 +330,7 @@ struct EventFlyerView: View {
                                     else { Image(systemName: "checkmark.circle.fill") }
                                     Text("Going")
                                 }
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(12))
                                 .background(currentEvent.myRsvp == "going" ? Color.nostiaSuccess : Color.nostiaInput)
                                 .foregroundColor(.white).cornerRadius(12)
                             }
@@ -337,14 +341,16 @@ struct EventFlyerView: View {
                                     else { Image(systemName: "xmark.circle.fill") }
                                     Text("Not Going")
                                 }
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(12))
                                 .background(currentEvent.myRsvp == "not_going" ? Color.nostriaDanger : Color.nostiaInput)
                                 .foregroundColor(.white).cornerRadius(12)
                             }
                             .disabled(isRsvping)
                         }
                     }
-                    .padding(20)
+                    .padding(responsive.spacing(20))
+                    .frame(maxWidth: responsive.sheetMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .ignoresSafeArea(edges: .top)
@@ -402,9 +408,10 @@ struct LinkInsertBar: View {
 struct EventCard: View {
     let event: Event
     var onCreatorTap: ((Int) -> Void)? = nil
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: responsive.spacing(8)) {
             HStack {
                 Text(event.title).font(.headline).foregroundColor(.white)
                 Spacer()
@@ -449,7 +456,7 @@ struct EventCard: View {
                 }
             }
         }
-        .padding(16)
+        .padding(responsive.spacing(16))
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
     }
 }

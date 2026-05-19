@@ -7,6 +7,7 @@ struct FriendsView: View {
     @State private var profileDestination: ProfileDestination?
     @State private var showContactsPicker = false
     @State private var userToUnfollow: FollowUser?
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,15 +26,15 @@ struct FriendsView: View {
                         }
                     }
                 }
-                .padding(12)
+                .padding(responsive.spacing(12))
                 .glassEffect(in: RoundedRectangle(cornerRadius: 12))
 
                 Button("Search") { Task { await vm.search() } }
                     .font(.subheadline.bold()).foregroundColor(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
                     .background(Color.nostiaAccent).cornerRadius(12)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
 
             // Find via Contacts
             Button {
@@ -49,7 +50,7 @@ struct FriendsView: View {
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, responsive.spacing(16))
             .padding(.bottom, 8)
 
             if vm.isSearching {
@@ -74,7 +75,7 @@ struct FriendsView: View {
                         vm.activeTab = .following
                     }
                 }
-                .padding(.horizontal, 16).padding(.bottom, 8)
+                .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 8)
 
                 if vm.isLoading && vm.followers.isEmpty && vm.following.isEmpty { FollowSkeletonView() }
                 else if vm.activeTab == .followers {
@@ -207,6 +208,7 @@ struct FollowUserRow<Trailing: View>: View {
     let user: FollowUser
     var onProfileTap: (() -> Void)? = nil
     let trailingContent: () -> Trailing
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         HStack(spacing: 12) {
@@ -214,7 +216,7 @@ struct FollowUserRow<Trailing: View>: View {
                 onProfileTap?()
             } label: {
                 HStack(spacing: 12) {
-                    AvatarView(initial: user.initial, color: Color.nostiaAccent, size: 50)
+                    AvatarView(initial: user.initial, color: Color.nostiaAccent, size: responsive.spacing(50))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(user.name).font(.headline).foregroundColor(.white)
                         Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
@@ -225,7 +227,7 @@ struct FollowUserRow<Trailing: View>: View {
             Spacer()
             trailingContent()
         }
-        .padding(16)
+        .padding(responsive.spacing(16))
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
     }
@@ -234,10 +236,11 @@ struct FollowUserRow<Trailing: View>: View {
 struct UserSearchRow: View {
     let user: UserSearchResult
     let onFollow: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         HStack(spacing: 12) {
-            AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 50)
+            AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(50))
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.name).font(.headline).foregroundColor(.white)
                 Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
@@ -249,7 +252,7 @@ struct UserSearchRow: View {
                     .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
             }
         }
-        .padding(16)
+        .padding(responsive.spacing(16))
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
     }

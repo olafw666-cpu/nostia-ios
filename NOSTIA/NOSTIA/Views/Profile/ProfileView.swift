@@ -3,6 +3,7 @@ import PhotosUI
 
 struct ProfileView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var user: User?
     @State private var isLoading = true
     @State private var isEditing = false
@@ -19,7 +20,7 @@ struct ProfileView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: responsive.spacing(20)) {
                 if isLoading {
                     ProfileSkeletonView()
                 } else if let u = user {
@@ -29,7 +30,7 @@ struct ProfileView: View {
                             imageData: isEditing ? editImageData : u.profilePictureUrl,
                             initial: u.initial,
                             color: Color.nostiaAccent,
-                            size: 100
+                            size: responsive.spacing(100)
                         )
                         if isEditing {
                             PhotosPicker(selection: $selectedPhoto, matching: .images) {
@@ -44,7 +45,7 @@ struct ProfileView: View {
                             .offset(x: 4, y: 4)
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, responsive.spacing(8))
 
                     // Username (read-only)
                     Text("@\(u.username)")
@@ -58,11 +59,11 @@ struct ProfileView: View {
                                 if editBio.isEmpty {
                                     Text("Write a short bio...")
                                         .foregroundColor(Color.nostiaTextMuted)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 14)
+                                        .padding(.horizontal, responsive.spacing(14))
+                                        .padding(.vertical, responsive.spacing(14))
                                 }
                                 TextEditor(text: $editBio)
-                                    .frame(minHeight: 80)
+                                    .frame(minHeight: responsive.spacing(80))
                                     .padding(8)
                                     .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                                     .foregroundColor(.white)
@@ -75,14 +76,14 @@ struct ProfileView: View {
                                     .foregroundColor(editBio.count > 100 ? Color.nostriaDanger : Color.nostiaTextMuted)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
                     } else {
                         let bioText = u.bio?.isEmpty == false ? u.bio! : nil
                         Text(bioText ?? "No bio yet")
                             .font(.body)
                             .foregroundColor(bioText != nil ? .white : Color.nostiaTextMuted)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, responsive.spacing(24))
                     }
 
                     // Follower count
@@ -94,12 +95,12 @@ struct ProfileView: View {
                         Text(err)
                             .font(.caption)
                             .foregroundColor(Color.nostriaDanger)
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, responsive.spacing(24))
                     }
 
                     Divider()
                         .background(Color.white.opacity(0.15))
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
 
                     // Buttons
                     if isEditing {
@@ -113,7 +114,7 @@ struct ProfileView: View {
                                 Text("Cancel")
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .padding(responsive.spacing(16))
                                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
@@ -129,16 +130,16 @@ struct ProfileView: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding()
+                                .padding(responsive.spacing(16))
                                 .background(editBio.count > 100 ? Color.nostiaInput : Color.nostiaAccent)
                                 .foregroundColor(.white)
                                 .cornerRadius(14)
                             }
                             .disabled(isSaving || editBio.count > 100)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
                     } else {
-                        VStack(spacing: 12) {
+                        VStack(spacing: responsive.spacing(12)) {
                             Button {
                                 editBio = u.bio ?? ""
                                 editImageData = u.profilePictureUrl
@@ -148,11 +149,11 @@ struct ProfileView: View {
                                     .font(.subheadline.bold())
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .padding(responsive.spacing(16))
                                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, responsive.spacing(20))
 
                             Button {
                                 feedVM.showCreateSheet = true
@@ -161,12 +162,12 @@ struct ProfileView: View {
                                     .font(.subheadline.bold())
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .padding(responsive.spacing(16))
                                     .background(Color.nostiaAccent)
                                     .cornerRadius(14)
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, responsive.spacing(20))
 
                             Button {
                                 showSettings = true
@@ -175,21 +176,21 @@ struct ProfileView: View {
                                     .font(.subheadline)
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .padding(responsive.spacing(16))
                                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, responsive.spacing(20))
                         }
                     }
 
                     // Posts section
                     Divider()
                         .background(Color.white.opacity(0.15))
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
 
                     SectionHeader(title: "Posts")
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
                         .padding(.top, 4)
 
                     if feedVM.isLoading {
@@ -208,12 +209,14 @@ struct ProfileView: View {
                                 onDislike: { Task { await feedVM.toggleDislike(post: post) } },
                                 onComment: { Task { await feedVM.loadComments(for: post) } }
                             )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, responsive.spacing(16))
                         }
                     }
                 }
             }
             .padding(.bottom, 40)
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .task {

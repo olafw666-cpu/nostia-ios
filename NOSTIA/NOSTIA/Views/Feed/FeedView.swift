@@ -3,6 +3,7 @@ import SwiftUI
 struct FeedView: View {
     @StateObject private var vm = FeedViewModel()
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         Group {
@@ -12,7 +13,7 @@ struct FeedView: View {
                 EmptyStateView(icon: "photo.on.rectangle.angled", text: "No posts yet", sub: "Be the first to share something!")
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: responsive.spacing(12)) {
                         ForEach(vm.posts) { post in
                             PostCard(
                                 post: post,
@@ -25,7 +26,9 @@ struct FeedView: View {
                             )
                         }
                     }
-                    .padding(16)
+                    .padding(responsive.spacing(16))
+                    .frame(maxWidth: responsive.contentMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .refreshable { await vm.loadFeed() }
             }

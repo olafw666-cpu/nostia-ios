@@ -10,21 +10,22 @@ struct SignupView: View {
     @State private var consentGranted = false
     @State private var pendingConsent: (location: Bool, data: Bool)?
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .frame(maxWidth: .infinity).frame(height: 240)
+                    .frame(maxWidth: .infinity).frame(height: responsive.spacing(240))
                     .overlay {
-                        VStack(spacing: 12) {
+                        VStack(spacing: responsive.spacing(12)) {
                             Image(systemName: "safari.fill")
-                                .font(.system(size: 64))
+                                .font(.system(size: responsive.fontSize(64)))
                                 .foregroundColor(.white)
                                 .shadow(color: .white.opacity(0.3), radius: 20)
                             Text("Join Nostia")
-                                .font(.system(size: 34, weight: .bold))
+                                .font(.system(size: responsive.fontSize(34), weight: .bold))
                                 .foregroundColor(.white)
                             Text("Start your adventure today")
                                 .font(.subheadline)
@@ -32,7 +33,7 @@ struct SignupView: View {
                         }
                     }
 
-                VStack(spacing: 20) {
+                VStack(spacing: responsive.spacing(20)) {
                     if let err = vm.errorMessage {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,8 +79,8 @@ struct SignupView: View {
                                 Text(consentGranted ? "Create Account" : "Continue to Consent")
                             }
                         }
-                        .font(.system(size: 18, weight: .bold)).foregroundColor(.white)
-                        .frame(maxWidth: .infinity).padding(18)
+                        .font(.system(size: responsive.fontSize(18), weight: .bold)).foregroundColor(.white)
+                        .frame(maxWidth: .infinity).padding(responsive.spacing(18))
                         .background(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                    startPoint: .leading, endPoint: .trailing))
                         .cornerRadius(16)
@@ -97,7 +98,9 @@ struct SignupView: View {
                         .font(.subheadline)
                     }
                 }
-                .padding(24)
+                .padding(responsive.spacing(24))
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
         }
         .background(.clear)

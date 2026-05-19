@@ -2,16 +2,20 @@ import SwiftUI
 
 struct PrivacyView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var user: User?
     @State private var consentStatus: ConsentStatus?
     @State private var isLoading = true
     @State private var showDeleteAlert = false
-    @State private var showRevokeAlert = false
     @State private var message: String?
+    @State private var showDeleteAccountStep1 = false
+    @State private var showDeleteAccountStep2 = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountError: String?
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: responsive.spacing(16)) {
                 if isLoading {
                     ProgressView().tint(Color.nostiaAccent).padding(40)
                 } else {
@@ -36,7 +40,7 @@ struct PrivacyView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
-                            .font(.subheadline).padding(16)
+                            .font(.subheadline).padding(responsive.spacing(16))
                             .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
                         }
                     }
@@ -52,16 +56,27 @@ struct PrivacyView: View {
                                  value: consentStatus?.dataCollectionConsent == true ? "Granted" : "Not granted",
                                  valueColor: consentStatus?.dataCollectionConsent == true ? Color.nostiaSuccess : Color.nostriaDanger)
 
-
-                        Button { showRevokeAlert = true } label: {
+                        Button { showDeleteAccountStep1 = true } label: {
                             HStack {
-                                Image(systemName: "xmark.shield").foregroundColor(Color.nostriaDanger)
-                                Text("Revoke All Consent").foregroundColor(Color.nostriaDanger)
+                                Image(systemName: "person.crop.circle.badge.minus").foregroundColor(Color.nostriaDanger)
+                                Text("Delete Account").foregroundColor(Color.nostriaDanger)
                                 Spacer()
-                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                                if isDeletingAccount {
+                                    ProgressView().tint(Color.nostriaDanger)
+                                } else {
+                                    Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                                }
                             }
-                            .padding(16)
+                            .padding(responsive.spacing(16))
                         }
+                        .disabled(isDeletingAccount)
+                    }
+
+                    if let err = deleteAccountError {
+                        Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(responsive.spacing(12))
+                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     // Data section
@@ -73,7 +88,7 @@ struct PrivacyView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
-                            .padding(16)
+                            .padding(responsive.spacing(16))
                         }
 
                         Button { showDeleteAlert = true } label: {
@@ -83,7 +98,7 @@ struct PrivacyView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
-                            .padding(16)
+                            .padding(responsive.spacing(16))
                         }
                     }
 
@@ -96,7 +111,7 @@ struct PrivacyView: View {
                             Spacer()
                         }
                         .font(.headline).foregroundColor(.white)
-                        .padding(16)
+                        .padding(responsive.spacing(16))
                         .background(Color.nostriaDanger).cornerRadius(14)
                         .shadow(color: Color.nostriaDanger.opacity(0.4), radius: 10, y: 5)
                     }
@@ -110,15 +125,23 @@ struct PrivacyView: View {
                     }
                 }
             }
-            .padding(16).padding(.bottom, 40)
+            .padding(responsive.spacing(16)).padding(.bottom, 40)
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .task { await loadData() }
-        .alert("Revoke Consent", isPresented: $showRevokeAlert) {
+        .alert("Delete Your Account?", isPresented: $showDeleteAccountStep1) {
             Button("Cancel", role: .cancel) {}
-            Button("Revoke", role: .destructive) { Task { await revokeConsent() } }
+            Button("Continue") { showDeleteAccountStep2 = true }
         } message: {
-            Text("This will revoke all consents and you may lose access to some features.")
+            Text("This will permanently delete your account and all associated data including your posts, events, vaults, messages, and follower relationships. This action cannot be undone.")
+        }
+        .alert("Are You Absolutely Sure?", isPresented: $showDeleteAccountStep2) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Forever", role: .destructive) { Task { await deleteAccount() } }
+        } message: {
+            Text("Your account and all your data will be deleted forever. You will be logged out immediately. There is no way to recover your account after this step.")
         }
         .alert("Delete Data", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -137,12 +160,6 @@ struct PrivacyView: View {
         isLoading = false
     }
 
-    func revokeConsent() async {
-        try? await APIClient.shared.requestVoid("/consent/revoke", method: "POST")
-        message = "Consent revoked."
-        await loadData()
-    }
-
     func requestDataExport() async {
         try? await APIClient.shared.requestVoid("/privacy/data-request", method: "POST")
         message = "Data export requested. You'll receive an email when it's ready."
@@ -151,6 +168,24 @@ struct PrivacyView: View {
     func deleteData() async {
         try? await APIClient.shared.requestVoid("/privacy/delete-data", method: "POST")
         authManager.logout()
+    }
+
+    func deleteAccount() async {
+        isDeletingAccount = true
+        deleteAccountError = nil
+        do {
+            try await APIClient.shared.requestVoid("/users/me", method: "DELETE")
+            if let bgURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+                .first?.appendingPathComponent("home_background.jpg") {
+                try? FileManager.default.removeItem(at: bgURL)
+            }
+            UserDefaults.standard.removeObject(forKey: "nostia_pending_invite_token")
+            UserDefaults.standard.removeObject(forKey: "nostia_pending_profile_setup")
+            authManager.logout()
+        } catch {
+            isDeletingAccount = false
+            deleteAccountError = "Something went wrong. Your account was not deleted. Please try again."
+        }
     }
 }
 
@@ -198,6 +233,7 @@ struct GlassRow: View {
     let label: String
     let value: String
     var valueColor: Color = Color.nostiaTextSecond
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         HStack {
@@ -207,7 +243,7 @@ struct GlassRow: View {
             Text(value).foregroundColor(valueColor)
         }
         .font(.subheadline)
-        .padding(16)
+        .padding(responsive.spacing(16))
         .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
     }
 }
