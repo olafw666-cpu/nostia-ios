@@ -399,22 +399,47 @@ struct CreateTripSheet: View {
 
 struct CreateExpenseSheet: View {
     let tripId: Int
+    let members: [TripParticipant]
     var showCategory: Bool = true
-    let onSave: (String, Double, String?, String) async -> Void
+    let onSave: (String, Double, String?, String, [ExpenseSplitInput]) async -> Void
 
     @State private var description = ""
     @State private var amountText = ""
     @State private var category = ""
     @State private var dateValue = Date()
     @State private var isSaving = false
+
+    // Split state
+    @State private var selectedMemberIds: Set<Int> = []
+    @State private var memberAmounts: [Int: String] = [:]
+    @State private var isCustomMode = false
+
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
-    let categories = ["Food", "Transport", "Accommodation", "Activities", "Shopping", "Other"]
-
+    private let currentUserId = AuthManager.shared.currentUserId
+    private let categories = ["Food", "Transport", "Accommodation", "Activities", "Shopping", "Other"]
     private let dateFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
     }()
+
+    private var activeMembers: [TripParticipant] { members.filter { !$0.isKicked } }
+    private var expenseAmount: Double { Double(amountText) ?? 0 }
+    private var assignedTotal: Double {
+        selectedMemberIds.reduce(0.0) { sum, uid in sum + (Double(memberAmounts[uid] ?? "") ?? 0) }
+    }
+    private var totalMatchesExpense: Bool {
+        expenseAmount > 0 && abs(assignedTotal - expenseAmount) < 0.005
+    }
+    private var allMembersSelected: Bool {
+        !activeMembers.isEmpty && selectedMemberIds.count == activeMembers.count
+    }
+    private var splitIsValid: Bool {
+        guard expenseAmount > 0, selectedMemberIds.count >= 2 else { return false }
+        let hasZeroOrInvalid = selectedMemberIds.contains { (Double(memberAmounts[$0] ?? "") ?? 0) <= 0 }
+        return !hasZeroOrInvalid && totalMatchesExpense
+    }
+    private var saveDisabled: Bool { description.isEmpty || expenseAmount <= 0 || !splitIsValid || isSaving }
 
     var body: some View {
         NavigationStack {
@@ -432,6 +457,9 @@ struct CreateExpenseSheet: View {
                         }
                         .padding(responsive.spacing(16))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .onChange(of: amountText) { _ in
+                        if !isCustomMode { recomputeEvenSplit() }
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
@@ -461,6 +489,8 @@ struct CreateExpenseSheet: View {
                             }
                         }
                     }
+
+                    splitBetweenSection
                 }
                 .padding(responsive.spacing(20))
                 .frame(maxWidth: responsive.sheetMaxWidth)
@@ -476,17 +506,18 @@ struct CreateExpenseSheet: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        guard let amount = Double(amountText), amount > 0, !description.isEmpty else { return }
+                        guard !saveDisabled else { return }
                         isSaving = true
+                        let splits = buildSplits()
                         Task {
-                            await onSave(description, amount, category.isEmpty ? nil : category, dateFmt.string(from: dateValue))
+                            await onSave(description, expenseAmount, category.isEmpty ? nil : category, dateFmt.string(from: dateValue), splits)
                             isSaving = false
                         }
                     } label: {
                         if isSaving { ProgressView().tint(Color.nostiaAccent) }
-                        else { Text("Add").fontWeight(.semibold).foregroundColor(Color.nostiaAccent) }
+                        else { Text("Add").fontWeight(.semibold).foregroundColor(saveDisabled ? Color.nostiaTextMuted : Color.nostiaAccent) }
                     }
-                    .disabled(description.isEmpty || amountText.isEmpty || isSaving)
+                    .disabled(saveDisabled)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -498,6 +529,168 @@ struct CreateExpenseSheet: View {
             }
         }
         .presentationBackground(.ultraThinMaterial)
+        .onAppear { initializeSplit() }
+    }
+
+    // MARK: - Split Between Section
+
+    private var splitBetweenSection: some View {
+        VStack(alignment: .leading, spacing: responsive.spacing(10)) {
+            HStack {
+                Text("Split Between")
+                    .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                Spacer()
+                if isCustomMode {
+                    Button("Split Evenly") {
+                        isCustomMode = false
+                        recomputeEvenSplit()
+                    }
+                    .font(.caption.bold())
+                    .foregroundColor(Color.nostiaAccent)
+                }
+            }
+
+            // Everyone master toggle
+            Button { toggleEveryone() } label: {
+                HStack(spacing: 10) {
+                    AvatarView(initial: "A", color: Color.nostriaPurple, size: responsive.spacing(36))
+                    Text("Everyone").font(.subheadline.bold()).foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: allMembersSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(allMembersSelected ? Color.nostiaAccent : Color.nostiaTextMuted)
+                        .font(.title3)
+                }
+                .padding(responsive.spacing(12))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
+            ForEach(activeMembers) { member in
+                memberSplitRow(for: member)
+            }
+
+            if selectedMemberIds.count < 2 {
+                Text("At least 2 members must be included in the split.")
+                    .font(.caption)
+                    .foregroundColor(Color.nostriaDanger)
+                    .padding(.leading, 4)
+            }
+
+            if expenseAmount > 0 {
+                HStack {
+                    Text("Total assigned:").font(.caption).foregroundColor(Color.nostiaTextSecond)
+                    Spacer()
+                    Text(String(format: "$%.2f of $%.2f", assignedTotal, expenseAmount))
+                        .font(.caption.bold())
+                        .foregroundColor(totalMatchesExpense ? Color.nostiaSuccess : Color.nostriaDanger)
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func memberSplitRow(for member: TripParticipant) -> some View {
+        let isSelected = selectedMemberIds.contains(member.id)
+        let isMe = member.id == currentUserId
+        let displayName = member.username.map { "@\($0)" } ?? member.name ?? "User \(member.id)"
+        let amountVal = Double(memberAmounts[member.id] ?? "") ?? 0
+        let hasZeroError = isSelected && amountVal <= 0 && expenseAmount > 0
+
+        VStack(alignment: .leading, spacing: 2) {
+            Button { toggleMember(member) } label: {
+                HStack(spacing: 10) {
+                    AvatarView(
+                        initial: String((member.name ?? "U").prefix(1)).uppercased(),
+                        color: Color.nostiaAccent,
+                        size: responsive.spacing(36)
+                    )
+                    HStack(spacing: 4) {
+                        Text(displayName).font(.subheadline).foregroundColor(.white)
+                        if isMe {
+                            Text("(you)").font(.caption).foregroundColor(Color.nostiaTextMuted)
+                        }
+                    }
+                    Spacer()
+                    TextField("0.00", text: Binding(
+                        get: { memberAmounts[member.id] ?? "0.00" },
+                        set: { val in
+                            memberAmounts[member.id] = val
+                            isCustomMode = true
+                        }
+                    ))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .font(.subheadline.bold())
+                    .foregroundColor(isSelected ? .white : Color.nostiaTextMuted)
+                    .frame(width: 72)
+                    .disabled(!isSelected)
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isSelected ? Color.nostiaAccent : Color.nostiaTextMuted)
+                        .font(.title3)
+                }
+                .padding(responsive.spacing(12))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .opacity(isSelected ? 1.0 : 0.6)
+            }
+            .buttonStyle(.plain)
+
+            if hasZeroError {
+                Text("Amount must be greater than $0.")
+                    .font(.caption2)
+                    .foregroundColor(Color.nostriaDanger)
+                    .padding(.leading, responsive.spacing(50))
+            }
+        }
+    }
+
+    // MARK: - Split Logic
+
+    private func initializeSplit() {
+        selectedMemberIds = Set(activeMembers.map { $0.id })
+        for member in activeMembers { memberAmounts[member.id] = "0.00" }
+        recomputeEvenSplit()
+    }
+
+    private func recomputeEvenSplit() {
+        let selected = activeMembers.filter { selectedMemberIds.contains($0.id) }
+        guard !selected.isEmpty, expenseAmount > 0 else { return }
+        let totalCents = Int(round(expenseAmount * 100))
+        let base = totalCents / selected.count
+        let remainder = totalCents % selected.count
+        for (i, member) in selected.enumerated() {
+            let cents = base + (i < remainder ? 1 : 0)
+            memberAmounts[member.id] = String(format: "%.2f", Double(cents) / 100.0)
+        }
+    }
+
+    private func toggleEveryone() {
+        if allMembersSelected {
+            selectedMemberIds.removeAll()
+        } else {
+            selectedMemberIds = Set(activeMembers.map { $0.id })
+            if !isCustomMode { recomputeEvenSplit() }
+        }
+    }
+
+    private func toggleMember(_ member: TripParticipant) {
+        if selectedMemberIds.contains(member.id) {
+            selectedMemberIds.remove(member.id)
+        } else {
+            selectedMemberIds.insert(member.id)
+        }
+        if !isCustomMode { recomputeEvenSplit() }
+    }
+
+    private func buildSplits() -> [ExpenseSplitInput] {
+        activeMembers
+            .filter { selectedMemberIds.contains($0.id) }
+            .compactMap { member in
+                guard let amt = Double(memberAmounts[member.id] ?? ""), amt > 0 else { return nil }
+                return ExpenseSplitInput(userId: member.id, amount: amt)
+            }
     }
 }
 

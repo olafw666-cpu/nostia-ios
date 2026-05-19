@@ -5,6 +5,7 @@ import StripePaymentSheet
 struct VaultContentView: View {
     let tripId: Int
     var isKicked: Bool = false
+    var participants: [TripParticipant] = []
 
     @StateObject private var vm = VaultViewModel()
     @State private var showAddExpense = false
@@ -146,8 +147,8 @@ struct VaultContentView: View {
             Text("Send a payment reminder to \(reminderTargetUsername.map { "@\($0)" } ?? "this member")?")
         }
         .sheet(isPresented: $showAddExpense) {
-            CreateExpenseSheet(tripId: tripId, showCategory: false) { desc, amount, cat, date in
-                let ok = await vm.addExpense(tripId: tripId, description: desc, amount: amount, category: cat, date: date)
+            CreateExpenseSheet(tripId: tripId, members: participants, showCategory: false) { desc, amount, cat, date, splits in
+                let ok = await vm.addExpense(tripId: tripId, description: desc, amount: amount, category: cat, date: date, splits: splits)
                 if ok { showAddExpense = false; await vm.loadVault(tripId: tripId) }
             }
         }

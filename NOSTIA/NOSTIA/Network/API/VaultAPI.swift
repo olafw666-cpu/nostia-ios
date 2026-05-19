@@ -9,12 +9,13 @@ final class VaultAPI {
         return try await client.request("/vault/trip/\(tripId)")
     }
 
-    func createEntry(tripId: Int, description: String, amount: Double, category: String?, date: String) async throws {
+    func createEntry(tripId: Int, description: String, amount: Double, category: String?, date: String, splits: [ExpenseSplitInput]) async throws {
         var body: [String: Any] = [
             "tripId": tripId,
             "description": description,
             "amount": amount,
-            "date": date
+            "date": date,
+            "splits": splits.map { ["userId": $0.userId, "amount": $0.amount] }
         ]
         if let cat = category { body["category"] = cat }
         try await client.requestVoid("/vault", method: "POST", body: body)
