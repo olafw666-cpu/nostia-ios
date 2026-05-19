@@ -435,7 +435,7 @@ struct CreateExpenseSheet: View {
         !activeMembers.isEmpty && selectedMemberIds.count == activeMembers.count
     }
     private var splitIsValid: Bool {
-        guard expenseAmount > 0, selectedMemberIds.count >= 2 else { return false }
+        guard expenseAmount > 0, selectedMemberIds.count >= 1 else { return false }
         let hasZeroOrInvalid = selectedMemberIds.contains { (Double(memberAmounts[$0] ?? "") ?? 0) <= 0 }
         return !hasZeroOrInvalid && totalMatchesExpense
     }
@@ -570,8 +570,8 @@ struct CreateExpenseSheet: View {
                 memberSplitRow(for: member)
             }
 
-            if selectedMemberIds.count < 2 {
-                Text("At least 2 members must be included in the split.")
+            if selectedMemberIds.count < 1 {
+                Text("At least 1 member must be included in the split.")
                     .font(.caption)
                     .foregroundColor(Color.nostriaDanger)
                     .padding(.leading, 4)
