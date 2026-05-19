@@ -17,6 +17,7 @@ struct VaultDetailView: View {
     @State private var editDescription = ""
     @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     // Use the latest trip data from the VM if available
     private var currentTrip: Trip {
@@ -43,7 +44,7 @@ struct VaultDetailView: View {
                 TabButton(title: "Vault", isActive: selectedTab == 0) { selectedTab = 0 }
                 TabButton(title: "Chat", isActive: selectedTab == 1) { selectedTab = 1 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
 
             if selectedTab == 0 {
                 VaultContentView(tripId: currentTrip.id, isKicked: isKicked)
@@ -140,6 +141,7 @@ struct KickMemberSheet: View {
     @State private var actionLoadingId: Int?
     @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var kickableParticipants: [TripParticipant] {
         guard let me = AuthManager.shared.currentUserId else { return [] }
@@ -158,12 +160,12 @@ struct KickMemberSheet: View {
                             HStack(spacing: 12) {
                                 AvatarView(
                                     initial: String((participant.name ?? "U").prefix(1)).uppercased(),
-                                    color: Color.nostiaAccent, size: 38
+                                    color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
                                     if let uname = participant.username {
-                                        Text("@\(uname)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                                        Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
                                 }
                                 Spacer()
@@ -180,23 +182,25 @@ struct KickMemberSheet: View {
                                         }
                                     } label: {
                                         Text("Kick")
-                                            .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                                            .padding(.horizontal, 14).padding(.vertical, 8)
+                                            .font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
+                                            .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(8))
                                             .background(Color.nostriaDanger).cornerRadius(8)
                                     }
                                 }
                             }
-                            .padding(14)
+                            .padding(responsive.spacing(14))
                             .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                            .padding(.horizontal, 16).padding(.vertical, 4)
+                            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         }
                     }
                     if let err = errorMessage {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
-                            .padding(.horizontal, 20).padding(.top, 12)
+                            .padding(.horizontal, responsive.spacing(20)).padding(.top, 12)
                     }
                 }
                 .padding(.top, 8)
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("Kick Member")
@@ -220,6 +224,7 @@ struct TransferLeadershipSheet: View {
     @State private var actionLoadingId: Int?
     @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var eligibleParticipants: [TripParticipant] {
         guard let me = AuthManager.shared.currentUserId else { return [] }
@@ -238,12 +243,12 @@ struct TransferLeadershipSheet: View {
                             HStack(spacing: 12) {
                                 AvatarView(
                                     initial: String((participant.name ?? "U").prefix(1)).uppercased(),
-                                    color: Color.nostiaAccent, size: 38
+                                    color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
+                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
                                     if let uname = participant.username {
-                                        Text("@\(uname)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                                        Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
                                 }
                                 Spacer()
@@ -260,23 +265,25 @@ struct TransferLeadershipSheet: View {
                                         }
                                     } label: {
                                         Text("Make Leader")
-                                            .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                                            .padding(.horizontal, 14).padding(.vertical, 8)
+                                            .font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
+                                            .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(8))
                                             .background(Color.nostiaAccent).cornerRadius(8)
                                     }
                                 }
                             }
-                            .padding(14)
+                            .padding(responsive.spacing(14))
                             .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                            .padding(.horizontal, 16).padding(.vertical, 4)
+                            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         }
                     }
                     if let err = errorMessage {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
-                            .padding(.horizontal, 20).padding(.top, 12)
+                            .padding(.horizontal, responsive.spacing(20)).padding(.top, 12)
                     }
                 }
                 .padding(.top, 8)
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("Transfer Leadership")

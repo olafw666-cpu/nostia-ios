@@ -16,10 +16,11 @@ struct VaultContentView: View {
     @State private var reminderTargetBalance: Double = 0
 
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: responsive.spacing(16)) {
                 if vm.isLoading && vm.vaultData == nil {
                     VaultExpenseSkeletonView()
                 } else if let data = vm.vaultData {
@@ -27,20 +28,20 @@ struct VaultContentView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Total Expenses").font(.footnote).foregroundColor(Color.nostiaTextSecond)
                             Text(String(format: "$%.2f", data.totalAmount ?? 0))
-                                .font(.system(size: 34, weight: .bold)).foregroundColor(.white)
+                                .font(.system(size: responsive.fontSize(34), weight: .bold)).foregroundColor(.white)
                         }
                         Spacer()
                         if !isKicked {
                             Button { showAddExpense = true } label: {
                                 Label("Add Expense", systemImage: "plus")
                                     .font(.subheadline.bold()).foregroundColor(.white)
-                                    .padding(.horizontal, 16).padding(.vertical, 10)
+                                    .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
                                     .background(Color.nostiaAccent).cornerRadius(12)
                                     .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
                             }
                         }
                     }
-                    .padding(16)
+                    .padding(responsive.spacing(16))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 18))
 
                     if isKicked {
@@ -95,7 +96,9 @@ struct VaultContentView: View {
                     }
                 }
             }
-            .padding(16).padding(.bottom, 40)
+            .padding(responsive.spacing(16)).padding(.bottom, 40)
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .refreshable { await vm.loadVault(tripId: tripId) }
@@ -239,6 +242,7 @@ struct BalanceRow: View {
     let isOwnRow: Bool
     let onTapOwn: () -> Void
     let onTapOther: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var displayName: String { balance.username.map { "@\($0)" } ?? balance.name }
     private var isPayable: Bool { isOwnRow && balance.balance < 0 }
@@ -252,7 +256,7 @@ struct BalanceRow: View {
             }
         } label: {
             HStack(spacing: 12) {
-                AvatarView(initial: String(balance.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 44)
+                AvatarView(initial: String(balance.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(44))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(displayName).font(.headline).foregroundColor(.white)
                     HStack(spacing: 4) {
@@ -276,7 +280,7 @@ struct BalanceRow: View {
                         .font(.caption.bold()).foregroundColor(Color.nostiaTextMuted)
                 }
             }
-            .padding(16)
+            .padding(responsive.spacing(16))
             .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
@@ -296,6 +300,7 @@ struct ExpenseCard: View {
     let payingId: Int?
 
     @State private var showDeleteAlert = false
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var canDelete: Bool {
         guard let me = currentUserId else { return false }
@@ -307,7 +312,7 @@ struct ExpenseCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: responsive.spacing(12)) {
             HStack {
                 Image(systemName: "doc.text").foregroundColor(Color.nostiaWarning).font(.title3)
                 VStack(alignment: .leading, spacing: 2) {
@@ -382,7 +387,7 @@ struct ExpenseCard: View {
                 }
             }
         }
-        .padding(16)
+        .padding(responsive.spacing(16))
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .alert("Delete Expense", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -403,6 +408,7 @@ struct PayTotalSheet: View {
     let onCardPay: ([Int]) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var total: Double { unpaidSplits.reduce(0) { $0 + $1.amount } }
     private var splitIds: [Int] { unpaidSplits.map(\.id) }
@@ -410,7 +416,7 @@ struct PayTotalSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: responsive.spacing(16)) {
                     if unpaidSplits.isEmpty {
                         EmptyStateView(icon: "checkmark.circle", text: "All settled up!", sub: "You have no outstanding splits")
                             .padding(.top, 40)
@@ -425,7 +431,7 @@ struct PayTotalSheet: View {
                                 Text(String(format: "$%.2f", split.amount))
                                     .font(.subheadline.bold()).foregroundColor(.white)
                             }
-                            .padding(14)
+                            .padding(responsive.spacing(14))
                             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                         }
 
@@ -434,13 +440,13 @@ struct PayTotalSheet: View {
                                 Text("Total").font(.headline).foregroundColor(Color.nostiaTextSecond)
                                 Spacer()
                                 Text(String(format: "$%.2f", total))
-                                    .font(.system(size: 28, weight: .bold)).foregroundColor(.white)
+                                    .font(.system(size: responsive.fontSize(28), weight: .bold)).foregroundColor(.white)
                             }
                             Text(String(format: "Card charge: $%.2f (includes Stripe fee)", calculateChargedAmount(total)))
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                         }
-                        .padding(16)
+                        .padding(responsive.spacing(16))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
 
                         HStack(spacing: 12) {
@@ -449,7 +455,7 @@ struct PayTotalSheet: View {
                             } label: {
                                 Text("Pay Cash")
                                     .font(.headline.bold()).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
                                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.2), lineWidth: 1))
                             }
@@ -458,14 +464,16 @@ struct PayTotalSheet: View {
                             } label: {
                                 Text("Pay with Card")
                                     .font(.headline.bold()).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
                                     .background(Color.nostiaAccent).cornerRadius(14)
                                     .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
                             }
                         }
                     }
                 }
-                .padding(16)
+                .padding(responsive.spacing(16))
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("Pay Total")

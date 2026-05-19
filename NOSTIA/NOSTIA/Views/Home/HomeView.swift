@@ -7,6 +7,7 @@ struct HomeView: View {
     @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -35,12 +36,12 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: responsive.spacing(16)) {
                 // Welcome header
                 LinearGradient(colors: [Color.nostiaAccent.opacity(0.85), Color.nostriaPurple.opacity(0.85)],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
                     .cornerRadius(20)
-                    .frame(height: 150)
+                    .frame(height: responsive.spacing(150))
                     .overlay {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -48,7 +49,7 @@ struct HomeView: View {
                                     .font(.subheadline)
                                     .foregroundColor(Color(hex: "E0E7FF"))
                                 Text(vm.user?.name ?? "Adventurer")
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.system(size: responsive.fontSize(28), weight: .bold))
                                     .foregroundColor(.white)
                                 Text("Your next adventure awaits")
                                     .font(.subheadline)
@@ -67,7 +68,7 @@ struct HomeView: View {
                                 )
                             }
                         }
-                        .padding(20)
+                        .padding(responsive.spacing(20))
                     }
                     .shadow(color: Color.nostiaAccent.opacity(0.35), radius: 20, y: 8)
 
@@ -136,9 +137,11 @@ struct HomeView: View {
                     }
                 }
             }
-            .padding(16)
-                .padding(.bottom, 40)
-            }
+            .padding(responsive.spacing(16))
+            .padding(.bottom, 40)
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
+        }
             .background {
                 if let bgImage = backgroundImage {
                     Image(uiImage: bgImage)
@@ -238,17 +241,18 @@ struct HomeView: View {
 struct StatCard: View {
     let icon: String; let color: Color; let count: Int; let label: String
     var onTap: (() -> Void)? = nil
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     var body: some View {
         Button {
             onTap?()
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: icon).font(.title2).foregroundColor(color)
-                Text("\(count)").font(.system(size: 24, weight: .bold)).foregroundColor(.white)
+                Text("\(count)").font(.system(size: responsive.fontSize(24), weight: .bold)).foregroundColor(.white)
                 Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
             }
             .frame(maxWidth: .infinity)
-            .padding(16)
+            .padding(responsive.spacing(16))
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)

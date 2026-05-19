@@ -34,6 +34,7 @@ final class EventsViewModel: ObservableObject {
 struct EventsView: View {
     @StateObject private var vm = EventsViewModel()
     @State private var actionsVM = EventActionsViewModel()
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     // All events minus any that are already in goingEvents (avoid duplicates)
     private var otherEvents: [Event] {
@@ -59,7 +60,7 @@ struct EventsView: View {
                                     .buttonStyle(.plain)
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                    .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
                                 }
                             } header: {
                                 Text("Going")
@@ -77,7 +78,7 @@ struct EventsView: View {
                                     .buttonStyle(.plain)
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                    .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
                                 }
                             } header: {
                                 Text(vm.goingEvents.isEmpty ? "All Events" : "Nearby Events")
@@ -97,12 +98,12 @@ struct EventsView: View {
 
             Button { vm.showCreate = true } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .bold)).foregroundColor(.white)
-                    .frame(width: 56, height: 56)
+                    .font(.system(size: responsive.fontSize(22), weight: .bold)).foregroundColor(.white)
+                    .frame(width: responsive.spacing(56), height: responsive.spacing(56))
                     .background(Color.nostiaAccent).clipShape(Circle())
                     .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 12, y: 6)
             }
-            .padding(20)
+            .padding(responsive.spacing(20))
         }
         .task { await vm.loadAll() }
         .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
@@ -132,6 +133,7 @@ struct CreateEventFromDiscoverSheet: View {
     let onCreated: (Event) -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var locationManager: LocationManager
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     @State private var step = 0
     @State private var selectedCoord: CLLocationCoordinate2D?
@@ -181,8 +183,8 @@ struct CreateEventFromDiscoverSheet: View {
                                 span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                             ))
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
+                        .padding(.horizontal, responsive.spacing(16))
+                        .padding(.top, responsive.spacing(12))
 
                         Text(selectedCoord == nil ? "Search or tap to place pin" : "Tap to move pin")
                             .font(.caption).foregroundColor(.white.opacity(0.8))
@@ -216,7 +218,7 @@ struct CreateEventFromDiscoverSheet: View {
                 }
             } else if let coord = selectedCoord {
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: responsive.spacing(16)) {
                         Map(initialPosition: .region(MKCoordinateRegion(
                             center: coord,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -260,16 +262,16 @@ struct CreateEventFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Date & Time *")
-                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                                 .datePickerStyle(.compact).labelsHidden()
-                                .padding(12).glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                                .padding(responsive.spacing(12)).glassEffect(in: RoundedRectangle(cornerRadius: 12))
                                 .colorScheme(.dark)
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Visibility")
-                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             HStack(spacing: 8) {
                                 ForEach(visibilityOptions, id: \.self) { opt in
                                     FilterChip(title: opt.capitalized, isActive: visibility == opt) { visibility = opt }
@@ -282,10 +284,10 @@ struct CreateEventFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description")
-                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             LinkInsertBar(text: $description)
                             TextEditor(text: $description)
-                                .frame(minHeight: 72).padding(8)
+                                .frame(minHeight: responsive.spacing(72)).padding(8)
                                 .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                                 .foregroundColor(.white).scrollContentBackground(.hidden)
                         }
@@ -325,7 +327,7 @@ struct CreateEventFromDiscoverSheet: View {
                                 if isLoading { ProgressView().tint(.white) }
                                 else { Text("Create Event").fontWeight(.bold) }
                             }
-                            .frame(maxWidth: .infinity).padding()
+                            .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(title.isEmpty
                                 ? AnyShapeStyle(Color.nostiaInput)
                                 : AnyShapeStyle(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
@@ -334,7 +336,9 @@ struct CreateEventFromDiscoverSheet: View {
                         }
                         .disabled(isLoading || title.isEmpty || isCoverPhotoLoading)
                     }
-                    .padding(20)
+                    .padding(responsive.spacing(20))
+                    .frame(maxWidth: responsive.sheetMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .background(.clear)
                 .navigationTitle("New Event")

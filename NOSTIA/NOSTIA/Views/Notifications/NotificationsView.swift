@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotificationsView: View {
     @StateObject private var vm = NotificationsViewModel()
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -13,7 +14,7 @@ struct NotificationsView: View {
                     Button("Mark all as read") { Task { await vm.markAllAsRead() } }
                         .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 12)
+                .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
                 .overlay(Divider().background(Color.white.opacity(0.1)), alignment: .bottom)
             }
 
@@ -25,7 +26,7 @@ struct NotificationsView: View {
                         Task { await vm.markAsRead(notif.id) }
                     }
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 4, leading: responsive.spacing(16), bottom: 4, trailing: responsive.spacing(16)))
                 }
                 .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 .refreshable { await vm.load() }
@@ -44,6 +45,7 @@ struct NotificationsView: View {
 struct NotificationRow: View {
     let notification: NostiaNotification
     let onTap: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         Button(action: onTap) {
@@ -51,7 +53,7 @@ struct NotificationRow: View {
                 Image(systemName: notification.iconName)
                     .font(.title3)
                     .foregroundColor(Color(hex: notification.iconColorHex))
-                    .frame(width: 48, height: 48)
+                    .frame(width: responsive.spacing(48), height: responsive.spacing(48))
                     .glassEffect(in: Circle())
                     .overlay(Circle().stroke(Color(hex: notification.iconColorHex).opacity(0.3), lineWidth: 1))
 
@@ -66,7 +68,7 @@ struct NotificationRow: View {
                         .shadow(color: Color.nostiaAccent.opacity(0.6), radius: 4)
                 }
             }
-            .padding(16)
+            .padding(responsive.spacing(16))
             .glassEffect(in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 notification.read ? nil :

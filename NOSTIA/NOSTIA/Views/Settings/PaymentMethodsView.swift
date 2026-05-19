@@ -4,10 +4,11 @@ import StripePaymentSheet
 
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: responsive.spacing(16)) {
                 if vm.isLoading {
                     ProgressView().tint(Color.nostiaAccent).padding(40)
                 } else {
@@ -16,7 +17,7 @@ struct PaymentMethodsView: View {
                         if vm.paymentMethods.isEmpty {
                             Text("No saved payment methods")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
-                                .padding(16)
+                                .padding(responsive.spacing(16))
                         } else {
                             ForEach(vm.paymentMethods) { method in
                                 HStack(spacing: 12) {
@@ -46,7 +47,7 @@ struct PaymentMethodsView: View {
                                         Image(systemName: "ellipsis").foregroundColor(Color.nostiaTextSecond)
                                     }
                                 }
-                                .padding(16)
+                                .padding(responsive.spacing(16))
                                 Divider().background(Color.nostriaBorder)
                             }
                         }
@@ -63,16 +64,16 @@ struct PaymentMethodsView: View {
                                     Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                                 }
                             }
-                            .frame(maxWidth: .infinity).padding(14)
+                            .frame(maxWidth: .infinity).padding(responsive.spacing(14))
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
                         }
-                        .padding(.horizontal, 16).padding(.bottom, 12)
+                        .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                         .disabled(vm.isLoading)
                     }
 
                     // Stripe Connect — for receiving payments
                     GlassSection(title: "Receive Payments") {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: responsive.spacing(8)) {
                             HStack {
                                 Image(systemName: "banknote.fill").foregroundColor(Color.nostiaSuccess).frame(width: 24)
                                 Text("Payout Account").foregroundColor(.white)
@@ -85,7 +86,7 @@ struct PaymentMethodsView: View {
                                     Text("Not set up").font(.caption).foregroundColor(Color.nostiaWarning)
                                 }
                             }
-                            .padding(16)
+                            .padding(responsive.spacing(16))
 
                             if vm.onboardingStatus?.complete != true {
                                 Button {
@@ -93,14 +94,14 @@ struct PaymentMethodsView: View {
                                 } label: {
                                     Text("Set Up Payouts with Stripe")
                                         .font(.subheadline.bold()).foregroundColor(.white)
-                                        .frame(maxWidth: .infinity).padding(14)
+                                        .frame(maxWidth: .infinity).padding(responsive.spacing(14))
                                         .background(Color.nostiaAccent).cornerRadius(10)
                                 }
-                                .padding(.horizontal, 16).padding(.bottom, 12)
+                                .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
 
                                 Text("Required to receive reimbursements from trip expenses.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                                    .padding(.horizontal, 16).padding(.bottom, 12)
+                                    .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             }
                         }
                     }
@@ -111,7 +112,9 @@ struct PaymentMethodsView: View {
                         .padding(12).background(Color.nostriaDanger.opacity(0.1)).cornerRadius(8)
                 }
             }
-            .padding(16)
+            .padding(responsive.spacing(16))
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .task { await vm.load() }

@@ -5,6 +5,7 @@ struct CommentsSheet: View {
     @ObservedObject var vm: FeedViewModel
     @FocusState private var inputFocused: Bool
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         NavigationStack {
@@ -12,9 +13,9 @@ struct CommentsSheet: View {
                 if vm.isLoadingComments {
                     CommentSkeletonView()
                 } else if vm.comments.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: responsive.spacing(12)) {
                         Image(systemName: "bubble.right")
-                            .font(.system(size: 48))
+                            .font(.system(size: responsive.fontSize(48)))
                             .foregroundColor(Color.nostiaAccent.opacity(0.7))
                         Text("No comments yet").font(.headline).foregroundColor(.white)
                         Text("Be the first to comment!").font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -22,12 +23,14 @@ struct CommentsSheet: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
+                        LazyVStack(alignment: .leading, spacing: responsive.spacing(12)) {
                             ForEach(vm.comments) { comment in
                                 CommentRow(comment: comment)
                             }
                         }
-                        .padding(16)
+                        .padding(responsive.spacing(16))
+                        .frame(maxWidth: responsive.sheetMaxWidth)
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
@@ -46,7 +49,7 @@ struct CommentsSheet: View {
             HStack(spacing: 10) {
                 TextField("Add a comment...", text: $vm.newComment, axis: .vertical)
                     .lineLimit(1...4)
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(10))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 20))
                     .foregroundColor(.white)
                     .focused($inputFocused)
@@ -70,7 +73,7 @@ struct CommentsSheet: View {
                 }
                 .disabled(vm.newComment.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSubmittingComment)
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, responsive.spacing(12)).padding(.vertical, responsive.spacing(8))
             .background(.ultraThinMaterial.opacity(0.9))
         }
         .presentationBackground(.ultraThinMaterial)
@@ -79,19 +82,20 @@ struct CommentsSheet: View {
 
 struct CommentRow: View {
     let comment: FeedComment
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             AvatarView(initial: String(comment.name.prefix(1)).uppercased(), color: Color.nostriaPurple, size: 34)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(comment.name).font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
+                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
                     Text(comment.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
-                Text(comment.content).font(.system(size: 14)).foregroundColor(Color.nostiaTextSecond)
+                Text(comment.content).font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
         }
-        .padding(12)
+        .padding(responsive.spacing(12))
         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
     }
 }

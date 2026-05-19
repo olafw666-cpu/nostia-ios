@@ -7,6 +7,7 @@ struct TripsView: View {
     @State private var tripToDetail: Trip?
     @State private var showQRScanner = false
     @State private var scanResultAlert: ScanResultAlert?
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     struct ScanResultAlert: Identifiable {
         let id = UUID()
@@ -26,7 +27,7 @@ struct TripsView: View {
                         }
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
                     }
                 }
                 .listStyle(.plain)
@@ -50,11 +51,11 @@ struct TripsView: View {
             } label: {
                 LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .frame(width: 60, height: 60).clipShape(Circle())
+                    .frame(width: responsive.spacing(60), height: responsive.spacing(60)).clipShape(Circle())
                     .overlay(Image(systemName: "plus").font(.title2.bold()).foregroundColor(.white))
                     .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 12, y: 6)
             }
-            .padding(20)
+            .padding(responsive.spacing(20))
         }
         .background(.clear)
         .task { await vm.loadTrips() }
@@ -125,10 +126,11 @@ struct TripsView: View {
 struct TripCard: View {
     let trip: Trip
     let onTap: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: responsive.spacing(12)) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(trip.title).font(.headline).foregroundColor(.white)
@@ -159,7 +161,7 @@ struct TripCard: View {
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
             }
-            .padding(16)
+            .padding(responsive.spacing(16))
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)

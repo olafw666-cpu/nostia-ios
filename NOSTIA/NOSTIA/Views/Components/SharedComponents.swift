@@ -111,11 +111,12 @@ struct EmptyStateView: View {
     let icon: String
     let text: String
     let sub: String
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: responsive.spacing(16)) {
             Image(systemName: icon)
-                .font(.system(size: 56))
+                .font(.system(size: responsive.fontSize(56)))
                 .foregroundStyle(Color.nostiaAccent.opacity(0.7))
             Text(text).font(.title3.bold()).foregroundColor(.white)
             if !sub.isEmpty {
@@ -126,8 +127,8 @@ struct EmptyStateView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-        .padding(.horizontal, 32)
+        .padding(.vertical, responsive.spacing(60))
+        .padding(.horizontal, responsive.spacing(32))
     }
 }
 
@@ -140,11 +141,12 @@ struct ConsentSheet: View {
     @State private var locationConsent = true
     @State private var dataCollectionConsent = true
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: responsive.spacing(20)) {
                     Text("Before you join Nostia, we need your consent to use certain features.")
                         .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
 
@@ -164,9 +166,9 @@ struct ConsentSheet: View {
 
                     Text("By tapping \"I Agree\", you confirm you've read and accept our Privacy Policy.")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                        .padding(.top, 8)
+                        .padding(.top, responsive.spacing(8))
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: responsive.spacing(12)) {
                         Button {
                             onConsent(locationConsent, dataCollectionConsent)
                         } label: {
@@ -175,7 +177,7 @@ struct ConsentSheet: View {
                                 Text("I Agree")
                             }
                             .font(.headline).foregroundColor(.white)
-                            .frame(maxWidth: .infinity).padding(16)
+                            .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(
                                 LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                startPoint: .leading, endPoint: .trailing)
@@ -188,12 +190,14 @@ struct ConsentSheet: View {
                         } label: {
                             Text("Decline")
                                 .font(.headline).foregroundColor(Color.nostiaTextSecond)
-                                .frame(maxWidth: .infinity).padding(16)
+                                .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
                         }
                     }
                 }
-                .padding(24)
+                .padding(responsive.spacing(24))
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("Privacy Consent")
@@ -209,9 +213,10 @@ struct ConsentToggle: View {
     let title: String
     let description: String
     @Binding var isOn: Bool
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: responsive.spacing(12)) {
             HStack {
                 Image(systemName: icon).foregroundColor(Color.nostiaAccent)
                 Text(title).font(.headline).foregroundColor(.white)
@@ -220,7 +225,7 @@ struct ConsentToggle: View {
             }
             Text(description).font(.footnote).foregroundColor(Color.nostiaTextSecond)
         }
-        .padding(16)
+        .padding(responsive.spacing(16))
         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -264,6 +269,7 @@ struct CreateTripSheet: View {
     @State private var isLoadingFriends = false
     @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         NavigationStack {
@@ -278,19 +284,21 @@ struct CreateTripSheet: View {
 
     private var detailsStep: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: responsive.spacing(16)) {
                 NostiaTextField(label: "Title *", placeholder: "Vault name", text: $title)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: responsive.fontSize(14), weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     TextEditor(text: $description)
-                        .frame(minHeight: 80).padding(12)
+                        .frame(minHeight: responsive.spacing(80)).padding(responsive.spacing(12))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                         .foregroundColor(.white).scrollContentBackground(.hidden)
                 }
             }
-            .padding(20)
+            .padding(responsive.spacing(20))
+            .frame(maxWidth: responsive.sheetMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .navigationTitle("Create Vault")
@@ -315,32 +323,32 @@ struct CreateTripSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("SELECT FOLLOWERS")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: responsive.fontSize(11), weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
-                    .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 10)
+                    .padding(.horizontal, responsive.spacing(20)).padding(.top, responsive.spacing(20)).padding(.bottom, responsive.spacing(10))
 
                 if isLoadingFriends {
                     ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding(40)
                 } else if followers.isEmpty {
                     Text("No followers to add yet")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, responsive.spacing(20))
                 } else {
                     ForEach(followers) { follower in
-                        HStack(spacing: 12) {
-                            AvatarView(initial: follower.initial, color: Color.nostiaAccent, size: 38)
+                        HStack(spacing: responsive.spacing(12)) {
+                            AvatarView(initial: follower.initial, color: Color.nostiaAccent, size: responsive.spacing(38))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(follower.name).font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
-                                Text("@\(follower.username)").font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                                Text(follower.name).font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
+                                Text("@\(follower.username)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                             }
                             Spacer()
                             Image(systemName: selectedFriendIds.contains(follower.id) ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
                                 .foregroundColor(selectedFriendIds.contains(follower.id) ? Color.nostiaAccent : Color.nostiaTextMuted)
                         }
-                        .padding(14)
+                        .padding(responsive.spacing(14))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                        .padding(.horizontal, 16).padding(.vertical, 4)
+                        .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             if selectedFriendIds.contains(follower.id) {
@@ -351,8 +359,10 @@ struct CreateTripSheet: View {
                         }
                     }
                 }
-                Spacer(minLength: 32)
+                Spacer(minLength: responsive.spacing(32))
             }
+            .frame(maxWidth: responsive.sheetMaxWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(.clear)
         .navigationTitle("Add Followers")
@@ -398,6 +408,7 @@ struct CreateExpenseSheet: View {
     @State private var dateValue = Date()
     @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     let categories = ["Food", "Transport", "Accommodation", "Activities", "Shopping", "Other"]
 
@@ -408,38 +419,38 @@ struct CreateExpenseSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: responsive.spacing(16)) {
                     NostiaTextField(label: "Description *", placeholder: "What was this for?", text: $description)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Amount *")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: responsive.fontSize(14), weight: .semibold))
                             .foregroundColor(.white.opacity(0.7))
                         HStack {
                             Text("$").foregroundColor(Color.nostiaTextSecond).font(.title3)
                             TextField("0.00", text: $amountText).keyboardType(.decimalPad).foregroundColor(.white)
                         }
-                        .padding(16)
+                        .padding(responsive.spacing(16))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Date *")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: responsive.fontSize(14), weight: .semibold))
                             .foregroundColor(.white.opacity(0.7))
                         DatePicker("", selection: $dateValue, displayedComponents: .date)
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(Color.nostiaAccent)
                             .colorScheme(.dark)
-                            .padding(12)
+                            .padding(responsive.spacing(12))
                             .glassEffect(in: RoundedRectangle(cornerRadius: 12))
                     }
 
                     if showCategory {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Category")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold))
                                 .foregroundColor(.white.opacity(0.7))
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
@@ -451,7 +462,9 @@ struct CreateExpenseSheet: View {
                         }
                     }
                 }
-                .padding(20)
+                .padding(responsive.spacing(20))
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
             .navigationTitle("Add Expense")
@@ -576,6 +589,7 @@ struct SkeletonCircle: View {
 // MARK: - Skeleton Composites
 
 struct FeedPostCardSkeleton: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
@@ -586,7 +600,7 @@ struct FeedPostCardSkeleton: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 10)
+            .padding(.horizontal, r.spacing(14)).padding(.top, r.spacing(14)).padding(.bottom, r.spacing(10))
 
             SkeletonRect(height: 200, cornerRadius: 0)
 
@@ -594,24 +608,25 @@ struct FeedPostCardSkeleton: View {
                 SkeletonBar(height: 12)
                 SkeletonBar(width: 200, height: 12)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, r.spacing(14)).padding(.vertical, r.spacing(10))
 
             SkeletonBar(width: 110, height: 10)
-                .padding(.horizontal, 14).padding(.bottom, 14)
+                .padding(.horizontal, r.spacing(14)).padding(.bottom, r.spacing(14))
         }
         .glassEffect(in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
 struct FeedSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: r.spacing(12)) {
                 ForEach(0..<4, id: \.self) { _ in
                     FeedPostCardSkeleton()
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -619,24 +634,25 @@ struct FeedSkeletonView: View {
 }
 
 struct ProfileSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                VStack(spacing: 12) {
+            VStack(spacing: r.spacing(16)) {
+                VStack(spacing: r.spacing(12)) {
                     SkeletonCircle(size: 80)
                     SkeletonBar(width: 160, height: 16)
                     SkeletonBar(width: 220, height: 12)
                     SkeletonBar(width: 100, height: 11)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(20)
+                .padding(r.spacing(20))
                 .glassEffect(in: RoundedRectangle(cornerRadius: 20))
 
                 ForEach(0..<2, id: \.self) { _ in
                     FeedPostCardSkeleton()
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -644,9 +660,10 @@ struct ProfileSkeletonView: View {
 }
 
 struct NotificationSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
+            LazyVStack(spacing: r.spacing(10)) {
                 ForEach(0..<6, id: \.self) { i in
                     HStack(spacing: 12) {
                         SkeletonCircle(size: 40)
@@ -656,11 +673,11 @@ struct NotificationSkeletonView: View {
                         }
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(r.spacing(14))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -668,9 +685,10 @@ struct NotificationSkeletonView: View {
 }
 
 struct FollowSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
+            LazyVStack(spacing: r.spacing(10)) {
                 ForEach(0..<6, id: \.self) { i in
                     HStack(spacing: 12) {
                         SkeletonCircle(size: 40)
@@ -678,11 +696,11 @@ struct FollowSkeletonView: View {
                         Spacer()
                         SkeletonBar(width: 70, height: 28)
                     }
-                    .padding(14)
+                    .padding(r.spacing(14))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -690,37 +708,39 @@ struct FollowSkeletonView: View {
 }
 
 struct SearchSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
-        LazyVStack(spacing: 10) {
+        LazyVStack(spacing: r.spacing(10)) {
             ForEach(0..<5, id: \.self) { i in
                 HStack(spacing: 12) {
                     SkeletonCircle(size: 40)
                     SkeletonBar(width: i % 2 == 0 ? 150 : 120, height: 13)
                     Spacer()
                 }
-                .padding(14)
+                .padding(r.spacing(14))
                 .glassEffect(in: RoundedRectangle(cornerRadius: 14))
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, r.spacing(16))
         .disabled(true)
     }
 }
 
 struct VaultListSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: r.spacing(12)) {
                 ForEach(0..<4, id: \.self) { i in
                     VStack(alignment: .leading, spacing: 8) {
                         SkeletonBar(height: 15)
                         SkeletonBar(width: i % 2 == 0 ? 130 : 100, height: 12)
                     }
-                    .padding(18)
+                    .padding(r.spacing(18))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 16))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -728,8 +748,9 @@ struct VaultListSkeletonView: View {
 }
 
 struct VaultDetailSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: r.spacing(12)) {
             SkeletonBar(height: 16)
             SkeletonBar(width: 180, height: 13)
 
@@ -740,11 +761,11 @@ struct VaultDetailSkeletonView: View {
                     SkeletonBar(width: 150, height: 12)
                     if i % 2 != 0 { Spacer() }
                 }
-                .padding(12)
+                .padding(r.spacing(12))
                 .glassEffect(in: RoundedRectangle(cornerRadius: 14))
             }
         }
-        .padding(16)
+        .padding(r.spacing(16))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .disabled(true)
         .background(.clear)
@@ -752,20 +773,21 @@ struct VaultDetailSkeletonView: View {
 }
 
 struct VaultExpenseSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
+            LazyVStack(spacing: r.spacing(10)) {
                 ForEach(0..<4, id: \.self) { i in
                     HStack(spacing: 12) {
                         SkeletonBar(width: i % 2 == 0 ? 160 : 130, height: 13)
                         Spacer()
                         SkeletonBar(width: 60, height: 13)
                     }
-                    .padding(14)
+                    .padding(r.spacing(14))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -773,9 +795,10 @@ struct VaultExpenseSkeletonView: View {
 }
 
 struct EventListSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: r.spacing(12)) {
                 ForEach(0..<4, id: \.self) { i in
                     HStack(spacing: 12) {
                         SkeletonRect(width: 60, height: 60, cornerRadius: 10)
@@ -785,11 +808,11 @@ struct EventListSkeletonView: View {
                         }
                         Spacer()
                     }
-                    .padding(14)
+                    .padding(r.spacing(14))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 16))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
@@ -797,9 +820,10 @@ struct EventListSkeletonView: View {
 }
 
 struct CommentSkeletonView: View {
+    private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: r.spacing(12)) {
                 ForEach(0..<4, id: \.self) { i in
                     HStack(alignment: .top, spacing: 10) {
                         SkeletonCircle(size: 34)
@@ -809,11 +833,11 @@ struct CommentSkeletonView: View {
                         }
                         Spacer()
                     }
-                    .padding(12)
+                    .padding(r.spacing(12))
                     .glassEffect(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
-            .padding(16)
+            .padding(r.spacing(16))
         }
         .disabled(true)
         .background(.clear)
