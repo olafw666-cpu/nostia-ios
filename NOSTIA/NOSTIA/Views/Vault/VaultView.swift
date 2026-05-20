@@ -84,6 +84,7 @@ struct VaultContentView: View {
                                 entry: entry,
                                 currentUserId: currentUserId,
                                 vaultLeaderId: data.vaultLeaderId,
+                                vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                                 onDelete: { Task { await vm.deleteEntry(entry.id, tripId: tripId) } },
                                 onMarkPaid: { splitId in confirmPaySplitId = splitId },
                                 onPayWithCard: { splitId in Task { await vm.handleCardTap(splitId: splitId) } },
@@ -158,6 +159,7 @@ struct VaultContentView: View {
                     unpaidSplits: data.unpaidSplits ?? [],
                     tripId: tripId,
                     vm: vm,
+                    vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                     onMarkAllPaid: { splitIds in
                         Task {
                             await vm.markAllPaid(splitIds: splitIds, tripId: tripId)
@@ -295,6 +297,7 @@ struct ExpenseCard: View {
     let entry: VaultEntry
     let currentUserId: Int?
     let vaultLeaderId: Int?
+    var vaultLeaderHasStripe: Bool = false
     let onDelete: () -> Void
     let onMarkPaid: (Int) -> Void
     let onPayWithCard: (Int) -> Void
@@ -368,20 +371,22 @@ struct ExpenseCard: View {
                                         .glassEffect(in: RoundedRectangle(cornerRadius: 10))
                                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1))
                                 }
-                                Button { onPayWithCard(split.id) } label: {
-                                    if payingId == split.id {
-                                        ProgressView().tint(.white).scaleEffect(0.8)
-                                            .frame(width: 70, height: 34)
-                                            .background(Color.nostiaAccent).cornerRadius(10)
-                                    } else {
-                                        Text("Card")
-                                            .font(.subheadline.bold()).foregroundColor(.white)
-                                            .padding(.horizontal, 16).padding(.vertical, 8)
-                                            .background(Color.nostiaAccent).cornerRadius(10)
-                                            .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
+                                if vaultLeaderHasStripe {
+                                    Button { onPayWithCard(split.id) } label: {
+                                        if payingId == split.id {
+                                            ProgressView().tint(.white).scaleEffect(0.8)
+                                                .frame(width: 70, height: 34)
+                                                .background(Color.nostiaAccent).cornerRadius(10)
+                                        } else {
+                                            Text("Card")
+                                                .font(.subheadline.bold()).foregroundColor(.white)
+                                                .padding(.horizontal, 16).padding(.vertical, 8)
+                                                .background(Color.nostiaAccent).cornerRadius(10)
+                                                .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
+                                        }
                                     }
+                                    .disabled(payingId != nil)
                                 }
-                                .disabled(payingId != nil)
                             }
                         }
                     }
@@ -405,6 +410,7 @@ struct PayTotalSheet: View {
     let unpaidSplits: [UnpaidSplit]
     let tripId: Int
     let vm: VaultViewModel
+    var vaultLeaderHasStripe: Bool = false
     let onMarkAllPaid: ([Int]) -> Void
     let onCardPay: ([Int]) -> Void
 
@@ -450,24 +456,33 @@ struct PayTotalSheet: View {
                         .padding(responsive.spacing(16))
                         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
 
-                        HStack(spacing: 12) {
-                            Button {
-                                onMarkAllPaid(splitIds)
-                            } label: {
-                                Text("Pay Cash")
-                                    .font(.headline.bold()).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                        VStack(spacing: responsive.spacing(12)) {
+                            HStack(spacing: 12) {
+                                Button {
+                                    onMarkAllPaid(splitIds)
+                                } label: {
+                                    Text("Pay Cash")
+                                        .font(.headline.bold()).foregroundColor(.white)
+                                        .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
+                                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                }
+                                if vaultLeaderHasStripe {
+                                    Button {
+                                        onCardPay(splitIds)
+                                    } label: {
+                                        Text("Pay with Card")
+                                            .font(.headline.bold()).foregroundColor(.white)
+                                            .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
+                                            .background(Color.nostiaAccent).cornerRadius(14)
+                                            .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                                    }
+                                }
                             }
-                            Button {
-                                onCardPay(splitIds)
-                            } label: {
-                                Text("Pay with Card")
-                                    .font(.headline.bold()).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
-                                    .background(Color.nostiaAccent).cornerRadius(14)
-                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                            if !vaultLeaderHasStripe {
+                                Text("Card payments unavailable — the vault owner hasn't set up payouts.")
+                                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                    .multilineTextAlignment(.center)
                             }
                         }
                     }

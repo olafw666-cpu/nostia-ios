@@ -12,6 +12,11 @@ struct PrivacyView: View {
     @State private var showDeleteAccountStep2 = false
     @State private var isDeletingAccount = false
     @State private var deleteAccountError: String?
+    @State private var navigateToPaymentMethods = false
+    @State private var showEmailPrompt = false
+    @State private var promptEmail = ""
+    @State private var isSavingEmail = false
+    @State private var emailSaveError: String?
 
     var body: some View {
         ScrollView {
@@ -28,11 +33,14 @@ struct PrivacyView: View {
                                 GlassRow(icon: "envelope.fill", label: "Email", value: email)
                             }
                         }
-                        NavigationLink {
-                            PaymentMethodsView()
-                                .navigationTitle("Payment Methods")
-                                .navigationBarTitleDisplayMode(.inline)
-                                .toolbarBackground(.hidden, for: .navigationBar)
+                        Button {
+                            if let email = user?.email, !email.isEmpty {
+                                navigateToPaymentMethods = true
+                            } else {
+                                promptEmail = ""
+                                emailSaveError = nil
+                                showEmailPrompt = true
+                            }
                         } label: {
                             HStack {
                                 Image(systemName: "creditcard.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
@@ -42,6 +50,12 @@ struct PrivacyView: View {
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                             .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
+                        }
+                        .navigationDestination(isPresented: $navigateToPaymentMethods) {
+                            PaymentMethodsView()
+                                .navigationTitle("Payment Methods")
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbarBackground(.hidden, for: .navigationBar)
                         }
                     }
 
@@ -131,6 +145,15 @@ struct PrivacyView: View {
         }
         .background(.clear)
         .task { await loadData() }
+        .sheet(isPresented: $showEmailPrompt) {
+            EmailCaptureSheet(
+                email: $promptEmail,
+                errorMessage: $emailSaveError,
+                isSaving: $isSavingEmail,
+                onSave: { Task { await saveEmailAndNavigate() } },
+                onDismiss: { showEmailPrompt = false }
+            )
+        }
         .alert("Delete Your Account?", isPresented: $showDeleteAccountStep1) {
             Button("Cancel", role: .cancel) {}
             Button("Continue") { showDeleteAccountStep2 = true }
@@ -186,6 +209,98 @@ struct PrivacyView: View {
             isDeletingAccount = false
             deleteAccountError = "Something went wrong. Your account was not deleted. Please try again."
         }
+    }
+
+    func saveEmailAndNavigate() async {
+        let trimmed = promptEmail.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed.contains("@"), trimmed.contains(".") else {
+            emailSaveError = "Please enter a valid email address."
+            return
+        }
+        isSavingEmail = true
+        emailSaveError = nil
+        do {
+            let updated = try await AuthAPI.shared.updateMe(["email": trimmed])
+            user = updated
+            showEmailPrompt = false
+            navigateToPaymentMethods = true
+        } catch {
+            emailSaveError = "Failed to save email. Please try again."
+        }
+        isSavingEmail = false
+    }
+}
+
+// MARK: - Email Capture Sheet
+
+struct EmailCaptureSheet: View {
+    @Binding var email: String
+    @Binding var errorMessage: String?
+    @Binding var isSaving: Bool
+    let onSave: () -> Void
+    let onDismiss: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: responsive.spacing(24)) {
+                VStack(spacing: responsive.spacing(12)) {
+                    Image(systemName: "envelope.badge.fill")
+                        .font(.system(size: responsive.fontSize(48)))
+                        .foregroundStyle(Color.nostiaAccent)
+                    Text("Email Required")
+                        .font(.title2.bold()).foregroundColor(.white)
+                    Text("An email address is required to set up payment methods. This email is used by Stripe for account verification.")
+                        .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, responsive.spacing(8))
+
+                NostiaTextField(label: "Email", placeholder: "your@email.com", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                if let err = errorMessage {
+                    Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Button {
+                    onSave()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isSaving {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "arrow.right.circle.fill")
+                            Text("Save & Continue")
+                        }
+                    }
+                    .font(.headline.bold()).foregroundColor(.white)
+                    .frame(maxWidth: .infinity).padding(responsive.spacing(16))
+                    .background(Color.nostiaAccent).cornerRadius(14)
+                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                }
+                .disabled(isSaving || email.trimmingCharacters(in: .whitespaces).isEmpty)
+
+                Spacer()
+            }
+            .padding(responsive.spacing(24))
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { onDismiss() }
+                        .foregroundColor(Color.nostiaTextSecond)
+                }
+            }
+        }
+        .presentationBackground(.ultraThinMaterial)
+        .presentationDetents([.medium])
     }
 }
 

@@ -7,6 +7,7 @@ struct VaultSummary: Codable {
     let vaultLeaderId: Int?
     let currentUserId: Int?
     let unpaidSplits: [UnpaidSplit]?
+    let vaultLeaderHasStripe: Bool?
 }
 
 struct VaultEntry: Codable, Identifiable {
