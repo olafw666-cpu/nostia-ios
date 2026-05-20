@@ -7,6 +7,7 @@ final class AuthManager: ObservableObject {
 
     @Published var isAuthenticated = false
     @Published var currentUserId: Int?
+    @Published var isDev: Bool = false
 
     private let tokenKey = "nostia_jwt_token"
 
@@ -59,6 +60,7 @@ final class AuthManager: ObservableObject {
         DispatchQueue.main.async {
             self.isAuthenticated = false
             self.currentUserId = nil
+            self.isDev = false
         }
     }
 

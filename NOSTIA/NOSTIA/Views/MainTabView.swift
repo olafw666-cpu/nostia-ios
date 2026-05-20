@@ -143,6 +143,7 @@ struct MainTabView: View {
             await MainActor.run {
                 headerImageData = user?.profilePictureUrl
                 headerInitial = user?.initial ?? "U"
+                AuthManager.shared.isDev = user?.isDev ?? false
             }
         }
     }
