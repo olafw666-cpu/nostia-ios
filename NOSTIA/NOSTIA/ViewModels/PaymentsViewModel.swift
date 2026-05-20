@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 import StripePaymentSheet
 
 @MainActor
@@ -10,8 +11,6 @@ final class PaymentsViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var onboardingURL: URL?
     @Published var showOnboarding = false
-    @Published var addCardSheet: PaymentSheet?
-    @Published var showAddCard = false
 
     func load() async {
         isLoading = true
@@ -64,11 +63,23 @@ final class PaymentsViewModel: ObservableObject {
                 id: intent.customerId,
                 ephemeralKeySecret: intent.ephemeralKey
             )
-            addCardSheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
+            let sheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
             isLoading = false
-            // Let SwiftUI render the .paymentSheet modifier with isPresented=false before we flip it
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            showAddCard = true
+
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = scene.keyWindow?.rootViewController else {
+                errorMessage = "Unable to present payment sheet."
+                return
+            }
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            sheet.present(from: topVC) { [weak self] result in
+                Task { @MainActor [weak self] in
+                    await self?.handleAddCardResult(result)
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false
@@ -76,17 +87,13 @@ final class PaymentsViewModel: ObservableObject {
     }
 
     func handleAddCardResult(_ result: PaymentSheetResult) async {
-        showAddCard = false
         switch result {
         case .completed:
-            // Payment method is now attached to the Stripe customer on Stripe's side.
-            // Reload so the server can reflect the saved card.
             await load()
         case .canceled:
             break
         case .failed(let error):
             errorMessage = error.localizedDescription
         }
-        addCardSheet = nil
     }
 }

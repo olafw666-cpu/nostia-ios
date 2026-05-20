@@ -1,6 +1,5 @@
 import SwiftUI
 import SafariServices
-import StripePaymentSheet
 
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
@@ -123,24 +122,6 @@ struct PaymentMethodsView: View {
             if let url = vm.onboardingURL {
                 SafariView(url: url)
             }
-        }
-        .optionalPaymentSheet(isPresented: $vm.showAddCard, paymentSheet: vm.addCardSheet) { result in
-            Task { await vm.handleAddCardResult(result) }
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func optionalPaymentSheet(
-        isPresented: Binding<Bool>,
-        paymentSheet: PaymentSheet?,
-        onCompletion: @escaping (PaymentSheetResult) -> Void
-    ) -> some View {
-        if let sheet = paymentSheet {
-            self.paymentSheet(isPresented: isPresented, paymentSheet: sheet, onCompletion: onCompletion)
-        } else {
-            self
         }
     }
 }
