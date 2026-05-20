@@ -27,3 +27,9 @@ struct OnboardingStatus: Codable {
 struct AddPaymentMethodRequest: Codable {
     let paymentMethodId: String
 }
+
+struct SetupIntentResponse: Decodable {
+    let clientSecret: String
+    let customerId: String
+    let ephemeralKey: String
+}
