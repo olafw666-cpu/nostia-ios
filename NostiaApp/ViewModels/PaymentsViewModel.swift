@@ -1,5 +1,7 @@
 import Combine
 import Foundation
+import StripePaymentSheet
+import UIKit
 
 @MainActor
 final class PaymentsViewModel: ObservableObject {
@@ -46,6 +48,51 @@ final class PaymentsViewModel: ObservableObject {
                 showOnboarding = true
             }
         } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func startAddCard() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let intent = try await PaymentsAPI.shared.createSetupIntent()
+            var config = PaymentSheet.Configuration()
+            config.merchantDisplayName = "Nostia"
+            config.customer = PaymentSheet.CustomerConfiguration(
+                id: intent.customerId,
+                ephemeralKeySecret: intent.ephemeralKey
+            )
+            let sheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
+            isLoading = false
+
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = scene.keyWindow?.rootViewController else {
+                errorMessage = "Unable to present payment sheet."
+                return
+            }
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            sheet.present(from: topVC) { [weak self] result in
+                Task { @MainActor [weak self] in
+                    await self?.handleAddCardResult(result)
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+        }
+    }
+
+    func handleAddCardResult(_ result: PaymentSheetResult) async {
+        switch result {
+        case .completed:
+            await load()
+        case .canceled:
+            break
+        case .failed(let error):
             errorMessage = error.localizedDescription
         }
     }

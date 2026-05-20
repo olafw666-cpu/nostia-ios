@@ -49,6 +49,23 @@ struct PaymentMethodsView: View {
                                 Divider().background(Color.nostriaBorder)
                             }
                         }
+
+                        Button {
+                            Task { await vm.startAddCard() }
+                        } label: {
+                            HStack {
+                                if vm.isLoading {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
+                                    Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                }
+                            }
+                            .frame(maxWidth: .infinity).padding(14)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
+                        }
+                        .padding(.horizontal, 16).padding(.bottom, 12)
+                        .disabled(vm.isLoading)
                     }
 
                     // Stripe Connect — for receiving payments
@@ -80,6 +97,9 @@ struct PaymentMethodsView: View {
                                 .padding(.horizontal, 16).padding(.bottom, 12)
 
                                 Text("Required to receive reimbursements from trip expenses.")
+                                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                    .padding(.horizontal, 16).padding(.bottom, 4)
+                                Text("Stripe will ask you to select your location (United States) and confirm your account type, then tap Continue.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, 16).padding(.bottom, 12)
                             }

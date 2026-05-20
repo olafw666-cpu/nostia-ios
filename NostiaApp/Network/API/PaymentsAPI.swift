@@ -17,6 +17,10 @@ final class PaymentsAPI {
         try await client.requestVoid("/stripe/payment-methods/\(id)/default", method: "PUT")
     }
 
+    func createSetupIntent() async throws -> SetupIntentResponse {
+        try await client.request("/stripe/setup-intent", method: "POST")
+    }
+
     func startOnboarding() async throws -> String {
         struct OnboardingResponse: Decodable { let url: String }
         let resp: OnboardingResponse = try await client.request("/stripe/onboard", method: "POST")
