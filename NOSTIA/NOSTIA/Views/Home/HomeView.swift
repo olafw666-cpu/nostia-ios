@@ -96,6 +96,15 @@ struct HomeView: View {
                             EventPreviewCard(event: event)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    Task { await vm.adminDeleteEvent(id: event.id) }
+                                } label: {
+                                    Label("Delete Event", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -107,6 +116,15 @@ struct HomeView: View {
                             EventPreviewCard(event: event)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    Task { await vm.adminDeleteEvent(id: event.id) }
+                                } label: {
+                                    Label("Delete Event", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -128,8 +146,16 @@ struct HomeView: View {
                         PostCard(
                             post: post,
                             currentUserId: authManager.currentUserId,
+                            isCurrentUserDev: authManager.isDev,
                             onLike: { Task { await feedVM.toggleLike(post: post) } },
                             onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                            onDelete: {
+                                if authManager.isDev && post.userId != authManager.currentUserId {
+                                    Task { await feedVM.adminDeletePost(post: post) }
+                                } else {
+                                    Task { await feedVM.deletePost(post: post) }
+                                }
+                            },
                             onComment: { activeSheet = .comments(post) },
                             isLikeProcessing: feedVM.likingPostIds.contains(post.id),
                             isDislikeProcessing: feedVM.dislikingPostIds.contains(post.id)

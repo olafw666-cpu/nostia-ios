@@ -18,8 +18,16 @@ struct FeedView: View {
                             PostCard(
                                 post: post,
                                 currentUserId: authManager.currentUserId,
+                                isCurrentUserDev: authManager.isDev,
                                 onLike: { Task { await vm.toggleLike(post: post) } },
                                 onDislike: { Task { await vm.toggleDislike(post: post) } },
+                                onDelete: {
+                                    if authManager.isDev && post.userId != authManager.currentUserId {
+                                        Task { await vm.adminDeletePost(post: post) }
+                                    } else {
+                                        Task { await vm.deletePost(post: post) }
+                                    }
+                                },
                                 onComment: { Task { await vm.loadComments(for: post) } },
                                 isLikeProcessing: vm.likingPostIds.contains(post.id),
                                 isDislikeProcessing: vm.dislikingPostIds.contains(post.id)

@@ -9,12 +9,14 @@ struct User: Codable, Identifiable {
     var latitude: Double?
     var longitude: Double?
     var role: String?        // "user" | "admin"
+    var accountType: String? // "user" | "dev"
     var createdAt: String?
     var bio: String?
     var profilePictureUrl: String?
     var followersCount: Int?
 
     var isAdmin: Bool { role == "admin" }
+    var isDev: Bool { accountType == "dev" }
     var isHomeOpen: Bool { homeStatus == "open" }
     var initial: String { String(name.prefix(1)).uppercased() }
 
@@ -22,6 +24,7 @@ struct User: Codable, Identifiable {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
         case profilePictureUrl = "profile_picture_url"
         case followersCount
+        case accountType = "account_type"
     }
 }
 

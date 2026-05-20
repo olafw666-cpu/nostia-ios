@@ -138,6 +138,17 @@ final class FeedViewModel: ObservableObject {
         }
     }
 
+    func adminDeletePost(post: FeedPost) async {
+        guard let idx = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        posts.remove(at: idx)
+        do {
+            try await FeedAPI.shared.adminDeletePost(id: post.id)
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
+        } catch {
+            posts.insert(post, at: idx)
+        }
+    }
+
     func loadComments(for post: FeedPost) async {
         selectedPost = post
         let key = CacheKey.comments(post.id)

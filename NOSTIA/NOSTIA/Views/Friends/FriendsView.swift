@@ -7,6 +7,7 @@ struct FriendsView: View {
     @State private var profileDestination: ProfileDestination?
     @State private var showContactsPicker = false
     @State private var userToUnfollow: FollowUser?
+    @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
@@ -62,6 +63,15 @@ struct FriendsView: View {
                     List(vm.searchResults) { user in
                         UserSearchRow(user: user, onFollow: { Task { await vm.follow(userId: user.id) } })
                             .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                            .contextMenu {
+                                if authManager.isDev {
+                                    Button(role: .destructive) {
+                                        Task { await vm.adminDeleteUser(id: user.id) }
+                                    } label: {
+                                        Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                                    }
+                                }
+                            }
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 }
@@ -94,6 +104,15 @@ struct FriendsView: View {
                             }
                         )
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    Task { await vm.adminDeleteUser(id: user.id) }
+                                } label: {
+                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                                }
+                            }
+                        }
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                     .refreshable { await vm.loadAll() }
@@ -112,6 +131,15 @@ struct FriendsView: View {
                             }
                         )
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    Task { await vm.adminDeleteUser(id: user.id) }
+                                } label: {
+                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                                }
+                            }
+                        }
                     }
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                     .refreshable { await vm.loadAll() }

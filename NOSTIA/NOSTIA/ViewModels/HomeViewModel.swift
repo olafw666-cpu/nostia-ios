@@ -33,6 +33,16 @@ final class HomeViewModel: ObservableObject {
         isLoading = false
     }
 
+    func adminDeleteEvent(id: Int) async {
+        do {
+            try await AdventuresAPI.shared.adminDeleteEvent(id: id)
+            upcomingEvents.removeAll { $0.id == id }
+            nearbyEvents.removeAll { $0.id == id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func updateLocation(_ location: CLLocation) async {
         do {
             _ = try await AuthAPI.shared.updateMe([

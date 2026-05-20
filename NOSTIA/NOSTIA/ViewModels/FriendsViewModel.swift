@@ -87,4 +87,15 @@ final class FriendsViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    func adminDeleteUser(id: Int) async {
+        do {
+            try await AdventuresAPI.shared.adminDeleteUser(id: id)
+            followers.removeAll { $0.id == id }
+            following.removeAll { $0.id == id }
+            searchResults.removeAll { $0.id == id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }

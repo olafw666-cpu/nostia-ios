@@ -3,8 +3,10 @@ import SwiftUI
 struct PostCard: View {
     let post: FeedPost
     let currentUserId: Int?
+    var isCurrentUserDev: Bool = false
     var onLike: () -> Void = {}
     var onDislike: () -> Void = {}
+    var onDelete: (() -> Void)? = nil
     var onComment: () -> Void = {}
     var onProfileTap: ((Int) -> Void)? = nil
     var isLikeProcessing: Bool = false
@@ -29,6 +31,12 @@ struct PostCard: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
+                if (post.userId == currentUserId || isCurrentUserDev), let onDelete {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.footnote).foregroundColor(Color.nostriaDanger)
+                    }
+                }
             }
             .padding(.horizontal, responsive.spacing(14)).padding(.top, responsive.spacing(14)).padding(.bottom, responsive.spacing(10))
 
