@@ -1,5 +1,4 @@
 import SwiftUI
-import SafariServices
 
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
@@ -50,22 +49,28 @@ struct PaymentMethodsView: View {
                             }
                         }
 
-                        Button {
-                            Task { await vm.startAddCard() }
-                        } label: {
-                            HStack {
-                                if vm.isLoading {
-                                    ProgressView().tint(.white)
-                                } else {
-                                    Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
-                                    Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                        if vm.onboardingStatus?.complete == true {
+                            Button {
+                                Task { await vm.startAddCard() }
+                            } label: {
+                                HStack {
+                                    if vm.isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
+                                        Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity).padding(14)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
                             }
-                            .frame(maxWidth: .infinity).padding(14)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
+                            .padding(.horizontal, 16).padding(.bottom, 12)
+                            .disabled(vm.isLoading)
+                        } else {
+                            Text("Complete payout setup below to enable card payments.")
+                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                .padding(.horizontal, 16).padding(.bottom, 12)
                         }
-                        .padding(.horizontal, 16).padding(.bottom, 12)
-                        .disabled(vm.isLoading)
                     }
 
                     // Stripe Connect — for receiving payments
@@ -117,20 +122,5 @@ struct PaymentMethodsView: View {
         .background(.clear)
         .task { await vm.load() }
         .refreshable { await vm.load() }
-        .fullScreenCover(isPresented: $vm.showOnboarding) {
-            if let url = vm.onboardingURL,
-               url.scheme == "https",
-               url.host?.hasSuffix("stripe.com") == true {
-                SafariView(url: url)
-            }
-        }
     }
-}
-
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
-    }
-    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }

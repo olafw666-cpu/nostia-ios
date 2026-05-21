@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import SafariServices
 import StripePaymentSheet
 import UIKit
 
@@ -9,8 +10,6 @@ final class PaymentsViewModel: ObservableObject {
     @Published var onboardingStatus: OnboardingStatus?
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var onboardingURL: URL?
-    @Published var showOnboarding = false
 
     func load() async {
         isLoading = true
@@ -43,10 +42,16 @@ final class PaymentsViewModel: ObservableObject {
     func startOnboarding() async {
         do {
             let urlString = try await PaymentsAPI.shared.startOnboarding()
-            if let url = URL(string: urlString) {
-                onboardingURL = url
-                showOnboarding = true
-            }
+            guard let url = URL(string: urlString),
+                  url.scheme == "https",
+                  url.host?.hasSuffix("stripe.com") == true else { return }
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = scene.keyWindow?.rootViewController else { return }
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController { topVC = presented }
+            let safari = SFSafariViewController(url: url)
+            safari.modalPresentationStyle = .fullScreen
+            topVC.present(safari, animated: true)
         } catch {
             errorMessage = error.localizedDescription
         }
