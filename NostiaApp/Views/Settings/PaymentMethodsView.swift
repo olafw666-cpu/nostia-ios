@@ -117,7 +117,7 @@ struct PaymentMethodsView: View {
         .background(.clear)
         .task { await vm.load() }
         .refreshable { await vm.load() }
-        .sheet(isPresented: $vm.showOnboarding) {
+        .fullScreenCover(isPresented: $vm.showOnboarding) {
             if let url = vm.onboardingURL,
                url.scheme == "https",
                url.host?.hasSuffix("stripe.com") == true {
