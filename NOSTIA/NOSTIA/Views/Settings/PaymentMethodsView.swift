@@ -1,5 +1,4 @@
 import SwiftUI
-import SafariServices
 
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
@@ -51,23 +50,28 @@ struct PaymentMethodsView: View {
                             }
                         }
 
-                        // Add card button
-                        Button {
-                            Task { await vm.startAddCard() }
-                        } label: {
-                            HStack {
-                                if vm.isLoading {
-                                    ProgressView().tint(.white)
-                                } else {
-                                    Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
-                                    Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                        if vm.onboardingStatus?.complete == true {
+                            Button {
+                                Task { await vm.startAddCard() }
+                            } label: {
+                                HStack {
+                                    if vm.isLoading {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Image(systemName: "plus.circle.fill").foregroundColor(Color.nostiaAccent)
+                                        Text("Add Card").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity).padding(responsive.spacing(14))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
                             }
-                            .frame(maxWidth: .infinity).padding(responsive.spacing(14))
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
+                            .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
+                            .disabled(vm.isLoading)
+                        } else {
+                            Text("Complete payout setup below to enable card payments.")
+                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                         }
-                        .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
-                        .disabled(vm.isLoading)
                     }
 
                     // Stripe Connect — for receiving payments
@@ -100,6 +104,9 @@ struct PaymentMethodsView: View {
 
                                 Text("Required to receive reimbursements from trip expenses.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                    .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 4)
+                                Text("Stripe will ask you to select your location (United States) and confirm your account type, then tap Continue.")
+                                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             }
                         }
@@ -118,18 +125,5 @@ struct PaymentMethodsView: View {
         .background(.clear)
         .task { await vm.load() }
         .refreshable { await vm.load() }
-        .sheet(isPresented: $vm.showOnboarding) {
-            if let url = vm.onboardingURL {
-                SafariView(url: url)
-            }
-        }
     }
-}
-
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
-    }
-    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }
