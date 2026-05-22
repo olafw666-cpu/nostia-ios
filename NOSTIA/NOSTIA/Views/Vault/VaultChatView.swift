@@ -24,8 +24,13 @@ struct VaultChatView: View {
                     ScrollView {
                         LazyVStack(spacing: 6) {
                             ForEach(messages) { msg in
-                                VaultChatBubble(message: msg, isMe: msg.senderId == currentUserId)
-                                    .id(msg.id)
+                                if msg.isSystem == true {
+                                    SystemMessagePill(text: msg.content)
+                                        .id(msg.id)
+                                } else {
+                                    VaultChatBubble(message: msg, isMe: msg.senderId == currentUserId)
+                                        .id(msg.id)
+                                }
                             }
                         }
                         .padding(.horizontal, 16).padding(.vertical, 12)
@@ -117,6 +122,22 @@ struct VaultChatView: View {
             errorMessage = error.localizedDescription
         }
         isSending = false
+    }
+}
+
+struct SystemMessagePill: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.caption)
+            .foregroundColor(Color.nostiaTextMuted)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.white.opacity(0.07))
+            .clipShape(Capsule())
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+            .padding(.vertical, 2)
     }
 }
 

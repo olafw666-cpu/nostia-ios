@@ -148,6 +148,10 @@ final class VaultViewModel: ObservableObject {
         payingId = nil
         switch result {
         case .completed:
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await loadVault(tripId: tripId)
+            try? await Task.sleep(for: .seconds(3))
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
         case .canceled:
             break
@@ -161,6 +165,10 @@ final class VaultViewModel: ObservableObject {
         bulkPaymentSheet = nil
         switch result {
         case .completed:
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await loadVault(tripId: tripId)
+            try? await Task.sleep(for: .seconds(3))
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
         case .canceled:
             break
