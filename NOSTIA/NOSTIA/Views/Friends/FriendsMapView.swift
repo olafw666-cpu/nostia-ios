@@ -23,6 +23,8 @@ struct FriendsMapView: View {
         ZStack(alignment: .bottom) {
             MapReader { proxy in
                 Map(position: $cameraPosition) {
+                    UserAnnotation()
+
                     // Friend location pins
                     ForEach(friendLocations) { friend in
                         Annotation(friend.name, coordinate: CLLocationCoordinate2D(
