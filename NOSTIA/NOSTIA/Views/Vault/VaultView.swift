@@ -57,10 +57,11 @@ struct VaultContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaTextMuted.opacity(0.3), lineWidth: 1))
                     }
 
-                    if !data.balances.isEmpty {
+                    let nonZeroBalances = data.balances.filter { abs($0.balance) > 0.005 }
+                    if !nonZeroBalances.isEmpty {
                         Text("Balances").font(.headline).foregroundColor(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        ForEach(data.balances) { bal in
+                        ForEach(nonZeroBalances) { bal in
                             BalanceRow(
                                 balance: bal,
                                 isOwnRow: bal.id == currentUserId,

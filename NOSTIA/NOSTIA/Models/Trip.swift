@@ -44,4 +44,5 @@ struct TripChatMessage: Codable, Identifiable {
     let createdAt: String
     let senderName: String?
     let senderUsername: String?
+    let isSystem: Bool?
 }
