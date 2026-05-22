@@ -138,6 +138,19 @@ final class FeedViewModel: ObservableObject {
         }
     }
 
+    func editPost(post: FeedPost, newContent: String) async {
+        guard let idx = posts.firstIndex(where: { $0.id == post.id }) else { return }
+        let snapshot = posts[idx]
+        posts[idx].content = newContent
+        do {
+            let updated = try await FeedAPI.shared.updatePost(id: post.id, content: newContent)
+            posts[idx] = updated
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
+        } catch {
+            posts[idx] = snapshot
+        }
+    }
+
     func adminDeletePost(post: FeedPost) async {
         guard let idx = posts.firstIndex(where: { $0.id == post.id }) else { return }
         posts.remove(at: idx)

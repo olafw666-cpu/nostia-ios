@@ -21,10 +21,12 @@ struct HomeView: View {
     private enum HomeSheet: Identifiable {
         case comments(FeedPost)
         case eventDetail(Event)
+        case editPost(FeedPost)
         var id: String {
             switch self {
             case .comments(let p): return "c\(p.id)"
             case .eventDetail(let e): return "e\(e.id)"
+            case .editPost(let p): return "edit\(p.id)"
             }
         }
     }
@@ -90,18 +92,21 @@ struct HomeView: View {
 
                 // Nearby events
                 if !vm.nearbyEvents.isEmpty {
-                    SectionHeader(title: "Nearby Events")
-                    ForEach(vm.nearbyEvents.prefix(3)) { event in
-                        Button { activeSheet = .eventDetail(event) } label: {
-                            EventPreviewCard(event: event)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if authManager.isDev {
-                                Button(role: .destructive) {
-                                    Task { await vm.adminDeleteEvent(id: event.id) }
-                                } label: {
-                                    Label("Delete Event", systemImage: "trash")
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader(title: "Nearby Events")
+                        ForEach(vm.nearbyEvents.prefix(3)) { event in
+                            Button { activeSheet = .eventDetail(event) } label: {
+                                EventPreviewCard(event: event)
+                            }
+                            .buttonStyle(.plain)
+                            .id("nearby-\(event.id)")
+                            .contextMenu {
+                                if authManager.isDev {
+                                    Button(role: .destructive) {
+                                        Task { await vm.adminDeleteEvent(id: event.id) }
+                                    } label: {
+                                        Label("Delete Event", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
@@ -110,18 +115,21 @@ struct HomeView: View {
 
                 // Events you're going to
                 if !vm.upcomingEvents.isEmpty {
-                    SectionHeader(title: "Events You're Going To")
-                    ForEach(vm.upcomingEvents.prefix(3)) { event in
-                        Button { activeSheet = .eventDetail(event) } label: {
-                            EventPreviewCard(event: event)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if authManager.isDev {
-                                Button(role: .destructive) {
-                                    Task { await vm.adminDeleteEvent(id: event.id) }
-                                } label: {
-                                    Label("Delete Event", systemImage: "trash")
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader(title: "Events You're Going To")
+                        ForEach(vm.upcomingEvents.prefix(3)) { event in
+                            Button { activeSheet = .eventDetail(event) } label: {
+                                EventPreviewCard(event: event)
+                            }
+                            .buttonStyle(.plain)
+                            .id("going-\(event.id)")
+                            .contextMenu {
+                                if authManager.isDev {
+                                    Button(role: .destructive) {
+                                        Task { await vm.adminDeleteEvent(id: event.id) }
+                                    } label: {
+                                        Label("Delete Event", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
@@ -156,6 +164,7 @@ struct HomeView: View {
                                     Task { await feedVM.deletePost(post: post) }
                                 }
                             },
+                            onEdit: post.userId == authManager.currentUserId ? { activeSheet = .editPost(post) } : nil,
                             onComment: { activeSheet = .comments(post) },
                             isLikeProcessing: feedVM.likingPostIds.contains(post.id),
                             isDislikeProcessing: feedVM.dislikingPostIds.contains(post.id)
@@ -186,6 +195,9 @@ struct HomeView: View {
         .task {
             await vm.loadAll()
             locationManager.startPeriodicSync()
+            if let loc = locationManager.location {
+                await vm.updateLocation(loc)
+            }
             await feedVM.loadFeed()
             loadBackgroundFromDisk()
         }
@@ -239,6 +251,8 @@ struct HomeView: View {
                     .onAppear { Task { await feedVM.loadComments(for: post) } }
             case .eventDetail(let event):
                 EventDetailSheet(event: event, vm: eventActionsVM)
+            case .editPost(let post):
+                EditPostSheet(post: post, feedVM: feedVM)
             }
         }
     }

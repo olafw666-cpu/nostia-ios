@@ -21,6 +21,10 @@ final class FeedAPI {
         try await client.requestVoid("/feed/\(id)", method: "DELETE")
     }
 
+    func updatePost(id: Int, content: String) async throws -> FeedPost {
+        try await client.request("/feed/\(id)", method: "PUT", body: ["content": content])
+    }
+
     func adminDeletePost(id: Int) async throws {
         try await client.requestVoid("/admin/posts/\(id)", method: "DELETE")
     }

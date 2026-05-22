@@ -7,11 +7,14 @@ struct PostCard: View {
     var onLike: () -> Void = {}
     var onDislike: () -> Void = {}
     var onDelete: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
     var onComment: () -> Void = {}
     var onProfileTap: ((Int) -> Void)? = nil
     var isLikeProcessing: Bool = false
     var isDislikeProcessing: Bool = false
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -31,10 +34,24 @@ struct PostCard: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                if (post.userId == currentUserId || isCurrentUserDev), let onDelete {
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.footnote).foregroundColor(Color.nostriaDanger)
+                HStack(spacing: 4) {
+                    if post.userId == currentUserId, let onEdit {
+                        Button { onEdit() } label: {
+                            Image(systemName: "pencil")
+                                .font(.footnote).foregroundColor(Color.nostiaTextMuted)
+                                .padding(8)
+                        }
+                    }
+                    if (post.userId == currentUserId || isCurrentUserDev), onDelete != nil {
+                        Button { showDeleteConfirm = true } label: {
+                            Image(systemName: "trash")
+                                .font(.footnote).foregroundColor(Color.nostriaDanger)
+                                .padding(8)
+                        }
+                        .confirmationDialog("Delete this post?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                            Button("Delete", role: .destructive) { onDelete?() }
+                            Button("Cancel", role: .cancel) {}
+                        }
                     }
                 }
             }

@@ -5,7 +5,7 @@ struct FeedPost: Codable, Identifiable {
     let userId: Int
     let username: String
     let name: String
-    let content: String?
+    var content: String?
     let imageData: String?
     let relatedTripId: Int?
     let relatedEventId: Int?
