@@ -105,7 +105,7 @@ struct PaymentMethodsView: View {
                                 Text("Required to receive reimbursements from trip expenses.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 4)
-                                Text("Stripe will open in Safari. Select your location (United States), confirm your account type, then complete the form. Return to Nostia when finished and pull down to refresh.")
+                                Text("Stripe will open below. Confirm your account type and complete the identity form, then close to return to Nostia.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             }
