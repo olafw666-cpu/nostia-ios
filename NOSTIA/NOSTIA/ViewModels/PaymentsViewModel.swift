@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import SafariServices
 import StripePaymentSheet
 import UIKit
 
@@ -44,7 +45,12 @@ final class PaymentsViewModel: ObservableObject {
             guard let url = URL(string: urlString),
                   url.scheme == "https",
                   url.host?.hasSuffix("stripe.com") == true else { return }
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = scene.keyWindow?.rootViewController else { return }
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController { topVC = presented }
+            let safari = SFSafariViewController(url: url)
+            topVC.present(safari, animated: true)
         } catch {
             errorMessage = error.localizedDescription
         }
