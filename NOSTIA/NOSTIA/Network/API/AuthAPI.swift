@@ -1,9 +1,11 @@
 import Foundation
 
-final class AuthAPI {
+actor AuthAPI {
     static let shared = AuthAPI()
     private let client = APIClient.shared
     private init() {}
+
+    private var ongoingRefresh: Task<String, Error>?
 
     func login(username: String, password: String) async throws -> AuthResponse {
         let res: AuthResponse = try await client.request(
@@ -47,20 +49,33 @@ final class AuthAPI {
     }
 
     // Exchange a refresh token for a new access + refresh token pair.
-    // Saves both to Keychain and returns the new access token.
+    // Deduplicates concurrent calls — if a refresh is already in flight, all callers
+    // await the same Task so token rotation only happens once.
     func refreshAccessToken() async throws -> String {
-        guard let refreshToken = AuthManager.shared.getRefreshToken() else {
-            throw APIError.noToken
+        if let existing = ongoingRefresh {
+            return try await existing.value
         }
-        let res: TokenRefreshResponse = try await client.request(
-            "/auth/refresh",
-            method: "POST",
-            body: ["refreshToken": refreshToken],
-            requiresAuth: false
-        )
-        AuthManager.shared.saveToken(res.token)
-        AuthManager.shared.saveRefreshToken(res.refreshToken)
-        return res.token
+        let task = Task<String, Error> {
+            guard let rt = AuthManager.shared.getRefreshToken() else { throw APIError.noToken }
+            let res: TokenRefreshResponse = try await APIClient.shared.request(
+                "/auth/refresh",
+                method: "POST",
+                body: ["refreshToken": rt],
+                requiresAuth: false
+            )
+            AuthManager.shared.saveToken(res.token)
+            AuthManager.shared.saveRefreshToken(res.refreshToken)
+            return res.token
+        }
+        ongoingRefresh = task
+        do {
+            let token = try await task.value
+            ongoingRefresh = nil
+            return token
+        } catch {
+            ongoingRefresh = nil
+            throw error
+        }
     }
 
     func getMe() async throws -> User {
