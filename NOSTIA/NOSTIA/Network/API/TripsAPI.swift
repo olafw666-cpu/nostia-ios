@@ -69,4 +69,8 @@ final class TripsAPI {
     func redeemInviteToken(_ token: String) async throws -> RedeemResult {
         return try await client.request("/invite/redeem", method: "POST", body: ["token": token])
     }
+
+    func addVaultMembers(tripId: Int, userIds: [Int]) async throws -> Trip {
+        return try await client.request("/trips/\(tripId)/vault-add-members", method: "POST", body: ["userIds": userIds])
+    }
 }
