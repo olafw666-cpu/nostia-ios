@@ -16,7 +16,7 @@ struct MainTabView: View {
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house") }
+            .tabItem { Label("Home", systemImage: "house") }
             .tag(0)
 
             NavigationStack {
@@ -36,7 +36,7 @@ struct MainTabView: View {
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map") }
+            .tabItem { Label("Map", systemImage: "map") }
             .tag(2)
 
             NavigationStack {
@@ -46,7 +46,7 @@ struct MainTabView: View {
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Events", systemImage: selectedTab == 3 ? "calendar.badge.clock" : "calendar") }
+            .tabItem { Label("Events", systemImage: "calendar") }
             .tag(3)
 
             NavigationStack {
@@ -56,9 +56,10 @@ struct MainTabView: View {
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Following", systemImage: selectedTab == 4 ? "person.2.fill" : "person.2") }
+            .tabItem { Label("Following", systemImage: "person.2") }
             .tag(4)
         }
+        .tabViewStyle(.sidebarAdaptable)
         .tint(Color.nostiaAccent)
         .onAppear {
             loadUnreadCount()

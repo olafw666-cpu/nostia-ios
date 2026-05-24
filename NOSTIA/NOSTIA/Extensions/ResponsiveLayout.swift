@@ -36,11 +36,11 @@ final class ResponsiveLayoutManager: ObservableObject {
 
     var isTablet: Bool { breakpoint == .tablet }
 
-    // Content containers: 600 pt max on tablet, unconstrained on phone
-    var contentMaxWidth: CGFloat { isTablet ? 600 : .infinity }
+    // Content containers: 900 pt max on tablet, unconstrained on phone
+    var contentMaxWidth: CGFloat { isTablet ? 900 : .infinity }
 
-    // Modals / sheets: 540 pt max on tablet
-    var sheetMaxWidth: CGFloat { isTablet ? 540 : .infinity }
+    // Modals / sheets: 680 pt max on tablet
+    var sheetMaxWidth: CGFloat { isTablet ? 680 : .infinity }
 
     private var spacingScale: CGFloat {
         switch breakpoint {
