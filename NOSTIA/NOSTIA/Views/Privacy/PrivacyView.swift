@@ -1,4 +1,5 @@
 import SwiftUI
+import SafariServices
 
 struct PrivacyView: View {
     @EnvironmentObject var authManager: AuthManager
@@ -116,6 +117,19 @@ struct PrivacyView: View {
                         }
                     }
 
+                    // Legal section
+                    GlassSection(title: "Legal") {
+                        Button { openURL(AppConfig.termsOfServiceURL) } label: {
+                            HStack {
+                                Image(systemName: "doc.text.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                Text("Terms of Service").foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "arrow.up.right").foregroundColor(Color.nostiaTextSecond)
+                            }
+                            .font(.subheadline).padding(responsive.spacing(16))
+                        }
+                    }
+
                     // Logout
                     Button { authManager.logout() } label: {
                         HStack {
@@ -209,6 +223,17 @@ struct PrivacyView: View {
             isDeletingAccount = false
             deleteAccountError = "Something went wrong. Your account was not deleted. Please try again."
         }
+    }
+
+    func openURL(_ urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = scene.keyWindow?.rootViewController else { return }
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController { topVC = presented }
+        let safari = SFSafariViewController(url: url)
+        safari.modalPresentationStyle = .pageSheet
+        topVC.present(safari, animated: true)
     }
 
     func saveEmailAndNavigate() async {
