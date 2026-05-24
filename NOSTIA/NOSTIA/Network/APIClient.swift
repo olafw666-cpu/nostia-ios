@@ -22,25 +22,45 @@ final class APIClient {
     ) async throws -> T {
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = method
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         if requiresAuth {
             guard let token = AuthManager.shared.getToken() else { throw APIError.noToken }
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
         if let body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, response) = try await session.data(for: request)
+        return try await executeRequest(urlRequest, requiresAuth: requiresAuth, allowRetry: requiresAuth, path: path, method: method, body: body)
+    }
+
+    private func executeRequest<T: Decodable>(
+        _ urlRequest: URLRequest,
+        requiresAuth: Bool,
+        allowRetry: Bool,
+        path: String,
+        method: String,
+        body: [String: Any]?
+    ) async throws -> T {
+        let (data, response) = try await session.data(for: urlRequest)
 
         guard let http = response as? HTTPURLResponse else { throw APIError.unknown }
 
         if http.statusCode == 401 {
-            if requiresAuth {
+            if requiresAuth && allowRetry {
+                // Attempt silent token refresh before forcing logout
+                if let newToken = try? await AuthAPI.shared.refreshAccessToken() {
+                    var retryRequest = urlRequest
+                    retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                    return try await executeRequest(retryRequest, requiresAuth: requiresAuth, allowRetry: false, path: path, method: method, body: body)
+                }
+                AuthManager.shared.logout()
+                throw APIError.httpError(statusCode: 401, message: "Session expired. Please log in again.")
+            } else if requiresAuth {
                 AuthManager.shared.logout()
                 throw APIError.httpError(statusCode: 401, message: "Session expired. Please log in again.")
             } else {
@@ -79,23 +99,40 @@ final class APIClient {
     ) async throws {
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = method
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         if let token = AuthManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
         if let body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, response) = try await session.data(for: request)
+        try await executeRequestVoid(urlRequest, allowRetry: true, path: path, method: method, body: body)
+    }
+
+    private func executeRequestVoid(
+        _ urlRequest: URLRequest,
+        allowRetry: Bool,
+        path: String,
+        method: String,
+        body: [String: Any]?
+    ) async throws {
+        let (data, response) = try await session.data(for: urlRequest)
 
         guard let http = response as? HTTPURLResponse else { throw APIError.unknown }
 
         if http.statusCode == 401 {
+            if allowRetry {
+                if let newToken = try? await AuthAPI.shared.refreshAccessToken() {
+                    var retryRequest = urlRequest
+                    retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                    return try await executeRequestVoid(retryRequest, allowRetry: false, path: path, method: method, body: body)
+                }
+            }
             AuthManager.shared.logout()
             throw APIError.httpError(statusCode: 401, message: "Session expired. Please log in again.")
         }

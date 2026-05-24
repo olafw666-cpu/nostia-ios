@@ -30,5 +30,11 @@ struct User: Codable, Identifiable {
 
 struct AuthResponse: Codable {
     let token: String
+    let refreshToken: String?
     let user: User
+}
+
+struct TokenRefreshResponse: Codable {
+    let token: String
+    let refreshToken: String
 }
