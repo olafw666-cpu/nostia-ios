@@ -10,6 +10,7 @@ final class AuthManager: ObservableObject {
     @Published var isDev: Bool = false
 
     private let tokenKey = "nostia_jwt_token"
+    private let refreshTokenKey = "nostia_refresh_token"
 
     private init() {
         if let token = getToken() {
@@ -21,16 +22,7 @@ final class AuthManager: ObservableObject {
     // MARK: - Token Storage (Keychain)
 
     func saveToken(_ token: String) {
-        let data = Data(token.utf8)
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: tokenKey,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        ]
-        SecItemDelete(query as CFDictionary)
-        SecItemAdd(query as CFDictionary, nil)
-
+        keychainWrite(key: tokenKey, value: token)
         DispatchQueue.main.async {
             self.isAuthenticated = true
             self.currentUserId = self.userIdFromToken(token)
@@ -38,9 +30,45 @@ final class AuthManager: ObservableObject {
     }
 
     func getToken() -> String? {
+        keychainRead(key: tokenKey)
+    }
+
+    func saveRefreshToken(_ token: String) {
+        keychainWrite(key: refreshTokenKey, value: token)
+    }
+
+    func getRefreshToken() -> String? {
+        keychainRead(key: refreshTokenKey)
+    }
+
+    func deleteToken() {
+        keychainDelete(key: tokenKey)
+        keychainDelete(key: refreshTokenKey)
+        DispatchQueue.main.async {
+            self.isAuthenticated = false
+            self.currentUserId = nil
+            self.isDev = false
+        }
+    }
+
+    // MARK: - Keychain helpers
+
+    private func keychainWrite(key: String, value: String) {
+        let data = Data(value.utf8)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: tokenKey,
+            kSecAttrAccount as String: key,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
+    }
+
+    private func keychainRead(key: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -50,18 +78,12 @@ final class AuthManager: ObservableObject {
         return String(data: data, encoding: .utf8)
     }
 
-    func deleteToken() {
+    private func keychainDelete(key: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: tokenKey
+            kSecAttrAccount as String: key
         ]
         SecItemDelete(query as CFDictionary)
-
-        DispatchQueue.main.async {
-            self.isAuthenticated = false
-            self.currentUserId = nil
-            self.isDev = false
-        }
     }
 
     func logout() {

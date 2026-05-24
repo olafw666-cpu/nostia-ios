@@ -13,6 +13,7 @@ final class AuthAPI {
             requiresAuth: false
         )
         AuthManager.shared.saveToken(res.token)
+        if let rt = res.refreshToken { AuthManager.shared.saveRefreshToken(rt) }
         return res
     }
 
@@ -41,7 +42,25 @@ final class AuthAPI {
             requiresAuth: false
         )
         AuthManager.shared.saveToken(res.token)
+        if let rt = res.refreshToken { AuthManager.shared.saveRefreshToken(rt) }
         return res
+    }
+
+    // Exchange a refresh token for a new access + refresh token pair.
+    // Saves both to Keychain and returns the new access token.
+    func refreshAccessToken() async throws -> String {
+        guard let refreshToken = AuthManager.shared.getRefreshToken() else {
+            throw APIError.noToken
+        }
+        let res: TokenRefreshResponse = try await client.request(
+            "/auth/refresh",
+            method: "POST",
+            body: ["refreshToken": refreshToken],
+            requiresAuth: false
+        )
+        AuthManager.shared.saveToken(res.token)
+        AuthManager.shared.saveRefreshToken(res.refreshToken)
+        return res.token
     }
 
     func getMe() async throws -> User {
