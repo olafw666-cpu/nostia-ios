@@ -117,6 +117,19 @@ final class TripsViewModel: ObservableObject {
         }
     }
 
+    func addVaultMembers(tripId: Int, userIds: [Int]) async -> Bool {
+        do {
+            let updated = try await TripsAPI.shared.addVaultMembers(tripId: tripId, userIds: userIds)
+            if let idx = trips.firstIndex(where: { $0.id == tripId }) {
+                trips[idx] = updated
+            }
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func refreshTrip(_ id: Int) async {
         do {
             let updated = try await TripsAPI.shared.get(id)
