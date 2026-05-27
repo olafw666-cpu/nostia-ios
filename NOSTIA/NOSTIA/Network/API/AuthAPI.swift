@@ -26,7 +26,8 @@ actor AuthAPI {
         email: String?,
         locationConsent: Bool,
         dataCollectionConsent: Bool,
-        tosVersion: String
+        tosVersion: String,
+        dataNotSold: Bool = false
     ) async throws -> AuthResponse {
         var body: [String: Any] = [
             "username": username,
@@ -34,7 +35,8 @@ actor AuthAPI {
             "name": name,
             "locationConsent": locationConsent,
             "dataCollectionConsent": dataCollectionConsent,
-            "tosVersion": tosVersion
+            "tosVersion": tosVersion,
+            "dataNotSold": dataNotSold
         ]
         if let email, !email.isEmpty { body["email"] = email }
         let res: AuthResponse = try await client.request(

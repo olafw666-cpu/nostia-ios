@@ -1,4 +1,5 @@
 import SwiftUI
+import AppTrackingTransparency
 
 private enum SignupSheet: Identifiable {
     case tos, consent
@@ -13,6 +14,7 @@ struct SignupView: View {
     @State private var email = ""
     @State private var activeSheet: SignupSheet?
     @State private var tosAgreed = false
+    @State private var attDenied = false
     @State private var consentGranted = false
     @State private var pendingConsent: (location: Bool, data: Bool)?
     @Environment(\.dismiss) private var dismiss
@@ -118,7 +120,13 @@ struct SignupView: View {
                 TermsAgreementView(
                     onAgree: {
                         tosAgreed = true
-                        activeSheet = .consent
+                        activeSheet = nil
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(500))
+                            let status = await ATTrackingManager.requestTrackingAuthorization()
+                            attDenied = (status != .authorized)
+                            activeSheet = .consent
+                        }
                     },
                     onDecline: {
                         activeSheet = nil
@@ -157,6 +165,6 @@ struct SignupView: View {
     func submitSignup(locationConsent: Bool, dataConsent: Bool) async {
         _ = await vm.register(username: username, password: password, name: name, email: email,
                               locationConsent: locationConsent, dataCollectionConsent: dataConsent,
-                              tosVersion: LegalDocuments.tosVersion)
+                              tosVersion: LegalDocuments.tosVersion, dataNotSold: attDenied)
     }
 }
