@@ -249,6 +249,12 @@ struct PrivacyView: View {
             user = updated
             showEmailPrompt = false
             navigateToPaymentMethods = true
+        } catch let error as APIError {
+            if case .httpError(_, let message) = error {
+                emailSaveError = message
+            } else {
+                emailSaveError = "Failed to save email. Please try again."
+            }
         } catch {
             emailSaveError = "Failed to save email. Please try again."
         }
