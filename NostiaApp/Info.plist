@@ -20,6 +20,8 @@
     <string>UIStatusBarStyleLightContent</string>
     <key>UIUserInterfaceStyle</key>
     <string>Dark</string>
+    <key>NSUserTrackingUsageDescription</key>
+    <string>Nostia uses tracking data to help personalize your experience and improve the app.</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>

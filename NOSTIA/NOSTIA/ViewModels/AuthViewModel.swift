@@ -32,7 +32,8 @@ final class AuthViewModel: ObservableObject {
         email: String,
         locationConsent: Bool,
         dataCollectionConsent: Bool,
-        tosVersion: String
+        tosVersion: String,
+        dataNotSold: Bool = false
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -44,7 +45,8 @@ final class AuthViewModel: ObservableObject {
                 email: email.isEmpty ? nil : email,
                 locationConsent: locationConsent,
                 dataCollectionConsent: dataCollectionConsent,
-                tosVersion: tosVersion
+                tosVersion: tosVersion,
+                dataNotSold: dataNotSold
             )
             UserDefaults.standard.set(true, forKey: "nostia_pending_profile_setup")
             NotificationCenter.default.post(name: .userDidLogin, object: nil)

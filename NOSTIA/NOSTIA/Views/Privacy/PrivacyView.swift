@@ -1,5 +1,4 @@
 import SwiftUI
-import SafariServices
 
 struct PrivacyView: View {
     @EnvironmentObject var authManager: AuthManager
@@ -18,6 +17,8 @@ struct PrivacyView: View {
     @State private var promptEmail = ""
     @State private var isSavingEmail = false
     @State private var emailSaveError: String?
+    @State private var showTermsSheet = false
+    @State private var trackingEnabled = true
 
     var body: some View {
         ScrollView {
@@ -119,12 +120,31 @@ struct PrivacyView: View {
 
                     // Legal section
                     GlassSection(title: "Legal") {
-                        Button { openURL(AppConfig.termsOfServiceURL) } label: {
+                        HStack {
+                            Image(systemName: "hand.raised.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Allow Data Tracking").foregroundColor(.white)
+                                Text("Used to personalise your experience")
+                                    .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $trackingEnabled)
+                                .tint(Color.nostiaAccent)
+                                .labelsHidden()
+                                .onChange(of: trackingEnabled) { newValue in
+                                    Task { await updateTracking(enabled: newValue) }
+                                }
+                        }
+                        .font(.subheadline)
+                        .padding(responsive.spacing(16))
+                        .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
+
+                        Button { showTermsSheet = true } label: {
                             HStack {
                                 Image(systemName: "doc.text.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
                                 Text("Terms of Service").foregroundColor(.white)
                                 Spacer()
-                                Image(systemName: "arrow.up.right").foregroundColor(Color.nostiaTextSecond)
+                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                         }
@@ -159,6 +179,9 @@ struct PrivacyView: View {
         }
         .background(.clear)
         .task { await loadData() }
+        .sheet(isPresented: $showTermsSheet) {
+            LegalDocumentView()
+        }
         .sheet(isPresented: $showEmailPrompt) {
             EmailCaptureSheet(
                 email: $promptEmail,
@@ -194,7 +217,17 @@ struct PrivacyView: View {
         async let consentResponseData: ConsentResponse? = try? APIClient.shared.request("/consent")
         let (u, c) = await (try? userData, await consentResponseData)
         user = u; consentStatus = c?.consent
+        trackingEnabled = !(u?.dataNotSold ?? false)
         isLoading = false
+    }
+
+    func updateTracking(enabled: Bool) async {
+        do {
+            let updated = try await AuthAPI.shared.updateMe(["data_not_sold": enabled ? 0 : 1])
+            user = updated
+        } catch {
+            trackingEnabled = !enabled
+        }
     }
 
     func requestDataExport() async {
@@ -223,17 +256,6 @@ struct PrivacyView: View {
             isDeletingAccount = false
             deleteAccountError = "Something went wrong. Your account was not deleted. Please try again."
         }
-    }
-
-    func openURL(_ urlString: String) {
-        guard let url = URL(string: urlString) else { return }
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootVC = scene.keyWindow?.rootViewController else { return }
-        var topVC = rootVC
-        while let presented = topVC.presentedViewController { topVC = presented }
-        let safari = SFSafariViewController(url: url)
-        safari.modalPresentationStyle = .pageSheet
-        topVC.present(safari, animated: true)
     }
 
     func saveEmailAndNavigate() async {
