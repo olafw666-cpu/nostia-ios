@@ -100,6 +100,7 @@ struct PaymentMethodsView: View {
                                         .frame(maxWidth: .infinity).padding(responsive.spacing(14))
                                         .background(Color.nostiaAccent).cornerRadius(10)
                                 }
+                                .disabled(vm.isOnboarding)
                                 .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
 
                                 Text("Required to receive reimbursements from trip expenses.")
