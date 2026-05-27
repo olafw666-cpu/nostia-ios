@@ -9,6 +9,7 @@ final class PaymentsViewModel: ObservableObject {
     @Published var paymentMethods: [PaymentMethod] = []
     @Published var onboardingStatus: OnboardingStatus?
     @Published var isLoading = false
+    @Published var isOnboarding = false
     @Published var errorMessage: String?
 
     func load() async {
@@ -40,6 +41,9 @@ final class PaymentsViewModel: ObservableObject {
     }
 
     func startOnboarding() async {
+        guard !isOnboarding else { return }
+        isOnboarding = true
+        defer { isOnboarding = false }
         do {
             let urlString = try await PaymentsAPI.shared.startOnboarding()
             guard let url = URL(string: urlString),
