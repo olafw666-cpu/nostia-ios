@@ -54,6 +54,7 @@ final class PaymentsViewModel: ObservableObject {
             var topVC = rootVC
             while let presented = topVC.presentedViewController { topVC = presented }
             let safari = SFSafariViewController(url: url)
+            safari.modalPresentationStyle = .fullScreen
             topVC.present(safari, animated: true)
         } catch {
             errorMessage = error.localizedDescription
