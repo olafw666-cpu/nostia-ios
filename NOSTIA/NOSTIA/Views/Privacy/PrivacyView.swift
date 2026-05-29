@@ -17,6 +17,13 @@ struct PrivacyView: View {
     @State private var promptEmail = ""
     @State private var isSavingEmail = false
     @State private var emailSaveError: String?
+    @State private var showAddressPrompt = false
+    @State private var promptLine1 = ""
+    @State private var promptCity = ""
+    @State private var promptState = ""
+    @State private var promptZip = ""
+    @State private var isSavingAddress = false
+    @State private var addressSaveError: String?
     @State private var showTermsSheet = false
     @State private var trackingEnabled = true
 
@@ -37,7 +44,13 @@ struct PrivacyView: View {
                         }
                         Button {
                             if let email = user?.email, !email.isEmpty {
-                                navigateToPaymentMethods = true
+                                if user?.hasHomeAddress == true {
+                                    navigateToPaymentMethods = true
+                                } else {
+                                    promptLine1 = ""; promptCity = ""; promptState = ""; promptZip = ""
+                                    addressSaveError = nil
+                                    showAddressPrompt = true
+                                }
                             } else {
                                 promptEmail = ""
                                 emailSaveError = nil
@@ -191,6 +204,18 @@ struct PrivacyView: View {
                 onDismiss: { showEmailPrompt = false }
             )
         }
+        .sheet(isPresented: $showAddressPrompt) {
+            AddressCaptureSheet(
+                line1: $promptLine1,
+                city: $promptCity,
+                state: $promptState,
+                zip: $promptZip,
+                errorMessage: $addressSaveError,
+                isSaving: $isSavingAddress,
+                onSave: { Task { await saveAddressAndNavigate() } },
+                onDismiss: { showAddressPrompt = false }
+            )
+        }
         .alert("Delete Your Account?", isPresented: $showDeleteAccountStep1) {
             Button("Cancel", role: .cancel) {}
             Button("Continue") { showDeleteAccountStep2 = true }
@@ -282,6 +307,39 @@ struct PrivacyView: View {
         }
         isSavingEmail = false
     }
+
+    func saveAddressAndNavigate() async {
+        let line1 = promptLine1.trimmingCharacters(in: .whitespaces)
+        let city = promptCity.trimmingCharacters(in: .whitespaces)
+        let state = promptState.trimmingCharacters(in: .whitespaces).uppercased()
+        let zip = promptZip.trimmingCharacters(in: .whitespaces)
+        guard !line1.isEmpty, !city.isEmpty, state.count == 2, zip.count >= 5 else {
+            addressSaveError = "Please fill in all fields. State must be a 2-letter code (e.g. CA)."
+            return
+        }
+        isSavingAddress = true
+        addressSaveError = nil
+        do {
+            let updated = try await AuthAPI.shared.updateMe([
+                "address_line1": line1,
+                "address_city": city,
+                "address_state": state,
+                "address_zip": zip
+            ])
+            user = updated
+            showAddressPrompt = false
+            navigateToPaymentMethods = true
+        } catch let error as APIError {
+            if case .httpError(_, let message) = error {
+                addressSaveError = message
+            } else {
+                addressSaveError = "Failed to save address. Please try again."
+            }
+        } catch {
+            addressSaveError = "Failed to save address. Please try again."
+        }
+        isSavingAddress = false
+    }
 }
 
 // MARK: - Email Capture Sheet
@@ -354,6 +412,107 @@ struct EmailCaptureSheet: View {
         }
         .presentationBackground(.ultraThinMaterial)
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Address Capture Sheet
+
+struct AddressCaptureSheet: View {
+    @Binding var line1: String
+    @Binding var city: String
+    @Binding var state: String
+    @Binding var zip: String
+    @Binding var errorMessage: String?
+    @Binding var isSaving: Bool
+    let onSave: () -> Void
+    let onDismiss: () -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
+
+    private var isValid: Bool {
+        !line1.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !city.trimmingCharacters(in: .whitespaces).isEmpty &&
+        state.trimmingCharacters(in: .whitespaces).count == 2 &&
+        zip.trimmingCharacters(in: .whitespaces).count >= 5
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: responsive.spacing(20)) {
+                VStack(spacing: responsive.spacing(12)) {
+                    Image(systemName: "house.fill")
+                        .font(.system(size: responsive.fontSize(48)))
+                        .foregroundStyle(Color.nostiaAccent)
+                    Text("Home Address Required")
+                        .font(.title2.bold()).foregroundColor(.white)
+                    Text("Your home address is required to set up your payout account with Stripe for receiving payments.")
+                        .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, responsive.spacing(8))
+
+                VStack(spacing: responsive.spacing(12)) {
+                    NostiaTextField(label: "Street Address", placeholder: "123 Main St", text: $line1)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+
+                    HStack(spacing: responsive.spacing(12)) {
+                        NostiaTextField(label: "City", placeholder: "New York", text: $city)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+
+                        NostiaTextField(label: "State", placeholder: "NY", text: $state)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .frame(maxWidth: 80)
+                            .onChange(of: state) { newValue in
+                                if newValue.count > 2 { state = String(newValue.prefix(2)) }
+                            }
+                    }
+
+                    NostiaTextField(label: "ZIP Code", placeholder: "10001", text: $zip)
+                        .keyboardType(.numberPad)
+                }
+
+                if let err = errorMessage {
+                    Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Button {
+                    onSave()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isSaving {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "arrow.right.circle.fill")
+                            Text("Save & Continue")
+                        }
+                    }
+                    .font(.headline.bold()).foregroundColor(.white)
+                    .frame(maxWidth: .infinity).padding(responsive.spacing(16))
+                    .background(Color.nostiaAccent).cornerRadius(14)
+                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                }
+                .disabled(isSaving || !isValid)
+
+                Spacer()
+            }
+            .padding(responsive.spacing(24))
+            .frame(maxWidth: responsive.contentMaxWidth)
+            .frame(maxWidth: .infinity)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { onDismiss() }
+                        .foregroundColor(Color.nostiaTextSecond)
+                }
+            }
+        }
+        .presentationBackground(.ultraThinMaterial)
+        .presentationDetents([.large])
     }
 }
 

@@ -15,12 +15,17 @@ struct User: Codable, Identifiable {
     var profilePictureUrl: String?
     var followersCount: Int?
     private var dataNotSoldRaw: Int?
+    var addressLine1: String?
+    var addressCity: String?
+    var addressState: String?
+    var addressZip: String?
 
     var isAdmin: Bool { role == "admin" }
     var isDev: Bool { accountType == "dev" }
     var isHomeOpen: Bool { homeStatus == "open" }
     var initial: String { String(name.prefix(1)).uppercased() }
     var dataNotSold: Bool { dataNotSoldRaw.map { $0 != 0 } ?? false }
+    var hasHomeAddress: Bool { !(addressLine1 ?? "").isEmpty }
 
     enum CodingKeys: String, CodingKey {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
@@ -28,6 +33,10 @@ struct User: Codable, Identifiable {
         case followersCount
         case accountType = "account_type"
         case dataNotSoldRaw = "data_not_sold"
+        case addressLine1 = "address_line1"
+        case addressCity = "address_city"
+        case addressState = "address_state"
+        case addressZip = "address_zip"
     }
 }
 
