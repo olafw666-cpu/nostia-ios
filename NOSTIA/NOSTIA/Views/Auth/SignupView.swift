@@ -120,13 +120,7 @@ struct SignupView: View {
                 TermsAgreementView(
                     onAgree: {
                         tosAgreed = true
-                        activeSheet = nil
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(500))
-                            let status = await ATTrackingManager.requestTrackingAuthorization()
-                            attDenied = (status != .authorized)
-                            activeSheet = .consent
-                        }
+                        activeSheet = .consent
                     },
                     onDecline: {
                         activeSheet = nil
@@ -163,6 +157,9 @@ struct SignupView: View {
     }
 
     func submitSignup(locationConsent: Bool, dataConsent: Bool) async {
+        try? await Task.sleep(for: .milliseconds(400))
+        let status = await ATTrackingManager.requestTrackingAuthorization()
+        attDenied = (status != .authorized)
         _ = await vm.register(username: username, password: password, name: name, email: email,
                               locationConsent: locationConsent, dataCollectionConsent: dataConsent,
                               tosVersion: LegalDocuments.tosVersion, dataNotSold: attDenied)
