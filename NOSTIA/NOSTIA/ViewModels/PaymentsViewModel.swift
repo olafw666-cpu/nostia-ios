@@ -49,8 +49,23 @@ final class PaymentsViewModel: ObservableObject {
                   url.scheme == "https",
                   url.host?.hasSuffix("stripe.com") == true else { return }
             await UIApplication.shared.open(url)
+            // Poll for onboarding completion so user doesn't have to pull-to-refresh manually
+            Task { @MainActor [weak self] in
+                await self?.pollOnboardingStatus()
+            }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func pollOnboardingStatus() async {
+        let interval: UInt64 = 20_000_000_000 // 20 seconds
+        let maxAttempts = 6                    // 2 minutes total
+        for _ in 0..<maxAttempts {
+            try? await Task.sleep(nanoseconds: interval)
+            guard let status = try? await PaymentsAPI.shared.getOnboardingStatus() else { continue }
+            onboardingStatus = status
+            if status.complete { return }
         }
     }
 

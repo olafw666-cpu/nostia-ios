@@ -30,6 +30,10 @@ final class FriendsAPI {
         return try await client.request("/users/search?query=\(encoded)")
     }
 
+    func lookupContacts(emails: [String]) async throws -> [String: UserSearchResult] {
+        return try await client.request("/contacts/lookup", method: "POST", body: ["emails": emails])
+    }
+
     func getLocations() async throws -> [FollowLocation] {
         return try await client.request("/follow/locations")
     }

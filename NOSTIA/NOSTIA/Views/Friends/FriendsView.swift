@@ -174,11 +174,9 @@ struct FriendsView: View {
             ChatView(conversationId: dest.id, friendName: dest.name)
         }
         .sheet(isPresented: $showContactsPicker) {
-            ContactsPickerView { name in
-                showContactsPicker = false
-                vm.searchQuery = name
-                Task { await vm.search() }
-            }
+            ContactsPickerView()
+                .environmentObject(responsive)
+                .onDisappear { Task { await vm.loadAll() } }
         }
     }
 
@@ -301,12 +299,14 @@ struct TabButton: View {
 }
 
 struct ContactsPickerView: View {
-    let onSelect: (String) -> Void
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @Environment(\.dismiss) private var dismiss
 
-    @State private var contactNames: [String] = []
+    @State private var onNostia: [ContactMatch] = []
+    @State private var toInvite: [InviteContact] = []
     @State private var isLoading = true
     @State private var denied = false
-    @Environment(\.dismiss) private var dismiss
+    @State private var followedIds: Set<Int> = []
 
     var body: some View {
         NavigationStack {
@@ -314,30 +314,63 @@ struct ContactsPickerView: View {
                 if isLoading {
                     LoadingView()
                 } else if denied {
-                    EmptyStateView(
-                        icon: "person.crop.circle.badge.xmark",
-                        text: "Contacts Access Denied",
-                        sub: "Enable contacts access in Settings to find people on Nostia"
-                    )
-                } else if contactNames.isEmpty {
-                    EmptyStateView(icon: "person.2", text: "No Contacts Found", sub: "")
-                } else {
-                    List(contactNames, id: \.self) { name in
-                        Button {
-                            onSelect(name)
-                        } label: {
-                            HStack(spacing: 12) {
-                                AvatarView(
-                                    initial: String(name.prefix(1)).uppercased(),
-                                    color: Color.nostiaAccent,
-                                    size: 40
-                                )
-                                Text(name).foregroundColor(.white).font(.body)
+                    VStack(spacing: 16) {
+                        EmptyStateView(
+                            icon: "person.crop.circle.badge.xmark",
+                            text: "Contacts Access Denied",
+                            sub: "Enable contacts access in Settings to find friends on Nostia"
+                        )
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
                             }
-                            .padding(.vertical, 4)
                         }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        .font(.subheadline.bold()).foregroundColor(.white)
+                        .padding(.horizontal, 24).padding(.vertical, 12)
+                        .background(Color.nostiaAccent).cornerRadius(12)
+                    }
+                } else if onNostia.isEmpty && toInvite.isEmpty {
+                    EmptyStateView(icon: "person.2", text: "No Contacts Found", sub: "Add contacts to your device to find friends")
+                } else {
+                    List {
+                        if !onNostia.isEmpty {
+                            Section {
+                                ForEach(onNostia) { match in
+                                    ContactOnNostiaRow(
+                                        match: match,
+                                        isFollowed: followedIds.contains(match.nostiaUser.id),
+                                        onFollow: {
+                                            let uid = match.nostiaUser.id
+                                            followedIds.insert(uid)
+                                            Task {
+                                                try? await FriendsAPI.shared.follow(userId: uid)
+                                            }
+                                        }
+                                    )
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                }
+                            } header: {
+                                Text("On Nostia")
+                                    .font(.caption.bold())
+                                    .foregroundColor(Color.nostiaTextSecond)
+                                    .textCase(nil)
+                            }
+                        }
+                        if !toInvite.isEmpty {
+                            Section {
+                                ForEach(toInvite) { contact in
+                                    ContactInviteRow(contact: contact)
+                                        .listRowBackground(Color.clear)
+                                        .listRowSeparator(.hidden)
+                                }
+                            } header: {
+                                Text("Invite to Nostia")
+                                    .font(.caption.bold())
+                                    .foregroundColor(Color.nostiaTextSecond)
+                                    .textCase(nil)
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .background(.clear)
@@ -350,7 +383,7 @@ struct ContactsPickerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button("Done") { dismiss() }
                         .foregroundColor(Color.nostiaAccent)
                 }
             }
@@ -363,38 +396,120 @@ struct ContactsPickerView: View {
         let store = CNContactStore()
         let status = CNContactStore.authorizationStatus(for: .contacts)
         guard status != .denied && status != .restricted else {
-            isLoading = false
-            denied = true
-            return
+            isLoading = false; denied = true; return
         }
         do {
             if status == .notDetermined {
-                let granted = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
-                    store.requestAccess(for: .contacts) { granted, error in
-                        if let error { continuation.resume(throwing: error) }
-                        else { continuation.resume(returning: granted) }
+                let granted = try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Bool, Error>) in
+                    store.requestAccess(for: .contacts) { ok, err in
+                        if let err { cont.resume(throwing: err) } else { cont.resume(returning: ok) }
                     }
                 }
-                guard granted else {
-                    isLoading = false
-                    denied = true
-                    return
-                }
+                guard granted else { isLoading = false; denied = true; return }
             }
-            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
+
+            let keys = [
+                CNContactGivenNameKey, CNContactFamilyNameKey,
+                CNContactEmailAddressesKey, CNContactPhoneNumbersKey
+            ] as [CNKeyDescriptor]
             let request = CNContactFetchRequest(keysToFetch: keys)
-            var names: [String] = []
+            var rawContacts: [(name: String, email: String?, phone: String?)] = []
             try store.enumerateContacts(with: request) { contact, _ in
                 let name = [contact.givenName, contact.familyName]
                     .filter { !$0.isEmpty }.joined(separator: " ")
-                if !name.trimmingCharacters(in: .whitespaces).isEmpty {
-                    names.append(name)
+                guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                let email = contact.emailAddresses.first.map { String($0.value) }
+                let phone = contact.phoneNumbers.first.map { $0.value.stringValue }
+                rawContacts.append((name: name, email: email, phone: phone))
+            }
+
+            let allEmails = rawContacts.compactMap(\.email)
+            let emailToUser: [String: UserSearchResult]
+            if allEmails.isEmpty {
+                emailToUser = [:]
+            } else {
+                emailToUser = (try? await FriendsAPI.shared.lookupContacts(emails: allEmails)) ?? [:]
+            }
+
+            var matches: [ContactMatch] = []
+            var invites: [InviteContact] = []
+            for c in rawContacts {
+                if let email = c.email?.lowercased(), let user = emailToUser[email] {
+                    matches.append(ContactMatch(name: c.name, email: email, phone: c.phone, nostiaUser: user))
+                } else {
+                    invites.append(InviteContact(name: c.name, phone: c.phone, email: c.email))
                 }
             }
-            contactNames = names.sorted()
+            onNostia = matches.sorted { $0.name < $1.name }
+            toInvite = invites.sorted { $0.name < $1.name }
         } catch {
             denied = true
         }
         isLoading = false
+    }
+}
+
+private struct ContactOnNostiaRow: View {
+    let match: ContactMatch
+    let isFollowed: Bool
+    let onFollow: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AvatarView(initial: String(match.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(match.name).font(.headline).foregroundColor(.white)
+                Text("@\(match.nostiaUser.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+            }
+            Spacer()
+            if isFollowed {
+                Text("Following")
+                    .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Color.white.opacity(0.1)).cornerRadius(8)
+            } else {
+                Button(action: onFollow) {
+                    Text("Follow")
+                        .font(.caption.bold()).foregroundColor(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.nostiaAccent).cornerRadius(8)
+                }
+            }
+        }
+        .padding(16)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, 4)
+    }
+}
+
+private struct ContactInviteRow: View {
+    let contact: InviteContact
+
+    private var inviteText: String {
+        "Hey \(contact.name.components(separatedBy: " ").first ?? contact.name)! I'm using Nostia to share travel moments with friends. Join me!"
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AvatarView(initial: String(contact.name.prefix(1)).uppercased(), color: Color.nostiaTextSecond.opacity(0.6), size: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(contact.name).font(.headline).foregroundColor(.white)
+                if let phone = contact.phone {
+                    Text(phone).font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                } else if let email = contact.email {
+                    Text(email).font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                }
+            }
+            Spacer()
+            ShareLink(item: inviteText) {
+                Text("Invite")
+                    .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Color.nostiaAccent.opacity(0.15)).cornerRadius(8)
+            }
+        }
+        .padding(16)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, 4)
     }
 }
