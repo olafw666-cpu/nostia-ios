@@ -29,3 +29,18 @@ struct UserSearchResult: Codable, Identifiable {
     let username: String
     let name: String
 }
+
+struct ContactMatch: Identifiable {
+    let id = UUID()
+    let name: String
+    let email: String
+    let phone: String?
+    let nostiaUser: UserSearchResult
+}
+
+struct InviteContact: Identifiable {
+    let id = UUID()
+    let name: String
+    let phone: String?
+    let email: String?
+}
