@@ -34,6 +34,17 @@ final class FriendsAPI {
         return try await client.request("/contacts/lookup", method: "POST", body: ["emails": emails])
     }
 
+    func createContactInvite(email: String?, phone: String?) async throws -> ContactInviteRecord {
+        var body: [String: Any] = [:]
+        if let email { body["email"] = email }
+        if let phone { body["phone"] = phone }
+        return try await client.request("/contacts/invite", method: "POST", body: body)
+    }
+
+    func getContactInvites() async throws -> [ContactInviteRecord] {
+        return try await client.request("/contacts/invites")
+    }
+
     func getLocations() async throws -> [FollowLocation] {
         return try await client.request("/follow/locations")
     }
