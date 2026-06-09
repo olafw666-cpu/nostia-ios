@@ -43,4 +43,18 @@ struct InviteContact: Identifiable {
     let name: String
     let phone: String?
     let email: String?
+    var pendingInvite: InviteInfo?
+}
+
+struct InviteInfo {
+    let token: String
+    let expiresAt: Date
+}
+
+struct ContactInviteRecord: Codable {
+    let token: String
+    let contactEmail: String?
+    let contactPhone: String?
+    let status: String
+    let expiresAt: String
 }

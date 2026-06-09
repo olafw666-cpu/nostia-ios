@@ -440,6 +440,30 @@ struct ContactsPickerView: View {
                     invites.append(InviteContact(name: c.name, phone: c.phone, email: c.email))
                 }
             }
+
+            // Attach pending invite state to each invite contact
+            let inviteRecords = (try? await FriendsAPI.shared.getContactInvites()) ?? []
+            let isoFormatter = ISO8601DateFormatter()
+            var inviteByEmail: [String: InviteInfo] = [:]
+            var inviteByPhone: [String: InviteInfo] = [:]
+            for rec in inviteRecords where rec.status == "pending" {
+                if let e = rec.contactEmail, let d = isoFormatter.date(from: rec.expiresAt) {
+                    inviteByEmail[e.lowercased()] = InviteInfo(token: rec.token, expiresAt: d)
+                }
+                if let p = rec.contactPhone, let d = isoFormatter.date(from: rec.expiresAt) {
+                    inviteByPhone[p] = InviteInfo(token: rec.token, expiresAt: d)
+                }
+            }
+            invites = invites.map { c in
+                var c = c
+                if let e = c.email, let info = inviteByEmail[e.lowercased()] {
+                    c.pendingInvite = info
+                } else if let p = c.phone, let info = inviteByPhone[p] {
+                    c.pendingInvite = info
+                }
+                return c
+            }
+
             onNostia = matches.sorted { $0.name < $1.name }
             toInvite = invites.sorted { $0.name < $1.name }
         } catch {
@@ -482,11 +506,27 @@ private struct ContactOnNostiaRow: View {
     }
 }
 
+private enum InviteRowState: Equatable {
+    case idle
+    case creating
+    case pending(expiresAt: Date)
+    case shareReady(url: URL, message: String)
+}
+
 private struct ContactInviteRow: View {
     let contact: InviteContact
 
-    private var inviteText: String {
-        "Hey \(contact.name.components(separatedBy: " ").first ?? contact.name)! I'm using Nostia to share travel moments with friends. Join me!"
+    @State private var inviteState: InviteRowState
+    @State private var showShareSheet = false
+    @State private var pendingExpiresAt: Date = Date()
+
+    init(contact: InviteContact) {
+        self.contact = contact
+        if let info = contact.pendingInvite, info.expiresAt > Date() {
+            _inviteState = State(initialValue: .pending(expiresAt: info.expiresAt))
+        } else {
+            _inviteState = State(initialValue: .idle)
+        }
     }
 
     var body: some View {
@@ -501,15 +541,75 @@ private struct ContactInviteRow: View {
                 }
             }
             Spacer()
-            ShareLink(item: inviteText) {
-                Text("Invite")
-                    .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Color.nostiaAccent.opacity(0.15)).cornerRadius(8)
-            }
+            trailingButton
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
+        .onChange(of: inviteState) { _, new in
+            if case .shareReady = new { showShareSheet = true }
+        }
+        .sheet(isPresented: $showShareSheet, onDismiss: {
+            if case .shareReady = inviteState {
+                inviteState = .pending(expiresAt: pendingExpiresAt)
+            }
+        }) {
+            if case .shareReady(let url, let message) = inviteState {
+                ActivityView(activityItems: [message, url])
+            }
+        }
     }
+
+    @ViewBuilder
+    private var trailingButton: some View {
+        switch inviteState {
+        case .idle:
+            Button("Invite") { Task { await sendInvite() } }
+                .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Color.nostiaAccent.opacity(0.15)).cornerRadius(8)
+        case .creating:
+            ProgressView().tint(Color.nostiaAccent).frame(width: 60)
+        case .pending:
+            HStack(spacing: 4) {
+                Image(systemName: "clock")
+                Text("Pending")
+            }
+            .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(Color.white.opacity(0.08)).cornerRadius(8)
+        case .shareReady:
+            EmptyView()
+        }
+    }
+
+    private func sendInvite() async {
+        inviteState = .creating
+        do {
+            let record = try await FriendsAPI.shared.createContactInvite(
+                email: contact.email, phone: contact.phone
+            )
+            guard record.status != "already_joined" else { inviteState = .idle; return }
+            let isoFormatter = ISO8601DateFormatter()
+            pendingExpiresAt = isoFormatter.date(from: record.expiresAt) ?? Date().addingTimeInterval(7 * 24 * 3600)
+            let link = "https://nostia.io/join/\(record.token)"
+            let firstName = contact.name.components(separatedBy: " ").first ?? contact.name
+            let msg = "Hey \(firstName)! I'm on Nostia, an app for sharing travel moments with friends. Join me here: \(link)"
+            if let url = URL(string: link) {
+                inviteState = .shareReady(url: url, message: msg)
+            } else {
+                inviteState = .idle
+            }
+        } catch {
+            inviteState = .idle
+        }
+    }
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
