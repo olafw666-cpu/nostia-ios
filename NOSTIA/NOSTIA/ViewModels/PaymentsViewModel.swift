@@ -60,7 +60,7 @@ final class PaymentsViewModel: ObservableObject {
 
     private func pollOnboardingStatus() async {
         let interval: UInt64 = 20_000_000_000 // 20 seconds
-        let maxAttempts = 6                    // 2 minutes total
+        let maxAttempts = 30                   // 10 minutes — Stripe KYC form typically takes 3–5+ min
         for _ in 0..<maxAttempts {
             try? await Task.sleep(nanoseconds: interval)
             guard let status = try? await PaymentsAPI.shared.getOnboardingStatus() else { continue }
