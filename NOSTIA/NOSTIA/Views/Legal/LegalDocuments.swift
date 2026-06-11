@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-05-16"
+    static let tosVersion = "2026-06-11"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: May 16, 2026
+Effective Date: June 11, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -40,6 +40,8 @@ You agree not to use Nostia to:
 - Attempt to gain unauthorized access to any systems or networks connected to Nostia
 - Scrape, crawl, or extract data from the App by automated means without our prior written consent
 - Violate any applicable local, national, or international law or regulation
+
+ZERO TOLERANCE POLICY: Nostia has no tolerance for objectionable content or abusive users. Objectionable or abusive content may be removed without notice, and offending accounts may be suspended or permanently terminated. Nostia provides in-app tools to flag objectionable content and to block abusive users; flagged content is reviewed and acted on within 24 hours.
 
 5. USER CONTENT
 
@@ -93,7 +95,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: May 16, 2026
+Effective Date: June 11, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -105,6 +107,7 @@ a) Information You Provide
 - User-generated content: posts, comments, event descriptions, trip details
 - Payment information: processed by Stripe; we store only a Stripe customer ID and the last four digits of saved cards
 - Location data: if you grant location permission, your approximate coordinates are used for event discovery and map features
+- Contacts: if you grant Contacts permission and use the optional "find friends from contacts" feature, email addresses from your address book are transmitted to our server solely to check which of them belong to existing Nostia users; they are matched in memory and not stored. If you explicitly invite a specific contact, that contact's email and/or phone number is stored only to generate the invitation link, and the record expires after 7 days. Contact data is never used for advertising and never shared with third parties.
 
 b) Information Collected Automatically
 - Device identifiers and platform information for push notifications
@@ -149,7 +152,7 @@ We retain your account data for as long as your account is active. You may reque
 
 5. SECURITY
 
-We implement reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. Passwords are stored using industry-standard bcrypt hashing. JWTs are used for session management with a 7-day expiry. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
+We implement reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. Passwords are stored using industry-standard bcrypt hashing. Short-lived JWTs are used for session management. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
 
 6. LOCATION DATA
 
@@ -190,7 +193,7 @@ For privacy-related questions or requests, use the Data Export or Delete My Data
     static let communityGuidelines = """
 COMMUNITY GUIDELINES
 
-Effective Date: May 16, 2026
+Effective Date: June 11, 2026
 
 Nostia is a platform built around shared travel experiences, adventure, and genuine human connection. These Community Guidelines describe the standards we expect all users to uphold to keep Nostia a safe, welcoming, and enjoyable place.
 
@@ -258,13 +261,13 @@ Respect the privacy of others:
 
 9. REPORTING VIOLATIONS
 
-If you see content or behavior that violates these guidelines, use the in-app reporting features or contact us through support. We review all reports and take appropriate action, which may include removing content, warning users, or banning accounts.
+If you see content or behavior that violates these guidelines, use the in-app reporting features (the Report option on any post, comment, message, or profile) or contact us through support. You can also block any user from their profile or from any of their content — blocking immediately removes their content from your feed and prevents them from contacting you. We review all reports within 24 hours and take appropriate action, which may include removing content, warning users, or banning accounts.
 
 We appreciate users who help keep Nostia safe.
 
 10. ENFORCEMENT
 
-Nostia reserves the right to:
+Nostia has zero tolerance for objectionable content and abusive users, and reserves the right to:
 - Remove any content that violates these guidelines
 - Issue warnings for first-time or minor violations
 - Suspend accounts temporarily for repeated violations

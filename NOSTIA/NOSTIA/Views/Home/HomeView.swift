@@ -125,6 +125,17 @@ struct HomeView: View {
                 EditPostSheet(post: post, feedVM: feedVM)
             }
         }
+        .sheet(item: $feedVM.reportTarget) { target in
+            ReportSheet(target: target)
+        }
+        .alert("Blocked", isPresented: Binding(
+            get: { feedVM.moderationMessage != nil },
+            set: { if !$0 { feedVM.moderationMessage = nil } }
+        )) {
+            Button("OK") { feedVM.moderationMessage = nil }
+        } message: {
+            Text(feedVM.moderationMessage ?? "")
+        }
     }
 
     // MARK: - Layouts
@@ -302,6 +313,8 @@ struct HomeView: View {
                         },
                         onEdit: post.userId == authManager.currentUserId ? { activeSheet = .editPost(post) } : nil,
                         onComment: { activeSheet = .comments(post) },
+                        onReport: { feedVM.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
+                        onBlockUser: { Task { await feedVM.blockUser(userId: post.userId, username: post.username) } },
                         isLikeProcessing: feedVM.likingPostIds.contains(post.id),
                         isDislikeProcessing: feedVM.dislikingPostIds.contains(post.id)
                     )

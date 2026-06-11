@@ -25,6 +25,10 @@ final class FeedViewModel: ObservableObject {
     @Published var isLoadingComments = false
     @Published var isSubmittingComment = false
 
+    // Moderation state (report / block)
+    @Published var reportTarget: ReportTarget?
+    @Published var moderationMessage: String?
+
     func loadFeed() async {
         if let cached: [FeedPost] = await CacheManager.shared.get(CacheKey.homeFeed) {
             posts = cached
@@ -159,6 +163,29 @@ final class FeedViewModel: ObservableObject {
             await CacheManager.shared.invalidate(CacheKey.homeFeed)
         } catch {
             posts.insert(post, at: idx)
+        }
+    }
+
+    // Blocks a user and removes their content from the local feed instantly,
+    // mirroring the optimistic deletePost flow. Rolls back on API failure.
+    func blockUser(userId: Int, username: String? = nil) async {
+        let postsSnapshot = posts
+        let commentsSnapshot = comments
+        posts.removeAll { $0.userId == userId }
+        comments.removeAll { $0.userId == userId }
+        do {
+            try await ModerationAPI.shared.blockUser(userId: userId)
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
+            await CacheManager.shared.invalidate(CacheKey.userPosts(userId))
+            await CacheManager.shared.invalidatePrefix("comments:")
+            await CacheManager.shared.invalidate(CacheKey.followersList)
+            await CacheManager.shared.invalidate(CacheKey.followingList)
+            await CacheManager.shared.invalidate(CacheKey.eventList)
+            moderationMessage = username.map { "@\($0) has been blocked" } ?? "User blocked"
+        } catch {
+            posts = postsSnapshot
+            comments = commentsSnapshot
+            errorMessage = error.localizedDescription
         }
     }
 

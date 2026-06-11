@@ -19,6 +19,7 @@ struct User: Codable, Identifiable {
     var addressCity: String?
     var addressState: String?
     var addressZip: String?
+    var isBlockedByMe: Bool?  // only present on GET /users/:id (public profile)
 
     var isAdmin: Bool { role == "admin" }
     var isDev: Bool { accountType == "dev" }
@@ -30,7 +31,7 @@ struct User: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
         case profilePictureUrl = "profile_picture_url"
-        case followersCount
+        case followersCount, isBlockedByMe
         case accountType = "account_type"
         case dataNotSoldRaw = "data_not_sold"
         case addressLine1 = "address_line1"

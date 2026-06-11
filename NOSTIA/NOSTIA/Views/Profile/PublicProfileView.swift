@@ -8,6 +8,8 @@ struct PublicProfileView: View {
     @State private var currentUserId: Int?
     @State private var isLoading = true
     @State private var isFollowActionInProgress = false
+    @State private var isBlockedByMe = false
+    @State private var showBlockConfirm = false
     @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -40,7 +42,14 @@ struct PublicProfileView: View {
                         .font(.subheadline.bold())
                         .foregroundColor(Color.nostiaTextSecond)
 
-                    if let status = followStatus, currentUserId != userId {
+                    if isBlockedByMe {
+                        Text("You have blocked this user")
+                            .font(.subheadline)
+                            .foregroundColor(Color.nostriaDanger)
+                            .padding(.vertical, 4)
+                    }
+
+                    if let status = followStatus, currentUserId != userId, !isBlockedByMe {
                         Button {
                             Task { await toggleFollow(status: status) }
                         } label: {
@@ -84,7 +93,9 @@ struct PublicProfileView: View {
                                 currentUserId: currentUserId,
                                 onLike: { Task { await feedVM.toggleLike(post: post) } },
                                 onDislike: { Task { await feedVM.toggleDislike(post: post) } },
-                                onComment: { Task { await feedVM.loadComments(for: post) } }
+                                onComment: { Task { await feedVM.loadComments(for: post) } },
+                                onReport: { feedVM.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
+                                onBlockUser: { Task { await blockUser() } }
                             )
                             .padding(.horizontal, responsive.spacing(16))
                         }
@@ -98,10 +109,53 @@ struct PublicProfileView: View {
         .background(.clear)
         .navigationTitle(user?.username ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if currentUserId != nil, currentUserId != userId {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            feedVM.reportTarget = ReportTarget(contentType: "user", contentId: userId)
+                        } label: {
+                            Label("Report User", systemImage: "flag")
+                        }
+                        if isBlockedByMe {
+                            Button { Task { await unblockUser() } } label: {
+                                Label("Unblock User", systemImage: "person.crop.circle.badge.checkmark")
+                            }
+                        } else {
+                            Button(role: .destructive) { showBlockConfirm = true } label: {
+                                Label("Block User", systemImage: "nosign")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(Color.nostiaAccent)
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Block @\(user?.username ?? "user")? You won't see each other's posts, comments, or messages.",
+            isPresented: $showBlockConfirm, titleVisibility: .visible
+        ) {
+            Button("Block", role: .destructive) { Task { await blockUser() } }
+            Button("Cancel", role: .cancel) {}
+        }
         .task { await load() }
         .sheet(item: $feedVM.selectedPost) { post in
             CommentsSheet(postId: post.id, vm: feedVM)
                 .onAppear { Task { await feedVM.loadComments(for: post) } }
+        }
+        .sheet(item: $feedVM.reportTarget) { target in
+            ReportSheet(target: target)
+        }
+        .alert("Blocked", isPresented: Binding(
+            get: { feedVM.moderationMessage != nil },
+            set: { if !$0 { feedVM.moderationMessage = nil } }
+        )) {
+            Button("OK") { feedVM.moderationMessage = nil }
+        } message: {
+            Text(feedVM.moderationMessage ?? "")
         }
     }
 
@@ -115,7 +169,22 @@ struct PublicProfileView: View {
         followStatus = try? await statusData
         currentUserId = (try? await meData)?.id
         feedVM.posts = (try? await postsData) ?? []
+        isBlockedByMe = user?.isBlockedByMe ?? false
         isLoading = false
+    }
+
+    private func blockUser() async {
+        await feedVM.blockUser(userId: userId, username: user?.username)
+        isBlockedByMe = true
+        followStatus = try? await FriendsAPI.shared.getFollowStatus(userId: userId)
+    }
+
+    private func unblockUser() async {
+        do {
+            try await ModerationAPI.shared.unblockUser(userId: userId)
+            isBlockedByMe = false
+            await load()
+        } catch {}
     }
 
     private func toggleFollow(status: FollowStatus) async {

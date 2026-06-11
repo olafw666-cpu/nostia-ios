@@ -10,11 +10,14 @@ struct PostCard: View {
     var onEdit: (() -> Void)? = nil
     var onComment: () -> Void = {}
     var onProfileTap: ((Int) -> Void)? = nil
+    var onReport: (() -> Void)? = nil
+    var onBlockUser: (() -> Void)? = nil
     var isLikeProcessing: Bool = false
     var isDislikeProcessing: Bool = false
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     @State private var showDeleteConfirm = false
+    @State private var showBlockConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -50,6 +53,31 @@ struct PostCard: View {
                         }
                         .confirmationDialog("Delete this post?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
                             Button("Delete", role: .destructive) { onDelete?() }
+                            Button("Cancel", role: .cancel) {}
+                        }
+                    }
+                    if post.userId != currentUserId, onReport != nil || onBlockUser != nil {
+                        Menu {
+                            if onReport != nil {
+                                Button { onReport?() } label: {
+                                    Label("Report Post", systemImage: "flag")
+                                }
+                            }
+                            if onBlockUser != nil {
+                                Button(role: .destructive) { showBlockConfirm = true } label: {
+                                    Label("Block @\(post.username)", systemImage: "nosign")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.footnote).foregroundColor(Color.nostiaTextMuted)
+                                .padding(8)
+                        }
+                        .confirmationDialog(
+                            "Block @\(post.username)? You won't see each other's posts, comments, or messages.",
+                            isPresented: $showBlockConfirm, titleVisibility: .visible
+                        ) {
+                            Button("Block", role: .destructive) { onBlockUser?() }
                             Button("Cancel", role: .cancel) {}
                         }
                     }

@@ -29,6 +29,8 @@ struct FeedView: View {
                                     }
                                 },
                                 onComment: { Task { await vm.loadComments(for: post) } },
+                                onReport: { vm.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
+                                onBlockUser: { Task { await vm.blockUser(userId: post.userId, username: post.username) } },
                                 isLikeProcessing: vm.likingPostIds.contains(post.id),
                                 isDislikeProcessing: vm.dislikingPostIds.contains(post.id)
                             )
@@ -50,6 +52,9 @@ struct FeedView: View {
             CommentsSheet(postId: post.id, vm: vm)
                 .onAppear { Task { await vm.loadComments(for: post) } }
         }
+        .sheet(item: $vm.reportTarget) { target in
+            ReportSheet(target: target)
+        }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }
@@ -57,6 +62,14 @@ struct FeedView: View {
             Button("OK") { vm.errorMessage = nil }
         } message: {
             Text(vm.errorMessage ?? "")
+        }
+        .alert("Blocked", isPresented: Binding(
+            get: { vm.moderationMessage != nil },
+            set: { if !$0 { vm.moderationMessage = nil } }
+        )) {
+            Button("OK") { vm.moderationMessage = nil }
+        } message: {
+            Text(vm.moderationMessage ?? "")
         }
     }
 }
