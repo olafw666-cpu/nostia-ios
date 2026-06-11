@@ -26,6 +26,7 @@ struct PrivacyView: View {
     @State private var addressSaveError: String?
     @State private var showTermsSheet = false
     @State private var trackingEnabled = true
+    @State private var navigateToBlockedUsers = false
 
     var body: some View {
         ScrollView {
@@ -71,6 +72,22 @@ struct PrivacyView: View {
                                 .navigationTitle("Payment Methods")
                                 .navigationBarTitleDisplayMode(.inline)
                                 .toolbarBackground(.hidden, for: .navigationBar)
+                        }
+                    }
+
+                    // Safety section
+                    GlassSection(title: "Safety") {
+                        Button { navigateToBlockedUsers = true } label: {
+                            HStack {
+                                Image(systemName: "nosign").foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                Text("Blocked Users").foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                            }
+                            .font(.subheadline).padding(responsive.spacing(16))
+                        }
+                        .navigationDestination(isPresented: $navigateToBlockedUsers) {
+                            BlockedUsersView()
                         }
                     }
 

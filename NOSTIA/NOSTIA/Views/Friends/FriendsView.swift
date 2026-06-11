@@ -171,7 +171,7 @@ struct FriendsView: View {
             PublicProfileView(userId: dest.id)
         }
         .navigationDestination(item: $chatDestination) { dest in
-            ChatView(conversationId: dest.id, friendName: dest.name)
+            ChatView(conversationId: dest.id, friendName: dest.name, friendId: dest.friendId)
         }
         .sheet(isPresented: $showContactsPicker) {
             ContactsPickerView()

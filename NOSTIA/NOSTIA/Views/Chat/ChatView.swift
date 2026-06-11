@@ -3,9 +3,14 @@ import SwiftUI
 struct ChatView: View {
     let conversationId: Int
     let friendName: String
+    var friendId: Int? = nil
 
     @StateObject private var vm = ChatViewModel()
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var reportTarget: ReportTarget?
+    @State private var showBlockConfirm = false
+    @State private var blockedMessage: String?
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
@@ -107,11 +112,62 @@ struct ChatView: View {
         .navigationTitle(friendName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            if let friendId {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            reportTarget = ReportTarget(contentType: "user", contentId: friendId)
+                        } label: {
+                            Label("Report User", systemImage: "flag")
+                        }
+                        Button(role: .destructive) { showBlockConfirm = true } label: {
+                            Label("Block \(friendName)", systemImage: "nosign")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(Color.nostiaAccent)
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Block \(friendName)? You won't see each other's posts, comments, or messages.",
+            isPresented: $showBlockConfirm, titleVisibility: .visible
+        ) {
+            Button("Block", role: .destructive) {
+                Task { await blockFriend() }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(item: $reportTarget) { target in
+            ReportSheet(target: target)
+        }
+        .alert("Blocked", isPresented: Binding(get: { blockedMessage != nil }, set: { if !$0 { blockedMessage = nil } })) {
+            Button("OK") {
+                blockedMessage = nil
+                dismiss()
+            }
+        } message: { Text(blockedMessage ?? "") }
         .task { await vm.initialize(conversationId: conversationId) }
         .onDisappear { vm.stopPolling() }
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
+    }
+
+    private func blockFriend() async {
+        guard let friendId else { return }
+        do {
+            try await ModerationAPI.shared.blockUser(userId: friendId)
+            vm.isLocked = true
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
+            await CacheManager.shared.invalidate(CacheKey.followersList)
+            await CacheManager.shared.invalidate(CacheKey.followingList)
+            blockedMessage = "\(friendName) has been blocked"
+        } catch {
+            vm.errorMessage = error.localizedDescription
+        }
     }
 }
 

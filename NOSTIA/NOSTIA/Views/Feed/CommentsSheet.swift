@@ -25,7 +25,15 @@ struct CommentsSheet: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: responsive.spacing(12)) {
                             ForEach(vm.comments) { comment in
-                                CommentRow(comment: comment)
+                                CommentRow(
+                                    comment: comment,
+                                    onReport: comment.userId == AuthManager.shared.currentUserId ? nil : {
+                                        vm.reportTarget = ReportTarget(contentType: "comment", contentId: comment.id)
+                                    },
+                                    onBlockUser: comment.userId == AuthManager.shared.currentUserId ? nil : {
+                                        Task { await vm.blockUser(userId: comment.userId, username: comment.username) }
+                                    }
+                                )
                             }
                         }
                         .padding(responsive.spacing(16))
@@ -77,12 +85,18 @@ struct CommentsSheet: View {
             .background(.ultraThinMaterial.opacity(0.9))
         }
         .presentationBackground(.ultraThinMaterial)
+        .sheet(item: $vm.reportTarget) { target in
+            ReportSheet(target: target)
+        }
     }
 }
 
 struct CommentRow: View {
     let comment: FeedComment
+    var onReport: (() -> Void)? = nil
+    var onBlockUser: (() -> Void)? = nil
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @State private var showBlockConfirm = false
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             AvatarView(initial: String(comment.name.prefix(1)).uppercased(), color: Color.nostriaPurple, size: 34)
@@ -94,6 +108,31 @@ struct CommentRow: View {
                 Text(comment.content).font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
+            if onReport != nil || onBlockUser != nil {
+                Menu {
+                    if onReport != nil {
+                        Button { onReport?() } label: {
+                            Label("Report Comment", systemImage: "flag")
+                        }
+                    }
+                    if onBlockUser != nil {
+                        Button(role: .destructive) { showBlockConfirm = true } label: {
+                            Label("Block @\(comment.username)", systemImage: "nosign")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.footnote).foregroundColor(Color.nostiaTextMuted)
+                        .padding(6)
+                }
+                .confirmationDialog(
+                    "Block @\(comment.username)? You won't see each other's posts, comments, or messages.",
+                    isPresented: $showBlockConfirm, titleVisibility: .visible
+                ) {
+                    Button("Block", role: .destructive) { onBlockUser?() }
+                    Button("Cancel", role: .cancel) {}
+                }
+            }
         }
         .padding(responsive.spacing(12))
         .glassEffect(in: RoundedRectangle(cornerRadius: 14))
