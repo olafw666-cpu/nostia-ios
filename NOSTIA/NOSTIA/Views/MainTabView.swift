@@ -61,7 +61,9 @@ struct MainTabView: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .tint(Color.nostiaAccent)
+        .onChange(of: selectedTab) { Haptics.select() }
         .onAppear {
+            LocationManager.shared.requestPermission()
             loadUnreadCount()
             loadHeaderUser()
         }
@@ -102,6 +104,7 @@ struct MainTabView: View {
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 8) {
                 Button {
+                    Haptics.tap()
                     showNotifications = true
                     loadUnreadCount()
                 } label: {
@@ -119,7 +122,7 @@ struct MainTabView: View {
                         }
                     }
                 }
-                Button { showProfile = true } label: {
+                Button { Haptics.tap(); showProfile = true } label: {
                     UserAvatarView(
                         imageData: headerImageData,
                         initial: headerInitial,

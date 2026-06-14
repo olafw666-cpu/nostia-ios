@@ -50,6 +50,15 @@ final class AdventuresAPI {
         return try await client.request("/events/\(eventId)/rsvp", method: "POST", body: ["status": status])
     }
 
+    // Event chat — reuses the FeedComment shape returned by the server.
+    func getEventComments(eventId: Int) async throws -> [FeedComment] {
+        return try await client.request("/events/\(eventId)/comments")
+    }
+
+    func addEventComment(eventId: Int, content: String) async throws -> FeedComment {
+        return try await client.request("/events/\(eventId)/comments", method: "POST", body: ["content": content])
+    }
+
     func adminDeleteEvent(id: Int) async throws {
         try await client.requestVoid("/admin/events/\(id)", method: "DELETE")
     }
