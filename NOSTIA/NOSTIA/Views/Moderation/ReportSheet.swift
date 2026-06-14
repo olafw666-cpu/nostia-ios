@@ -18,6 +18,7 @@ struct ReportSheet: View {
         switch target.contentType {
         case "post": return "Report Post"
         case "comment": return "Report Comment"
+        case "event_comment": return "Report Message"
         case "message": return "Report Message"
         case "user": return "Report User"
         default: return "Report"

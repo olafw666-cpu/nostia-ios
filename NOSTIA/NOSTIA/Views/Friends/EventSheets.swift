@@ -31,6 +31,7 @@ struct EventDetailSheet: View {
     @State private var showDeleteConfirm = false
     @State private var showCreatorProfile = false
     @State private var showFlyer = false
+    @State private var showChat = false
     @State private var selectedFlyerItem: PhotosPickerItem?
     @State private var isFlyerUploading = false
     @State private var flyerError: String?
@@ -100,6 +101,13 @@ struct EventDetailSheet: View {
 
                         Button { showFlyer = true } label: {
                             Label("View Event Page", systemImage: "doc.richtext")
+                                .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
+                                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                                .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
+                        }
+
+                        Button { Haptics.tap(); showChat = true } label: {
+                            Label("Event Chat", systemImage: "bubble.left.and.bubble.right")
                                 .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
                                 .frame(maxWidth: .infinity).padding(.vertical, 11)
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
@@ -182,6 +190,9 @@ struct EventDetailSheet: View {
             }
             .sheet(isPresented: $showFlyer) {
                 EventFlyerView(event: currentEvent, vm: vm)
+            }
+            .sheet(isPresented: $showChat) {
+                EventChatSheet(eventId: currentEvent.id)
             }
             .sheet(isPresented: $showCreatorProfile) {
                 if let creatorId = currentEvent.createdBy {

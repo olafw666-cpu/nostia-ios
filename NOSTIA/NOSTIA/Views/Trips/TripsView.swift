@@ -23,6 +23,7 @@ struct TripsView: View {
                 List {
                     ForEach(vm.trips) { trip in
                         TripCard(trip: trip) {
+                            Haptics.tap()
                             tripToDetail = trip
                         }
                         .listRowBackground(Color.clear)
@@ -42,10 +43,10 @@ struct TripsView: View {
             }
 
             Menu {
-                Button { showCreateSheet = true } label: {
+                Button { Haptics.tap(); showCreateSheet = true } label: {
                     Label("Create Vault", systemImage: "plus.circle")
                 }
-                Button { Task { await requestCameraAndScan() } } label: {
+                Button { Haptics.tap(); Task { await requestCameraAndScan() } } label: {
                     Label("Scan QR to Join", systemImage: "qrcode.viewfinder")
                 }
             } label: {

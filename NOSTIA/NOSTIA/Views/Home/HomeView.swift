@@ -61,7 +61,7 @@ struct HomeView: View {
         }
         .navigationTitle("Nostia")
         .navigationBarTitleDisplayMode(.inline)
-        .onTapGesture(count: 2) { showBackgroundMenu = true }
+        .onTapGesture(count: 2) { Haptics.tap(); showBackgroundMenu = true }
         .task {
             await vm.loadAll()
             locationManager.startPeriodicSync()
@@ -127,6 +127,9 @@ struct HomeView: View {
         }
         .sheet(item: $feedVM.reportTarget) { target in
             ReportSheet(target: target)
+        }
+        .sheet(isPresented: $feedVM.showCreateSheet) {
+            CreatePostSheet(vm: feedVM)
         }
         .alert("Blocked", isPresented: Binding(
             get: { feedVM.moderationMessage != nil },
@@ -212,6 +215,7 @@ struct HomeView: View {
                             size: isIPad ? 110 : 88
                         )
                     }
+                    .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
                 }
                 .padding(responsive.spacing(20))
             }
@@ -241,7 +245,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "Nearby Events")
             ForEach(vm.nearbyEvents.prefix(isIPad ? 5 : 3)) { event in
-                Button { activeSheet = .eventDetail(event) } label: {
+                Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
                     EventPreviewCard(event: event)
                 }
                 .buttonStyle(.plain)
@@ -264,7 +268,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "Events You're Going To")
             ForEach(vm.upcomingEvents.prefix(isIPad ? 5 : 3)) { event in
-                Button { activeSheet = .eventDetail(event) } label: {
+                Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
                     EventPreviewCard(event: event)
                 }
                 .buttonStyle(.plain)
@@ -285,7 +289,17 @@ struct HomeView: View {
     @ViewBuilder
     private var feedSection: some View {
         VStack(spacing: responsive.spacing(16)) {
-            SectionHeader(title: "Feed")
+            HStack {
+                SectionHeader(title: "Feed")
+                Button {
+                    Haptics.tap()
+                    feedVM.showCreateSheet = true
+                } label: {
+                    Label("New Post", systemImage: "plus.circle.fill")
+                        .font(.subheadline.bold())
+                        .foregroundColor(Color.nostiaAccent)
+                }
+            }
             if feedVM.isLoading && feedVM.posts.isEmpty {
                 ProgressView().tint(Color.nostiaAccent)
                     .frame(maxWidth: .infinity)

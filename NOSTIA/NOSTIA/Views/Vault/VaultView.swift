@@ -33,7 +33,7 @@ struct VaultContentView: View {
                         }
                         Spacer()
                         if !isKicked {
-                            Button { showAddExpense = true } label: {
+                            Button { Haptics.impact(.medium); showAddExpense = true } label: {
                                 Label("Add Expense", systemImage: "plus")
                                     .font(.subheadline.bold()).foregroundColor(.white)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
