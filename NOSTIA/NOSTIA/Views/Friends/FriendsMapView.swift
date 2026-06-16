@@ -129,6 +129,38 @@ struct FriendsMapView: View {
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .glassEffect(in: Capsule())
                 .padding(.bottom, 12)
+
+            // Location-denied notice
+            if locationManager.permissionDenied {
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "location.slash.fill").foregroundColor(Color.nostiaWarning)
+                        Text("Location is off").font(.subheadline.bold()).foregroundColor(.white)
+                    }
+                    Text("Enable location in Settings to see nearby events and share your location.")
+                        .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Text("Open Settings")
+                            .font(.subheadline.bold()).foregroundColor(.white)
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .background(
+                                LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
+                                               startPoint: .leading, endPoint: .trailing)
+                            )
+                            .cornerRadius(12)
+                    }
+                }
+                .padding(16)
+                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .frame(maxHeight: .infinity, alignment: .top)
+            }
         }
         .task {
             await loadAll()

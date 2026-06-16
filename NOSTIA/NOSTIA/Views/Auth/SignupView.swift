@@ -16,7 +16,6 @@ struct SignupView: View {
     @State private var tosAgreed = false
     @State private var attDenied = false
     @State private var consentGranted = false
-    @State private var pendingConsent: (location: Bool, data: Bool)?
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -77,9 +76,7 @@ struct SignupView: View {
                         if let err = validationError { vm.errorMessage = err; return }
                         if !tosAgreed { activeSheet = .tos; return }
                         if !consentGranted { activeSheet = .consent; return }
-                        if let c = pendingConsent {
-                            Task { await submitSignup(locationConsent: c.location, dataConsent: c.data) }
-                        }
+                        Task { await submitSignup(locationConsent: true, dataConsent: true) }
                     } label: {
                         HStack(spacing: 8) {
                             if vm.isLoading { ProgressView().tint(.white) }
@@ -128,18 +125,11 @@ struct SignupView: View {
                     }
                 )
             case .consent:
-                ConsentSheet(
-                    onConsent: { location, data in
-                        consentGranted = true
-                        pendingConsent = (location, data)
-                        activeSheet = nil
-                        Task { await submitSignup(locationConsent: location, dataConsent: data) }
-                    },
-                    onDecline: {
-                        activeSheet = nil
-                        vm.errorMessage = "Consent is required to create a Nostia account."
-                    }
-                )
+                ConsentSheet(onContinue: {
+                    consentGranted = true
+                    activeSheet = nil
+                    Task { await submitSignup(locationConsent: true, dataConsent: true) }
+                })
             }
         }
     }
