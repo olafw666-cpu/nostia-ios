@@ -31,6 +31,14 @@ final class AdventuresAPI {
         return try await client.request(path)
     }
 
+    /// Far-out-zoom heatmap density grid. Public is platform-wide; followers/private are
+    /// personalized to the signed-in user. Returns normalized cells (intensity 0...1).
+    func getHeatmap(includePublic: Bool, includeFollowers: Bool, includePrivate: Bool) async throws -> [HeatmapCell] {
+        let path = "/events/heatmap?public=\(includePublic ? 1 : 0)&followers=\(includeFollowers ? 1 : 0)&private=\(includePrivate ? 1 : 0)"
+        let resp: HeatmapResponse = try await client.request(path)
+        return resp.cells
+    }
+
     func getMyGoingEvents() async throws -> [Event] {
         return try await client.request("/events/mine")
     }

@@ -20,6 +20,7 @@ struct User: Codable, Identifiable {
     var addressState: String?
     var addressZip: String?
     var isBlockedByMe: Bool?  // only present on GET /users/:id (public profile)
+    private var hasCreatedEventRaw: Int?
 
     var isAdmin: Bool { role == "admin" }
     var isDev: Bool { accountType == "dev" }
@@ -27,6 +28,8 @@ struct User: Codable, Identifiable {
     var initial: String { String(name.prefix(1)).uppercased() }
     var dataNotSold: Bool { dataNotSoldRaw.map { $0 != 0 } ?? false }
     var hasHomeAddress: Bool { !(addressLine1 ?? "").isEmpty }
+    // True once the user has ever created an event — suppresses the map empty-state popup.
+    var hasCreatedEvent: Bool { (hasCreatedEventRaw ?? 0) != 0 }
 
     enum CodingKeys: String, CodingKey {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
@@ -38,6 +41,7 @@ struct User: Codable, Identifiable {
         case addressCity = "address_city"
         case addressState = "address_state"
         case addressZip = "address_zip"
+        case hasCreatedEventRaw = "has_created_event"
     }
 }
 

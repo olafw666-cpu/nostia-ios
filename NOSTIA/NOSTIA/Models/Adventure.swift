@@ -46,3 +46,20 @@ struct Event: Codable, Identifiable {
         return d < 1 ? "\(Int(d * 1000))m" : String(format: "%.1fkm", d)
     }
 }
+
+// MARK: - Heatmap (far-out zoom event density)
+
+/// One geographic cell of the heatmap density grid. `intensity` is normalized over all
+/// qualifying platform events (0...1) per the heatmap spec.
+struct HeatmapCell: Codable, Identifiable {
+    let lat: Double
+    let lng: Double
+    let intensity: Double
+    // Stable id from the cell coordinates (the API does not send one).
+    var id: String { "\(lat),\(lng)" }
+}
+
+struct HeatmapResponse: Codable {
+    let cells: [HeatmapCell]
+    let total: Int
+}

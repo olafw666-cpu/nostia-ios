@@ -19,6 +19,23 @@ struct FriendsMapView: View {
     @State private var adventuresVM = EventActionsViewModel()
     @State private var viewportTask: Task<Void, Never>?
 
+    // Heatmap (far-out zoom). Filter toggles are session-only @State → reset on app restart.
+    @State private var viewportRadiusMiles: Double = 0
+    @State private var heatmapCells: [HeatmapCell] = []
+    @State private var heatmapCache: [String: [HeatmapCell]] = [:]   // per-filter session cache
+    @State private var filterPublic = true
+    @State private var filterFollowers = false
+    @State private var filterPrivate = false
+    @State private var currentUser: User?
+    @State private var didCreateEventThisSession = false   // local mirror of has_created_event
+
+    // Heatmap replaces pins once the viewport zooms out past the 20-mile public-event radius.
+    private var isHeatmapMode: Bool { viewportRadiusMiles > 20 }
+    private var filterKey: String { "\(filterPublic)|\(filterFollowers)|\(filterPrivate)" }
+    // Densest cell currently loaded — used to normalize blob brightness so the gradient
+    // spans the full blue→purple range while preserving relative density.
+    private var heatmapMaxIntensity: Double { heatmapCells.map(\.intensity).max() ?? 1 }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             MapReader { proxy in
@@ -44,23 +61,39 @@ struct FriendsMapView: View {
                         }
                     }
 
-                    // Event pins
-                    ForEach(events) { event in
-                        if let lat = event.latitude, let lng = event.longitude {
-                            Annotation(event.title, coordinate: CLLocationCoordinate2D(
-                                latitude: lat, longitude: lng
-                            ), anchor: .bottom) {
-                                Button { selectedEvent = event } label: {
-                                    VStack(spacing: 4) {
-                                        EventMapPin(event: event)
-                                        Text(event.title)
-                                            .font(.caption.bold()).foregroundColor(.white)
-                                            .lineLimit(1)
-                                            .padding(.horizontal, 6).padding(.vertical, 2)
-                                            .glassEffect(in: Capsule())
+                    // Event pins — hidden at far-out (heatmap) zoom. The two views are
+                    // mutually exclusive at any given zoom level (spec §2).
+                    if !isHeatmapMode {
+                        ForEach(events) { event in
+                            if let lat = event.latitude, let lng = event.longitude {
+                                Annotation(event.title, coordinate: CLLocationCoordinate2D(
+                                    latitude: lat, longitude: lng
+                                ), anchor: .bottom) {
+                                    Button { selectedEvent = event } label: {
+                                        VStack(spacing: 4) {
+                                            EventMapPin(event: event)
+                                            Text(event.title)
+                                                .font(.caption.bold()).foregroundColor(.white)
+                                                .lineLimit(1)
+                                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                                .glassEffect(in: Capsule())
+                                        }
                                     }
+                                    .buttonStyle(.plain)
+                                    .transition(.opacity)
                                 }
-                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    // Heatmap density blobs — shown only at far-out zoom.
+                    if isHeatmapMode {
+                        ForEach(heatmapCells) { cell in
+                            Annotation("", coordinate: CLLocationCoordinate2D(
+                                latitude: cell.lat, longitude: cell.lng
+                            )) {
+                                HeatBlob(intensity: heatmapMaxIntensity > 0 ? cell.intensity / heatmapMaxIntensity : 0)
+                                    .transition(.opacity)
                             }
                         }
                     }
@@ -84,8 +117,17 @@ struct FriendsMapView: View {
                 .ignoresSafeArea(edges: .bottom)
                 .onMapCameraChange(frequency: .onEnd) { context in
                     let region = context.region
+                    let radius = region.span.latitudeDelta / 2 * 69.0
+                    // Crossfade between pin and heatmap views as the 20-mile boundary is crossed.
+                    withAnimation(.easeInOut(duration: 0.25)) { viewportRadiusMiles = radius }
                     viewportTask?.cancel()
-                    viewportTask = Task { await loadEventsForRegion(region) }
+                    viewportTask = Task {
+                        if radius > 20 {
+                            await loadHeatmap()
+                        } else {
+                            await loadEventsForRegion(region)
+                        }
+                    }
                 }
                 .gesture(
                     LongPressGesture(minimumDuration: 0.5)
@@ -108,7 +150,11 @@ struct FriendsMapView: View {
                     .padding(.bottom, 100)
             }
 
-            if !isLoading && friendLocations.isEmpty && events.isEmpty {
+            // Empty state — permanently suppressed once the user has ever created an event
+            // (spec §6), and never shown over the heatmap at far-out zoom.
+            if !isLoading && !isHeatmapMode && currentUser?.hasCreatedEvent != true
+                && !didCreateEventThisSession
+                && friendLocations.isEmpty && events.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "map").font(.system(size: 48)).foregroundColor(Color.nostiaAccent.opacity(0.8))
                     Text("Nothing on the map yet").font(.headline).foregroundColor(.white)
@@ -121,6 +167,24 @@ struct FriendsMapView: View {
                 .padding()
                 .padding(.bottom, 60)
             }
+
+            // Map editor — heatmap filter pills (spec §5). Fixed at the top, always visible.
+            // Controls which event types feed the heatmap; does NOT affect pin visibility.
+            HStack(spacing: 8) {
+                FilterChip(title: "Public", isActive: filterPublic) {
+                    filterPublic.toggle(); onFiltersChanged()
+                }
+                FilterChip(title: "Followers", isActive: filterFollowers) {
+                    filterFollowers.toggle(); onFiltersChanged()
+                }
+                FilterChip(title: "Private", isActive: filterPrivate) {
+                    filterPrivate.toggle(); onFiltersChanged()
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .glassEffect(in: Capsule())
+            .padding(.top, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             // Hint label
             Text("Hold map to create an event")
@@ -158,12 +222,13 @@ struct FriendsMapView: View {
                 .padding(16)
                 .glassEffect(in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
-                .padding(.top, 12)
+                .padding(.top, 56)   // sit below the heatmap filter pills
                 .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .task {
             await loadAll()
+            currentUser = try? await AuthAPI.shared.getMe()
             if let loc = locationManager.location {
                 cameraPosition = .region(MKCoordinateRegion(
                     center: loc.coordinate,
@@ -177,6 +242,7 @@ struct FriendsMapView: View {
             if let coord = pendingCoordinate {
                 CreateEventSheet(coordinate: coord) { newEvent in
                     events.append(newEvent)
+                    didCreateEventThisSession = true   // suppress empty state for the rest of the session
                     pendingCoordinate = nil
                 }
             }
@@ -198,11 +264,82 @@ struct FriendsMapView: View {
         let maxLat = region.center.latitude + half.latitudeDelta / 2
         let minLng = region.center.longitude - half.longitudeDelta / 2
         let maxLng = region.center.longitude + half.longitudeDelta / 2
-        let viewportRadiusMiles = half.latitudeDelta / 2 * 69.0
+        let radiusMiles = half.latitudeDelta / 2 * 69.0
         events = (try? await AdventuresAPI.shared.getMapEvents(
             minLat: minLat, maxLat: maxLat, minLng: minLng, maxLng: maxLng,
-            viewportRadiusMiles: viewportRadiusMiles
+            viewportRadiusMiles: radiusMiles
         )) ?? []
+    }
+
+    // Fetch the heatmap grid for the active filters. The grid is platform-wide and
+    // normalized, so it isn't viewport-bound — one fetch per filter combo per session.
+    func loadHeatmap() async {
+        let key = filterKey
+        if let cached = heatmapCache[key] {
+            withAnimation(.easeInOut(duration: 0.25)) { heatmapCells = cached }
+            return
+        }
+        let cells = (try? await AdventuresAPI.shared.getHeatmap(
+            includePublic: filterPublic,
+            includeFollowers: filterFollowers,
+            includePrivate: filterPrivate
+        )) ?? []
+        heatmapCache[key] = cells
+        withAnimation(.easeInOut(duration: 0.25)) { heatmapCells = cells }
+    }
+
+    // A heatmap filter was toggled: drop the session cache and refresh if showing heatmap.
+    func onFiltersChanged() {
+        heatmapCache.removeAll()
+        if isHeatmapMode {
+            viewportTask?.cancel()
+            viewportTask = Task { await loadHeatmap() }
+        }
+    }
+}
+
+// MARK: - Heatmap Blob
+
+/// A single soft heatmap hotspot: a blurred radial blue→purple gradient whose color and
+/// size scale with the (display-normalized) intensity. Continuous gradient — no bands.
+struct HeatBlob: View {
+    let intensity: Double   // 0...1, normalized to the densest cell currently on screen
+
+    var body: some View {
+        let color = HeatBlob.heatColor(intensity)
+        let size = 60.0 + 80.0 * intensity
+        Circle()
+            .fill(RadialGradient(
+                colors: [color.opacity(0.85), color.opacity(0.0)],
+                center: .center, startRadius: 0, endRadius: size / 2))
+            .frame(width: size, height: size)
+            .blur(radius: 18)
+            .allowsHitTesting(false)
+    }
+
+    // Blue → purple ramp tuned to Nostia's dark palette (spec §4 reference hexes).
+    static func heatColor(_ t: Double) -> Color {
+        let stops: [(Double, UIColor)] = [
+            (0.0,  UIColor(red: 0.04, green: 0.04, blue: 0.18, alpha: 1)),  // #0A0A2E navy
+            (0.4,  UIColor(red: 0.12, green: 0.23, blue: 0.54, alpha: 1)),  // #1E3A8A blue
+            (0.7,  UIColor(red: 0.43, green: 0.16, blue: 0.85, alpha: 1)),  // #6D28D9 violet
+            (1.0,  UIColor(red: 0.66, green: 0.33, blue: 0.92, alpha: 1)),  // #A855F7 purple
+        ]
+        let clamped = min(max(t, 0), 1)
+        var lo = stops[0], hi = stops[stops.count - 1]
+        for i in 0..<(stops.count - 1) where clamped >= stops[i].0 && clamped <= stops[i + 1].0 {
+            lo = stops[i]; hi = stops[i + 1]; break
+        }
+        let span = hi.0 - lo.0
+        let f = CGFloat(span > 0 ? (clamped - lo.0) / span : 0)
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        lo.1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        hi.1.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        return Color(
+            red: Double(r1 + (r2 - r1) * f),
+            green: Double(g1 + (g2 - g1) * f),
+            blue: Double(b1 + (b2 - b1) * f))
     }
 }
 
