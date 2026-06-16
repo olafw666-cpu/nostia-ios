@@ -135,47 +135,37 @@ struct EmptyStateView: View {
 // MARK: - Consent Sheet
 
 struct ConsentSheet: View {
-    let onConsent: (Bool, Bool) -> Void
-    let onDecline: () -> Void
+    let onContinue: () -> Void
 
-    @State private var locationConsent = true
-    @State private var dataCollectionConsent = true
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: responsive.spacing(20)) {
-                    Text("Before you join Nostia, we need your consent to use certain features.")
+                    Text("Here's how Nostia uses your information to power the app.")
                         .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
 
-                    ConsentToggle(
+                    ConsentInfoRow(
                         icon: "location.fill",
                         title: "Location Services",
-                        description: "Nostia uses your location to show nearby events and share your position with friends.",
-                        isOn: $locationConsent
+                        description: "Nostia uses your location to show nearby events and share your position with friends. You'll be asked for permission, and you can change it anytime in Settings."
                     )
 
-                    ConsentToggle(
+                    ConsentInfoRow(
                         icon: "chart.bar.fill",
                         title: "Data Collection",
-                        description: "We collect usage data to improve the app experience. All data is anonymized.",
-                        isOn: $dataCollectionConsent
+                        description: "We collect usage data to improve the app experience. All data is anonymized."
                     )
 
-                    Text("By tapping \"I Agree\", you confirm you've read and accept our Privacy Policy.")
+                    Text("By tapping \"Continue\", you confirm you've read and accept our Privacy Policy.")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         .padding(.top, responsive.spacing(8))
 
-                    VStack(spacing: responsive.spacing(12)) {
-                        Button {
-                            onConsent(locationConsent, dataCollectionConsent)
-                        } label: {
-                            HStack {
-                                Image(systemName: "checkmark.shield.fill")
-                                Text("I Agree")
-                            }
+                    Button {
+                        onContinue()
+                    } label: {
+                        Text("Continue")
                             .font(.headline).foregroundColor(.white)
                             .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(
@@ -183,16 +173,6 @@ struct ConsentSheet: View {
                                                startPoint: .leading, endPoint: .trailing)
                             )
                             .cornerRadius(14)
-                        }
-
-                        Button {
-                            onDecline()
-                        } label: {
-                            Text("Decline")
-                                .font(.headline).foregroundColor(Color.nostiaTextSecond)
-                                .frame(maxWidth: .infinity).padding(responsive.spacing(16))
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        }
                     }
                 }
                 .padding(responsive.spacing(24))
@@ -200,19 +180,19 @@ struct ConsentSheet: View {
                 .frame(maxWidth: .infinity)
             }
             .background(.clear)
-            .navigationTitle("Privacy Consent")
+            .navigationTitle("Privacy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .interactiveDismissDisabled()
         }
         .presentationBackground(.ultraThinMaterial)
     }
 }
 
-struct ConsentToggle: View {
+struct ConsentInfoRow: View {
     let icon: String
     let title: String
     let description: String
-    @Binding var isOn: Bool
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
@@ -221,7 +201,6 @@ struct ConsentToggle: View {
                 Image(systemName: icon).foregroundColor(Color.nostiaAccent)
                 Text(title).font(.headline).foregroundColor(.white)
                 Spacer()
-                Toggle("", isOn: $isOn).tint(Color.nostiaAccent).labelsHidden()
             }
             Text(description).font(.footnote).foregroundColor(Color.nostiaTextSecond)
         }
