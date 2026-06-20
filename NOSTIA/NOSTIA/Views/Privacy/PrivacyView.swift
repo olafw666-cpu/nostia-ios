@@ -27,7 +27,6 @@ struct PrivacyView: View {
     @State private var showTermsSheet = false
     @State private var trackingEnabled = true
     @State private var navigateToBlockedUsers = false
-    @State private var navigateToTwoFactor = false
     @State private var navigateToNotifications = false
 
     var body: some View {
@@ -77,23 +76,8 @@ struct PrivacyView: View {
                         }
                     }
 
-                    // Security & Notifications section
-                    GlassSection(title: "Security") {
-                        Button { navigateToTwoFactor = true } label: {
-                            HStack {
-                                Image(systemName: "lock.shield.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Two-Factor Authentication").foregroundColor(.white)
-                                Spacer()
-                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
-                            }
-                            .font(.subheadline).padding(responsive.spacing(16))
-                            .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
-                        }
-                        .accessibilityHint("Add a verification code when signing in on a new device")
-                        .navigationDestination(isPresented: $navigateToTwoFactor) {
-                            TwoFactorSettingsView()
-                        }
-
+                    // Notifications section
+                    GlassSection(title: "Notifications") {
                         Button { navigateToNotifications = true } label: {
                             HStack {
                                 Image(systemName: "bell.badge.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)

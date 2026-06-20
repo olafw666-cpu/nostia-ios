@@ -11,7 +11,6 @@ final class AuthManager: ObservableObject {
 
     private let tokenKey = "nostia_jwt_token"
     private let refreshTokenKey = "nostia_refresh_token"
-    private let deviceTokenKey = "nostia_2fa_device_token"  // recognized-device secret (Section 2.3)
 
     private init() {
         if let token = getToken() {
@@ -40,20 +39,6 @@ final class AuthManager: ObservableObject {
 
     func getRefreshToken() -> String? {
         keychainRead(key: refreshTokenKey)
-    }
-
-    // 2FA recognized-device token: persists across logout (it identifies the device,
-    // not the session) so a trusted device keeps skipping the 2FA challenge.
-    func saveDeviceToken(_ token: String) {
-        keychainWrite(key: deviceTokenKey, value: token)
-    }
-
-    func getDeviceToken() -> String? {
-        keychainRead(key: deviceTokenKey)
-    }
-
-    func deleteDeviceToken() {
-        keychainDelete(key: deviceTokenKey)
     }
 
     func deleteToken() {
