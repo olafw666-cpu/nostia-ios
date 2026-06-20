@@ -16,6 +16,7 @@ struct FriendsMapView: View {
     @State private var pendingCoordinate: CLLocationCoordinate2D?
     @State private var showCreateEvent = false
     @State private var selectedEvent: Event?
+    @State private var showEventsList = false   // accessible list alternative (Section 1.4)
     @State private var adventuresVM = EventActionsViewModel()
     @State private var viewportTask: Task<Void, Never>?
 
@@ -94,6 +95,7 @@ struct FriendsMapView: View {
                             )) {
                                 HeatBlob(intensity: heatmapMaxIntensity > 0 ? cell.intensity / heatmapMaxIntensity : 0)
                                     .transition(.opacity)
+                                    .accessibilityHidden(true) // decorative (Section 1.4)
                             }
                         }
                     }
@@ -249,6 +251,20 @@ struct FriendsMapView: View {
         }
         .sheet(item: $selectedEvent, onDismiss: { Task { await loadAll() } }) { event in
             EventDetailSheet(event: event, vm: adventuresVM)
+        }
+        .sheet(isPresented: $showEventsList) {
+            NearbyEventsListView(events: events)
+        }
+        .toolbar {
+            // Accessible list alternative to the visual map (Section 1.4 "Map alternative").
+            ToolbarItem(placement: .topBarLeading) {
+                Button { showEventsList = true } label: {
+                    Image(systemName: "list.bullet")
+                        .foregroundColor(.white)
+                }
+                .accessibilityLabel("Nearby events list")
+                .accessibilityHint("Shows a list of nearby events for screen-reader navigation")
+            }
         }
     }
 

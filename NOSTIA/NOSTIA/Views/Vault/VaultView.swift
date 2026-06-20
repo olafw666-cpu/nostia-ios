@@ -251,6 +251,19 @@ struct BalanceRow: View {
     private var displayName: String { balance.username.map { "@\($0)" } ?? balance.name }
     private var isPayable: Bool { isOwnRow && balance.balance < 0 }
 
+    // Combined VoiceOver summary so the row reads as one coherent statement, and the
+    // owe/collect direction is conveyed in words, not color alone (Section 1.2).
+    private var accessibilityText: String {
+        let direction = balance.balance >= 0 ? "to collect" : "to pay"
+        let amount = String(format: "$%.2f", abs(balance.balance))
+        return "\(displayName), \(amount) \(direction). Paid \(String(format: "$%.2f", balance.paid)), owes \(String(format: "$%.2f", balance.owes))."
+    }
+    private var accessibilityActionHint: String {
+        if isPayable { return "Double tap to pay your balance" }
+        if !isOwnRow && balance.balance < 0 { return "Double tap to send a payment reminder" }
+        return ""
+    }
+
     var body: some View {
         Button {
             if isOwnRow {
@@ -286,6 +299,9 @@ struct BalanceRow: View {
             }
             .padding(responsive.spacing(16))
             .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityText)
+            .accessibilityHint(accessibilityActionHint)
         }
         .buttonStyle(.plain)
         .disabled(!isPayable && isOwnRow)

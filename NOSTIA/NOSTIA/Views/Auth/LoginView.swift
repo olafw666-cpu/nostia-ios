@@ -78,6 +78,15 @@ struct LoginView: View {
                     }
                     .disabled(vm.isLoading)
 
+                    NavigationLink(destination: ForgotPasswordView()) {
+                        Text("Forgot password?")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Color.nostiaAccent)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .accessibilityHint("Recover your account with a verification code")
+
                     Divider().background(Color.nostriaBorder)
 
                     NavigationLink(destination: SignupView()) {
@@ -96,6 +105,21 @@ struct LoginView: View {
         .background(.clear)
         .scrollBounceBehavior(.basedOnSize)
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: Binding(
+            get: { vm.pendingChallenge != nil },
+            set: { if !$0 { vm.pendingChallenge = nil } }
+        )) {
+            NavigationStack {
+                if let challenge = vm.pendingChallenge {
+                    TwoFactorChallengeView(challenge: challenge) {
+                        vm.pendingChallenge = nil
+                        NotificationCenter.default.post(name: .userDidLogin, object: nil)
+                    }
+                }
+            }
+            .background(.clear)
+            .presentationBackground(.ultraThinMaterial)
+        }
     }
 }
 

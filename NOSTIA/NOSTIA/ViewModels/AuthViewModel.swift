@@ -5,6 +5,8 @@ import Foundation
 final class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
+    /// Set when the server requires a 2FA code to finish login (Section 2.3).
+    @Published var pendingChallenge: LoginChallenge?
 
     func login(username: String, password: String) async -> Bool {
         guard !username.trimmingCharacters(in: .whitespaces).isEmpty, !password.isEmpty else {
@@ -14,10 +16,18 @@ final class AuthViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            _ = try await AuthAPI.shared.login(username: username.trimmingCharacters(in: .whitespaces), password: password)
-            NotificationCenter.default.post(name: .userDidLogin, object: nil)
+            let outcome = try await AuthAPI.shared.login(
+                username: username.trimmingCharacters(in: .whitespaces), password: password
+            )
             isLoading = false
-            return true
+            switch outcome {
+            case .authenticated:
+                NotificationCenter.default.post(name: .userDidLogin, object: nil)
+                return true
+            case .twoFactorRequired(let challenge):
+                pendingChallenge = challenge   // LoginView presents the code-entry screen
+                return false
+            }
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false

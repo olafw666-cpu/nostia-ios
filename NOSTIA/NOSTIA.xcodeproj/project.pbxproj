@@ -408,6 +408,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = A29P2W9B57;
 				ENABLE_PREVIEWS = YES;
+				CODE_SIGN_ENTITLEMENTS = NOSTIA/NOSTIA.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nostia uses your camera to scan QR codes to join vaults and take photos.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
@@ -448,6 +449,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = A29P2W9B57;
 				ENABLE_PREVIEWS = YES;
+				CODE_SIGN_ENTITLEMENTS = NOSTIA/NOSTIA.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nostia uses your camera to scan QR codes to join vaults and take photos.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
