@@ -27,7 +27,28 @@ final class NotificationsAPI {
         try await client.requestVoid("/notifications/read-all", method: "PUT")
     }
 
-    func savePushToken(_ token: String) async throws {
-        try await client.requestVoid("/push-token", method: "POST", body: ["token": token])
+    /// Register this device's APNs token (platform "ios"). Multi-device on the backend.
+    func savePushToken(_ token: String, platform: String = "ios") async throws {
+        try await client.requestVoid("/push-token", method: "POST", body: ["token": token, "platform": platform])
     }
+
+    /// Remove this device's token (e.g. on logout / permission revoked).
+    func removePushToken(_ token: String) async throws {
+        try await client.requestVoid("/push-token", method: "DELETE", body: ["token": token])
+    }
+
+    // MARK: - Push preference (single all-or-nothing toggle, spec Section 3.3)
+
+    func getPushEnabled() async throws -> Bool {
+        let res: PushSettingsResponse = try await client.request("/notifications/settings")
+        return res.pushEnabled
+    }
+
+    func setPushEnabled(_ enabled: Bool) async throws {
+        try await client.requestVoid("/notifications/settings", method: "PUT", body: ["pushEnabled": enabled])
+    }
+}
+
+struct PushSettingsResponse: Decodable {
+    let pushEnabled: Bool
 }

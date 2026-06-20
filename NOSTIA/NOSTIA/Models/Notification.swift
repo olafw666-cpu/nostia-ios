@@ -34,6 +34,9 @@ struct NostiaNotification: Identifiable, Decodable {
         switch type {
         case "trip_invite":      return "airplane"
         case "friend_request":   return "person.badge.plus"
+        case "new_follower":     return "person.badge.plus"
+        case "event_invite":     return "calendar.badge.plus"
+        case "added_to_vault":   return "person.2.badge.gearshape"
         case "payment_received": return "creditcard"
         case "message":          return "bubble.left"
         case "vault_reminder":   return "bell.badge"
@@ -45,6 +48,9 @@ struct NostiaNotification: Identifiable, Decodable {
         switch type {
         case "trip_invite":      return "3B82F6"
         case "friend_request":   return "10B981"
+        case "new_follower":     return "10B981"
+        case "event_invite":     return "3B82F6"
+        case "added_to_vault":   return "8B5CF6"
         case "payment_received": return "F59E0B"
         case "message":          return "8B5CF6"
         case "vault_reminder":   return "EF4444"
@@ -72,6 +78,8 @@ struct NotificationData: Codable {
     var conversationId: Int?
     var tripId: Int?
     var requestId: Int?
+    var eventId: Int?
+    var userId: Int?
 }
 
 struct NotificationsResponse: Decodable {

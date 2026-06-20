@@ -560,9 +560,20 @@ struct CreateExpenseSheet: View {
                 HStack {
                     Text("Total assigned:").font(.caption).foregroundColor(Color.nostiaTextSecond)
                     Spacer()
-                    Text(String(format: "$%.2f of $%.2f", assignedTotal, expenseAmount))
-                        .font(.caption.bold())
-                        .foregroundColor(totalMatchesExpense ? Color.nostiaSuccess : Color.nostriaDanger)
+                    // Non-color cue (icon) so the match/mismatch isn't color-only (Section 1.2).
+                    HStack(spacing: 4) {
+                        Image(systemName: totalMatchesExpense ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .font(.caption2)
+                        Text(String(format: "$%.2f of $%.2f", assignedTotal, expenseAmount))
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(totalMatchesExpense ? Color.nostiaSuccess : Color.nostriaDanger)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(
+                        totalMatchesExpense
+                        ? "Total assigned matches the expense, \(String(format: "$%.2f", assignedTotal))"
+                        : "Total assigned does not match. \(String(format: "$%.2f assigned of $%.2f", assignedTotal, expenseAmount))"
+                    )
                 }
                 .padding(.horizontal, 4)
             }
@@ -683,9 +694,14 @@ struct FilterChip: View {
                 .font(.caption.bold())
                 .foregroundColor(isActive ? .white : Color.nostiaTextSecond)
                 .padding(.horizontal, 12).padding(.vertical, 6)
+                .frame(minHeight: 32)
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay(isActive ? Capsule().stroke(Color.nostiaAccent, lineWidth: 1) : nil)
         }
+        // State conveyed to VoiceOver, not by color alone (Section 1.2 / 1.4).
+        .accessibilityLabel("\(title) events filter")
+        .accessibilityValue(isActive ? "On" : "Off")
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -694,18 +710,25 @@ struct FilterChip: View {
 private struct ShimmerModifier: ViewModifier {
     @State private var start = UnitPoint(x: -1, y: 0.5)
     @State private var end   = UnitPoint(x:  0, y: 0.5)
+    // Respect the iOS Reduce Motion setting (Section 1.2 "Reduce Motion").
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .overlay(
-                LinearGradient(
-                    colors: [.clear, Color.white.opacity(0.35), .clear],
-                    startPoint: start,
-                    endPoint: end
-                )
-                .allowsHitTesting(false)
+                Group {
+                    if !reduceMotion {
+                        LinearGradient(
+                            colors: [.clear, Color.white.opacity(0.35), .clear],
+                            startPoint: start,
+                            endPoint: end
+                        )
+                        .allowsHitTesting(false)
+                    }
+                }
             )
             .onAppear {
+                guard !reduceMotion else { return }
                 withAnimation(.linear(duration: 1.3).repeatForever(autoreverses: false)) {
                     start = UnitPoint(x: 1, y: 0.5)
                     end   = UnitPoint(x: 2, y: 0.5)
@@ -720,6 +743,8 @@ extension View {
 
 // MARK: - Skeleton Primitives
 
+// Skeleton placeholders are decorative — VoiceOver should announce "Loading" at the
+// container level, not read the placeholder shapes (Section 1.2 "State announcements").
 struct SkeletonBar: View {
     var width: CGFloat? = nil
     var height: CGFloat = 14
@@ -730,6 +755,7 @@ struct SkeletonBar: View {
             .frame(width: width, height: height)
             .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
             .shimmer()
+            .accessibilityHidden(true)
     }
 }
 
@@ -744,6 +770,7 @@ struct SkeletonRect: View {
             .frame(width: width, height: height)
             .frame(maxWidth: width == nil ? .infinity : nil)
             .shimmer()
+            .accessibilityHidden(true)
     }
 }
 
@@ -755,6 +782,7 @@ struct SkeletonCircle: View {
             .fill(Color(uiColor: .systemGray5))
             .frame(width: size, height: size)
             .shimmer()
+            .accessibilityHidden(true)
     }
 }
 
