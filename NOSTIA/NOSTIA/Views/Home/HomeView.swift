@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var backgroundPickerItem: PhotosPickerItem?
     @State private var activeSheet: HomeSheet?
     @State private var eventActionsVM = EventActionsViewModel()
+    @State private var showOrganizations = false
 
     private var isIPad: Bool { hSizeClass == .regular }
 
@@ -131,6 +132,9 @@ struct HomeView: View {
         .sheet(isPresented: $feedVM.showCreateSheet) {
             CreatePostSheet(vm: feedVM)
         }
+        .sheet(isPresented: $showOrganizations) {
+            OrganizationsHubView()
+        }
         .alert("Blocked", isPresented: Binding(
             get: { feedVM.moderationMessage != nil },
             set: { if !$0 { feedVM.moderationMessage = nil } }
@@ -152,6 +156,7 @@ struct HomeView: View {
                 // Left column: stats + events
                 VStack(spacing: responsive.spacing(16)) {
                     statCards
+                    orgsButton
                     if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
                     if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
                     Spacer(minLength: 0)
@@ -172,6 +177,7 @@ struct HomeView: View {
         LazyVStack(spacing: responsive.spacing(16)) {
             welcomeHeader
             statCards
+            orgsButton
             if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
             feedSection
@@ -238,6 +244,27 @@ struct HomeView: View {
                 selectedTab = 3
             }
         }
+    }
+
+    @ViewBuilder
+    private var orgsButton: some View {
+        Button { Haptics.tap(); showOrganizations = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "building.2.fill")
+                    .font(.title3).foregroundColor(Color.nostriaPurple)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Organizations")
+                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                    Text("Join or create location-gated groups")
+                        .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
+            }
+            .padding(16)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

@@ -9,6 +9,7 @@ struct ProfileView: View {
     @State private var isEditing = false
     @State private var showSettings = false
     @State private var showAnalytics = false
+    @State private var showOrganizations = false
     @State private var editBio = ""
     @State private var editImageData: String?
     @State private var selectedPhoto: PhotosPickerItem?
@@ -170,6 +171,19 @@ struct ProfileView: View {
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
+                                showOrganizations = true
+                            } label: {
+                                Label("Organizations", systemImage: "building.2")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(responsive.spacing(16))
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, responsive.spacing(20))
+
+                            Button {
                                 showSettings = true
                             } label: {
                                 Label("Settings", systemImage: "gear")
@@ -268,6 +282,9 @@ struct ProfileView: View {
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
             .presentationBackground(.ultraThinMaterial)
+        }
+        .sheet(isPresented: $showOrganizations) {
+            OrganizationsHubView()
         }
         .sheet(isPresented: $showAnalytics) {
             NavigationStack {
