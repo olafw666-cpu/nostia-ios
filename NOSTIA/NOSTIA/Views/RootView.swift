@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showProfileBuilder = false
+    @State private var showPaymentSetupPrompt = false
     @State private var inviteJoinedVault: String?
     @State private var showInviteJoined = false
 
@@ -28,9 +29,18 @@ struct RootView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showProfileBuilder) {
+        .fullScreenCover(isPresented: $showProfileBuilder, onDismiss: {
+            // Right after first-time profile setup, offer to set up payments. Guarded by
+            // isAuthenticated so logging out mid-setup doesn't surface the prompt.
+            if authManager.isAuthenticated { showPaymentSetupPrompt = true }
+        }) {
             ProfileBuilderView {
                 showProfileBuilder = false
+            }
+        }
+        .fullScreenCover(isPresented: $showPaymentSetupPrompt) {
+            PaymentSetupPromptView {
+                showPaymentSetupPrompt = false
             }
         }
         .onOpenURL { url in
@@ -62,6 +72,7 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
             showProfileBuilder = false
+            showPaymentSetupPrompt = false
         }
     }
 

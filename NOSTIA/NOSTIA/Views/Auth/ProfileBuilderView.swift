@@ -97,6 +97,7 @@ struct ProfileBuilderView: View {
                 }
                 .padding(24)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(.clear)
             .navigationTitle("Build Your Profile")
             .navigationBarTitleDisplayMode(.inline)
@@ -105,6 +106,15 @@ struct ProfileBuilderView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Skip") { onComplete() }
                         .foregroundColor(Color.nostiaTextSecond)
+                }
+                // The bio TextEditor inserts a newline on Return, so give it an explicit
+                // keyboard dismiss. Matches CreateOrganizationView / CreateExpenseSheet.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .foregroundColor(Color.nostiaAccent)
                 }
             }
         }

@@ -62,6 +62,7 @@ struct CreateOrganizationView: View {
                 .frame(maxWidth: responsive.sheetMaxWidth)
                 .frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(.clear)
             .navigationTitle("New Organization")
             .navigationBarTitleDisplayMode(.inline)
@@ -69,6 +70,16 @@ struct CreateOrganizationView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }.foregroundColor(Color.nostiaTextSecond)
+                }
+                // TextEditor inserts a newline on Return, so without an explicit dismiss the
+                // keyboard can trap the user in the description/rules fields. Mirrors the
+                // keyboard toolbar used in CreateExpenseSheet.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .foregroundColor(Color.nostiaAccent)
                 }
             }
             .onChange(of: selectedPhoto) { _, item in

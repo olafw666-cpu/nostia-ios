@@ -41,10 +41,22 @@ struct OrgManageView: View {
             }
             .padding(16)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(.clear)
         .navigationTitle("Manage")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            // Give the description/rules TextEditors an explicit keyboard dismiss (Return
+            // only inserts a newline). Matches CreateOrganizationView / CreateExpenseSheet.
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .foregroundColor(Color.nostiaAccent)
+            }
+        }
         .task { await load() }
         .onChange(of: selectedPhoto) { _, item in
             Task {
