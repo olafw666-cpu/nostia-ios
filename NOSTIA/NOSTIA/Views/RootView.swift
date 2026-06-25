@@ -6,6 +6,9 @@ struct RootView: View {
     @State private var showPaymentSetupPrompt = false
     @State private var inviteJoinedVault: String?
     @State private var showInviteJoined = false
+    // Cold-launch splash. `@State` on the persistent root view means this only shows once
+    // when the app process starts — not when navigating between screens.
+    @State private var isLaunching = true
 
     var body: some View {
         ZStack {
@@ -73,6 +76,19 @@ struct RootView: View {
             authManager.isAuthenticated = false
             showProfileBuilder = false
             showPaymentSetupPrompt = false
+        }
+        .overlay {
+            if isLaunching {
+                LaunchView()
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
+        }
+        .task {
+            // Runs once on cold launch (RootView lives for the whole session). Hold the
+            // splash briefly so the mark spins ~twice, then reveal the app.
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
         }
     }
 
