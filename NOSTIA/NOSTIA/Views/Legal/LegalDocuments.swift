@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-06-11"
+    static let tosVersion = "2026-06-24"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: June 11, 2026
+Effective Date: June 24, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -87,7 +87,15 @@ We may update these Terms from time to time. If we make material changes, we wil
 
 These Terms shall be governed by and construed in accordance with applicable law. Any disputes shall be resolved through binding arbitration or in the courts of competent jurisdiction.
 
-15. CONTACT
+15. PUSH NOTIFICATIONS
+
+With your permission, Nostia sends push notifications for time-sensitive activity such as expense and payment reminders, new followers, event invitations, being added to a vault, and payments you receive. To deliver them we store a push token for each device on which you enable notifications. Push notifications are optional: you can turn them off at any time from the App's notification settings or your device settings, and doing so does not disable in-app notifications. See our Privacy Policy for details on the data involved.
+
+16. ACCESSIBILITY
+
+Nostia is committed to making the App accessible to everyone, including people with disabilities, and designs its primary user flows to target conformance with the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA. This includes support for VoiceOver, Dynamic Type, Reduce Motion, and cues that do not rely on color alone. Accessibility is an ongoing effort; if you encounter a barrier that prevents you from using any part of the App, please contact us through the App's support channels so we can address it.
+
+17. CONTACT
 
 For questions about these Terms, contact us through the App's support channels.
 """
@@ -95,7 +103,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: June 11, 2026
+Effective Date: June 24, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -165,7 +173,7 @@ You can revoke location permission at any time in your device Settings.
 
 7. PUSH NOTIFICATIONS
 
-Push notification tokens are stored to deliver in-app alerts (event updates, vault reminders, etc.). You can opt out of push notifications at any time in your device Settings.
+If you grant permission, Nostia sends push notifications for high-priority activity, including expense and payment reminders, new followers, event invitations, being added to a vault, and payments you receive. To deliver them, we store a push token for each device on which you enable notifications, associated with your account. Tokens are used only to route notifications through Apple Push Notification service and are removed when they become invalid or when you disable notifications. You can turn push notifications off at any time from the App's notification settings or your device Settings; doing so does not affect in-app notifications.
 
 8. CHILDREN'S PRIVACY
 
@@ -185,7 +193,11 @@ You can exercise these rights through the Privacy settings in the App (Data Expo
 
 We may update this Privacy Policy periodically. If we make material changes, we will notify you within the App. Your continued use of Nostia after changes take effect constitutes acceptance of the updated policy.
 
-11. CONTACT
+11. ACCESSIBILITY
+
+Nostia is committed to accessibility and designs its primary user flows to target conformance with the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA, including support for VoiceOver, Dynamic Type, Reduce Motion, and non-color status cues. Enabling these assistive features does not change what personal data we collect about you. If you encounter an accessibility barrier, please contact us through the App's support channels.
+
+12. CONTACT
 
 For privacy-related questions or requests, use the Data Export or Delete My Data features in the App's Privacy settings, or contact us through our support channels.
 """
