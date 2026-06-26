@@ -127,7 +127,7 @@ struct CreateOrgPostSheet: View {
                         if isSubmitting { ProgressView().tint(.white) }
                         else { Text("Post").fontWeight(.semibold).foregroundColor(Color.nostiaAccent) }
                     }
-                    .disabled(isSubmitting || imageData == nil)
+                    .disabled(isSubmitting || (content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && imageData == nil))
                 }
             }
             .onChange(of: selectedPhoto) { _, item in
@@ -144,13 +144,14 @@ struct CreateOrgPostSheet: View {
     }
 
     private func submit() async {
-        guard let imageData else { return }
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || imageData != nil else { return }
         isSubmitting = true
         defer { isSubmitting = false }
         do {
             _ = try await OrganizationsAPI.shared.createPost(
                 id: orgId,
-                content: content.isEmpty ? nil : content,
+                content: trimmed.isEmpty ? nil : trimmed,
                 imageData: imageData
             )
             Haptics.success()

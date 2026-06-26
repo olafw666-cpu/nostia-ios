@@ -102,8 +102,9 @@ final class OrganizationsAPI {
         try await client.request("/orgs/\(id)/posts")
     }
 
-    func createPost(id: Int, content: String?, imageData: String) async throws -> FeedPost {
-        var body: [String: Any] = ["imageData": imageData]
+    func createPost(id: Int, content: String?, imageData: String?) async throws -> FeedPost {
+        var body: [String: Any] = [:]
+        if let imageData { body["imageData"] = imageData }
         if let content { body["content"] = content }
         return try await client.request("/orgs/\(id)/posts", method: "POST", body: body)
     }
