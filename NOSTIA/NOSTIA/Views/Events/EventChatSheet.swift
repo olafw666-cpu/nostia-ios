@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Per-event chat thread. Reuses the post-comments UI (`CommentRow` / `FeedComment`)
-/// backed by the event_comments endpoints. Opens from EventDetailSheet.
-struct EventChatSheet: View {
-    let eventId: Int
-    @StateObject private var vm = EventChatViewModel()
+/// Per-experience chat thread. Reuses the post-comments UI (`CommentRow` / `FeedComment`)
+/// backed by the experience comments endpoints. Opens from ExperienceDetailSheet.
+struct ExperienceChatSheet: View {
+    let experienceId: Int
+    @StateObject private var vm = ExperienceChatViewModel()
     @FocusState private var inputFocused: Bool
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
@@ -20,7 +20,7 @@ struct EventChatSheet: View {
                 } else if vm.comments.isEmpty {
                     EmptyStateView(icon: "bubble.left.and.bubble.right",
                                    text: "No messages yet",
-                                   sub: "Start the conversation for this event!")
+                                   sub: "Start the conversation for this experience!")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollViewReader { proxy in
@@ -50,7 +50,7 @@ struct EventChatSheet: View {
                 }
             }
             .background(.clear)
-            .navigationTitle("Event Chat")
+            .navigationTitle("Experience Chat")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
@@ -70,7 +70,7 @@ struct EventChatSheet: View {
                     .focused($inputFocused)
                 Button {
                     Haptics.tap()
-                    Task { await vm.submit(eventId: eventId) }
+                    Task { await vm.submit(experienceId: experienceId) }
                 } label: {
                     if vm.isSubmitting {
                         ProgressView().tint(.white).frame(width: 36, height: 36)
@@ -93,7 +93,7 @@ struct EventChatSheet: View {
             .background(.ultraThinMaterial.opacity(0.9))
         }
         .presentationBackground(.ultraThinMaterial)
-        .task { await vm.initialize(eventId: eventId) }
+        .task { await vm.initialize(experienceId: experienceId) }
         .onDisappear { vm.stopPolling() }
         .sheet(item: $vm.reportTarget) { target in
             ReportSheet(target: target)

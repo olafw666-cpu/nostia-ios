@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// Accessible, VoiceOver-navigable alternative to the visual map (spec Section 1.4
-/// "Map alternative"). Lists nearby events with name, type, date, and distance so
+/// "Map alternative"). Lists nearby experiences with name, type, and distance so
 /// screen-reader users get the same information the map conveys visually.
-struct NearbyEventsListView: View {
-    let events: [Event]
+struct NearbyExperiencesListView: View {
+    let events: [Experience]
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -13,25 +13,22 @@ struct NearbyEventsListView: View {
             Group {
                 if events.isEmpty {
                     ContentUnavailableView(
-                        "No nearby events",
-                        systemImage: "calendar",
-                        description: Text("Events near the area shown on the map will appear here.")
+                        "No nearby experiences",
+                        systemImage: "sparkles",
+                        description: Text("Experiences near the area shown on the map will appear here.")
                     )
                 } else {
                     List(events) { event in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(event.title)
                                 .font(.headline).foregroundColor(.white)
-                            HStack(spacing: 10) {
-                                Label(event.formattedDate, systemImage: "clock")
-                                if let dist = event.formattedDistance {
-                                    Label(dist, systemImage: "location")
-                                }
+                            if let dist = event.formattedDistance {
+                                Label(dist, systemImage: "location")
+                                    .font(.caption).foregroundColor(Color.nostiaTextSecond)
                             }
-                            .font(.caption).foregroundColor(Color.nostiaTextSecond)
                             HStack(spacing: 10) {
                                 if let type = event.visibility {
-                                    Text("\(type.capitalized) event")
+                                    Text("\(type.capitalized) experience")
                                 }
                                 if let going = event.goingCount, going > 0 {
                                     Text("\(going) going")
@@ -48,7 +45,7 @@ struct NearbyEventsListView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Nearby Events")
+            .navigationTitle("Nearby Experiences")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -59,10 +56,9 @@ struct NearbyEventsListView: View {
         .presentationBackground(.ultraThinMaterial)
     }
 
-    private func accessibilityLabel(for e: Event) -> String {
+    private func accessibilityLabel(for e: Experience) -> String {
         var parts = [e.title]
-        if let type = e.visibility { parts.append("\(type) event") }
-        parts.append(e.formattedDate)
+        if let type = e.visibility { parts.append("\(type) experience") }
         if let dist = e.formattedDistance { parts.append("\(dist) away") }
         if let going = e.goingCount, going > 0 { parts.append("\(going) going") }
         return parts.joined(separator: ", ")

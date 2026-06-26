@@ -181,7 +181,7 @@ final class FeedViewModel: ObservableObject {
             await CacheManager.shared.invalidatePrefix("comments:")
             await CacheManager.shared.invalidate(CacheKey.followersList)
             await CacheManager.shared.invalidate(CacheKey.followingList)
-            await CacheManager.shared.invalidate(CacheKey.eventList)
+            await CacheManager.shared.invalidate(CacheKey.experienceList)
             moderationMessage = username.map { "@\($0) has been blocked" } ?? "User blocked"
         } catch {
             posts = postsSnapshot

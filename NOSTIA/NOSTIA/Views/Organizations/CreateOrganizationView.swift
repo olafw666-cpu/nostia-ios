@@ -169,7 +169,7 @@ struct CreateOrganizationView: View {
             }
             .pickerStyle(.segmented)
             Text(postPermission == "members"
-                 ? "Any member can create org posts and events."
+                 ? "Any member can create org posts and experiences."
                  : "Only admins and the owner can post.")
                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
         }
