@@ -26,14 +26,29 @@ struct Experience: Codable, Identifiable {
     var createdBy: Int?
     var creatorName: String?
     var createdAt: String?
-    var goingCount: Int?
-    var myRsvp: String?
+    // D5: how many people marked Visited (replaces the old goingCount).
+    var visitedCount: Int?
+    // Q-B: tracked silently — not surfaced on the card today.
+    var visitingCount: Int?
+    // D1: the caller's own status — wire "visited" | "visiting" | nil (cleared).
+    var myStatus: String?
+    // D4: server-computed average rating + how many ratings it's based on.
+    var avgRating: Double?
+    var ratingCount: Int?
+    // D3: the caller's own submitted rating (0...5 in 0.5 steps), nil when never rated.
+    var myRating: Double?
     var flyerImage: String?
     var tags: [String]?
 
     var formattedDistance: String? {
         guard let d = distance else { return nil }
         return d < 1 ? "\(Int(d * 1000))m" : String(format: "%.1fkm", d)
+    }
+
+    /// Average rating formatted to one decimal, e.g. "2.5". Nil when there are no ratings.
+    var formattedAvgRating: String? {
+        guard let avg = avgRating, (ratingCount ?? 0) > 0 else { return nil }
+        return String(format: "%.1f", avg)
     }
 }
 

@@ -14,4 +14,11 @@ final class ProfileAPI {
     func getPublicProfile(userId: Int) async throws -> User {
         return try await client.request("/users/\(userId)")
     }
+
+    /// D6: persist who can see the caller's Visited tab.
+    /// `visibility` ∈ "public" | "followers" | "private". Returns the updated User.
+    @discardableResult
+    func setVisitedVisibility(_ visibility: String) async throws -> User {
+        return try await client.request("/profile", method: "PATCH", body: ["visitedVisibility": visibility])
+    }
 }

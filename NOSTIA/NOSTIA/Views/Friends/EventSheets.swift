@@ -2,11 +2,15 @@ import SwiftUI
 import MapKit
 import PhotosUI
 
-// Minimal view model — only the RSVP/delete/flyer actions needed by the map's ExperienceDetailSheet.
+// Minimal view model — only the status/rating/delete/flyer actions needed by the map's ExperienceDetailSheet.
 @MainActor
 final class ExperienceActionsViewModel {
-    func rsvpExperience(experienceId: Int, status: String) async throws -> Experience {
-        try await ExperiencesAPI.shared.rsvp(experienceId: experienceId, status: status)
+    func setStatus(experienceId: Int, status: String) async throws -> Experience {
+        try await ExperiencesAPI.shared.setStatus(experienceId: experienceId, status: status)
+    }
+
+    func rateExperience(experienceId: Int, rating: Double) async throws -> Experience {
+        try await ExperiencesAPI.shared.rateExperience(experienceId: experienceId, rating: rating)
     }
 
     func deleteExperience(_ experienceId: Int) async throws {
@@ -15,6 +19,72 @@ final class ExperienceActionsViewModel {
 
     func updateExperienceFlyer(id: Int, flyerImage: String) async throws -> Experience {
         try await ExperiencesAPI.shared.updateExperience(id: id, flyerImage: flyerImage)
+    }
+}
+
+// MARK: - Status / Rating shared building blocks (D1–D4)
+
+/// The two-state Visited / Visiting control shared by ExperienceDetailSheet and
+/// ExperienceFlyerView (D1). Neither state is selected by default; tapping a state
+/// selects it, tapping the selected state again clears it (status → "none").
+struct StatusButtons: View {
+    let myStatus: String?
+    let isBusy: Bool
+    let onSelect: (String) -> Void   // "visited" | "visiting" — caller toggles/clears
+
+    var body: some View {
+        HStack(spacing: 12) {
+            statusButton(
+                value: "visited",
+                title: "Visited",
+                icon: "checkmark.seal.fill",
+                selectedColor: Color.nostiaSuccess
+            )
+            statusButton(
+                value: "visiting",
+                title: "Visiting",
+                icon: "figure.walk",
+                selectedColor: Color.nostiaAccent
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func statusButton(value: String, title: String, icon: String, selectedColor: Color) -> some View {
+        let isSelected = myStatus == value
+        Button { onSelect(value) } label: {
+            HStack {
+                if isBusy { ProgressView().tint(.white).scaleEffect(0.8) }
+                else { Image(systemName: icon) }
+                Text(title)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 12)
+            .background(isSelected ? selectedColor : Color.nostiaInput)
+            .foregroundColor(.white).cornerRadius(12)
+        }
+        .disabled(isBusy)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// The interactive rating row revealed once the user has a status (D2). Shows their own
+/// star picker; submitting calls `onRate`.
+struct MyRatingRow: View {
+    let myRating: Double?
+    let isBusy: Bool
+    let onRate: (Double) -> Void
+
+    var body: some View {
+        HStack {
+            Text("Your rating")
+                .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
+            Spacer()
+            if isBusy {
+                ProgressView().tint(Color.nostiaWarning).scaleEffect(0.8)
+            } else {
+                StarRatingView(rating: myRating ?? 0, size: 24, spacing: 4, isInteractive: true, onRate: onRate)
+            }
+        }
     }
 }
 
@@ -45,7 +115,8 @@ struct ExperienceDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var currentEvent: Experience
-    @State private var isRsvping = false
+    @State private var isStatusUpdating = false
+    @State private var isRating = false
     @State private var showDeleteConfirm = false
     @State private var showCreatorProfile = false
     @State private var showFlyer = false
@@ -115,8 +186,14 @@ struct ExperienceDetailSheet: View {
                             }
                         }
 
-                        Label("\(currentEvent.goingCount ?? 0) going", systemImage: "checkmark.circle")
-                            .font(.subheadline).foregroundColor(Color.nostiaSuccess)
+                        HStack(spacing: responsive.spacing(14)) {
+                            // D5: visited count replaces the old going count.
+                            Label("\(currentEvent.visitedCount ?? 0) visited", systemImage: "checkmark.seal")
+                                .font(.subheadline).foregroundColor(Color.nostiaSuccess)
+                            // D4: server-computed average rating.
+                            AverageRatingBadge(avgRating: currentEvent.avgRating,
+                                               ratingCount: currentEvent.ratingCount, starSize: 14)
+                        }
 
                         Button { showFlyer = true } label: {
                             Label("View Experience Page", systemImage: "doc.richtext")
@@ -134,28 +211,16 @@ struct ExperienceDetailSheet: View {
 
                         Divider().background(Color.white.opacity(0.2))
 
-                        HStack(spacing: 12) {
-                            Button { Task { await rsvp("going") } } label: {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text("Going")
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                                .background(currentEvent.myRsvp == "going" ? Color.nostiaSuccess : Color.nostiaInput)
-                                .foregroundColor(.white).cornerRadius(12)
-                            }
-                            .disabled(isRsvping)
+                        // D1: two-state Visited / Visiting control.
+                        StatusButtons(myStatus: currentEvent.myStatus, isBusy: isStatusUpdating) { value in
+                            Task { await toggleStatus(value) }
+                        }
 
-                            Button { Task { await rsvp("not_going") } } label: {
-                                HStack {
-                                    Image(systemName: "xmark.circle.fill")
-                                    Text("Not Going")
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                                .background(currentEvent.myRsvp == "not_going" ? Color.nostriaDanger : Color.nostiaInput)
-                                .foregroundColor(.white).cornerRadius(12)
+                        // D2: rating unlocks once Visited or Visiting is selected.
+                        if currentEvent.myStatus == "visited" || currentEvent.myStatus == "visiting" {
+                            MyRatingRow(myRating: currentEvent.myRating, isBusy: isRating) { value in
+                                Task { await rate(value) }
                             }
-                            .disabled(isRsvping)
                         }
 
                         if isCreator {
@@ -227,31 +292,49 @@ struct ExperienceDetailSheet: View {
         .presentationBackground(.ultraThinMaterial)
     }
 
-    private func rsvp(_ status: String) async {
-        guard !isRsvping else { return }
+    // D1: tap a state to select it; tap the selected state again to clear it ("none").
+    private func toggleStatus(_ tapped: String) async {
+        guard !isStatusUpdating else { return }
 
-        let previousRsvp = currentEvent.myRsvp
-        let previousCount = currentEvent.goingCount ?? 0
+        let previousStatus = currentEvent.myStatus
+        let previousVisited = currentEvent.visitedCount ?? 0
+        let previousRating = currentEvent.myRating
 
-        if status == "going" && currentEvent.myRsvp != "going" {
-            currentEvent.myRsvp = "going"
-            currentEvent.goingCount = previousCount + 1
-        } else if status == "not_going" {
-            if currentEvent.myRsvp == "going" {
-                currentEvent.goingCount = max(0, previousCount - 1)
-            }
-            currentEvent.myRsvp = "not_going"
-        }
+        let newStatus = (previousStatus == tapped) ? "none" : tapped
 
-        isRsvping = true
+        // Optimistic update of myStatus + visitedCount.
+        let wasVisited = previousStatus == "visited"
+        let willBeVisited = newStatus == "visited"
+        currentEvent.myStatus = (newStatus == "none") ? nil : newStatus
+        currentEvent.visitedCount = max(0, previousVisited + (willBeVisited ? 1 : 0) - (wasVisited ? 1 : 0))
+        // Q-D: clearing status withdraws the rating.
+        if newStatus == "none" { currentEvent.myRating = nil }
+
+        isStatusUpdating = true
         do {
-            let updated = try await vm.rsvpExperience(experienceId: currentEvent.id, status: status)
+            let updated = try await vm.setStatus(experienceId: currentEvent.id, status: newStatus)
             currentEvent = updated
         } catch {
-            currentEvent.myRsvp = previousRsvp
-            currentEvent.goingCount = previousCount
+            currentEvent.myStatus = previousStatus
+            currentEvent.visitedCount = previousVisited
+            currentEvent.myRating = previousRating
         }
-        isRsvping = false
+        isStatusUpdating = false
+    }
+
+    // D3: submit a 0…5 (half-step) rating for the current user.
+    private func rate(_ value: Double) async {
+        guard !isRating else { return }
+        let previousRating = currentEvent.myRating
+        currentEvent.myRating = value
+        isRating = true
+        do {
+            let updated = try await vm.rateExperience(experienceId: currentEvent.id, rating: value)
+            currentEvent = updated
+        } catch {
+            currentEvent.myRating = previousRating
+        }
+        isRating = false
     }
 
     private func uploadFlyer(_ item: PhotosPickerItem) async {
@@ -286,7 +369,8 @@ struct ExperienceFlyerView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
     @State private var currentEvent: Experience
-    @State private var isRsvping = false
+    @State private var isStatusUpdating = false
+    @State private var isRating = false
 
     init(event: Experience, vm: ExperienceActionsViewModel) {
         self.event = event
@@ -338,8 +422,12 @@ struct ExperienceFlyerView: View {
                             Label("Hosted by \(name)", systemImage: "person")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                         }
-                        Label("\(currentEvent.goingCount ?? 0) going", systemImage: "checkmark.circle")
-                            .font(.subheadline).foregroundColor(Color.nostiaSuccess)
+                        HStack(spacing: responsive.spacing(14)) {
+                            Label("\(currentEvent.visitedCount ?? 0) visited", systemImage: "checkmark.seal")
+                                .font(.subheadline).foregroundColor(Color.nostiaSuccess)
+                            AverageRatingBadge(avgRating: currentEvent.avgRating,
+                                               ratingCount: currentEvent.ratingCount, starSize: 14)
+                        }
                         if let desc = currentEvent.description, !desc.isEmpty {
                             Divider().background(Color.white.opacity(0.2))
                             if let attributed = try? AttributedString(
@@ -354,29 +442,15 @@ struct ExperienceFlyerView: View {
                             }
                         }
                         Divider().background(Color.white.opacity(0.2))
-                        HStack(spacing: 12) {
-                            Button { Task { await rsvp("going") } } label: {
-                                HStack {
-                                    if isRsvping { ProgressView().tint(.white).scaleEffect(0.8) }
-                                    else { Image(systemName: "checkmark.circle.fill") }
-                                    Text("Going")
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(12))
-                                .background(currentEvent.myRsvp == "going" ? Color.nostiaSuccess : Color.nostiaInput)
-                                .foregroundColor(.white).cornerRadius(12)
+                        // D1: two-state Visited / Visiting control (kept in sync with the detail sheet).
+                        StatusButtons(myStatus: currentEvent.myStatus, isBusy: isStatusUpdating) { value in
+                            Task { await toggleStatus(value) }
+                        }
+                        // D2: rating unlocks once Visited or Visiting is selected.
+                        if currentEvent.myStatus == "visited" || currentEvent.myStatus == "visiting" {
+                            MyRatingRow(myRating: currentEvent.myRating, isBusy: isRating) { value in
+                                Task { await rate(value) }
                             }
-                            .disabled(isRsvping)
-                            Button { Task { await rsvp("not_going") } } label: {
-                                HStack {
-                                    if isRsvping { ProgressView().tint(.white).scaleEffect(0.8) }
-                                    else { Image(systemName: "xmark.circle.fill") }
-                                    Text("Not Going")
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(12))
-                                .background(currentEvent.myRsvp == "not_going" ? Color.nostriaDanger : Color.nostiaInput)
-                                .foregroundColor(.white).cornerRadius(12)
-                            }
-                            .disabled(isRsvping)
                         }
                     }
                     .padding(responsive.spacing(20))
@@ -401,12 +475,43 @@ struct ExperienceFlyerView: View {
         .presentationBackground(.ultraThinMaterial)
     }
 
-    private func rsvp(_ status: String) async {
-        isRsvping = true
-        if let updated = try? await vm.rsvpExperience(experienceId: currentEvent.id, status: status) {
+    // D1: tap a state to select it; tap the selected state again to clear it ("none").
+    private func toggleStatus(_ tapped: String) async {
+        guard !isStatusUpdating else { return }
+        let previousStatus = currentEvent.myStatus
+        let previousVisited = currentEvent.visitedCount ?? 0
+        let previousRating = currentEvent.myRating
+
+        let newStatus = (previousStatus == tapped) ? "none" : tapped
+        let wasVisited = previousStatus == "visited"
+        let willBeVisited = newStatus == "visited"
+        currentEvent.myStatus = (newStatus == "none") ? nil : newStatus
+        currentEvent.visitedCount = max(0, previousVisited + (willBeVisited ? 1 : 0) - (wasVisited ? 1 : 0))
+        if newStatus == "none" { currentEvent.myRating = nil }   // Q-D: rating withdrawn on clear
+
+        isStatusUpdating = true
+        if let updated = try? await vm.setStatus(experienceId: currentEvent.id, status: newStatus) {
             currentEvent = updated
+        } else {
+            currentEvent.myStatus = previousStatus
+            currentEvent.visitedCount = previousVisited
+            currentEvent.myRating = previousRating
         }
-        isRsvping = false
+        isStatusUpdating = false
+    }
+
+    // D3: submit a 0…5 (half-step) rating for the current user.
+    private func rate(_ value: Double) async {
+        guard !isRating else { return }
+        let previousRating = currentEvent.myRating
+        currentEvent.myRating = value
+        isRating = true
+        if let updated = try? await vm.rateExperience(experienceId: currentEvent.id, rating: value) {
+            currentEvent = updated
+        } else {
+            currentEvent.myRating = previousRating
+        }
+        isRating = false
     }
 }
 
@@ -446,6 +551,8 @@ struct ExperienceCard: View {
             HStack {
                 Text(event.title).font(.headline).foregroundColor(.white)
                 Spacer()
+                // D4/Q-A: average rating star sits top-right of the card.
+                AverageRatingBadge(avgRating: event.avgRating, ratingCount: event.ratingCount)
                 if let vis = event.visibility, vis != "public" {
                     // Two-state visibility (D2/D6): anything non-public is "Private" (followers).
                     Label("Private", systemImage: "person.2")
@@ -470,8 +577,9 @@ struct ExperienceCard: View {
                 Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             HStack {
-                if let going = event.goingCount, going > 0 {
-                    Label("\(going) going", systemImage: "checkmark.circle")
+                // D5: visited count replaces the old going count.
+                if let visited = event.visitedCount, visited > 0 {
+                    Label("\(visited) visited", systemImage: "checkmark.seal")
                         .font(.caption).foregroundColor(Color.nostiaSuccess)
                 }
                 Spacer()

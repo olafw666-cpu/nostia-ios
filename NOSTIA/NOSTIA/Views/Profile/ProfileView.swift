@@ -17,6 +17,9 @@ struct ProfileView: View {
     @State private var showCrop = false
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var profileTab: ProfileTab = .posts
+    @State private var visitedVisibility: String = "followers"
+    @State private var isUpdatingVisibility = false
     @StateObject private var feedVM = FeedViewModel()
 
     var body: some View {
@@ -198,33 +201,43 @@ struct ProfileView: View {
                         }
                     }
 
-                    // Posts section
+                    // Posts / Visited tab switcher (D6)
                     Divider()
                         .background(Color.white.opacity(0.15))
                         .padding(.horizontal, responsive.spacing(20))
 
-                    SectionHeader(title: "Posts")
-                        .padding(.horizontal, responsive.spacing(20))
-                        .padding(.top, 4)
+                    Picker("", selection: $profileTab) {
+                        Text("Posts").tag(ProfileTab.posts)
+                        Text("Visited").tag(ProfileTab.visited)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, responsive.spacing(20))
+                    .onChange(of: profileTab) { _, _ in Haptics.select() }
 
-                    if feedVM.isLoading {
-                        ProgressView().tint(Color.nostiaAccent).padding(.vertical, 12)
-                    } else if feedVM.posts.isEmpty {
-                        Text("No posts yet.")
-                            .font(.subheadline)
-                            .foregroundColor(Color.nostiaTextMuted)
-                            .padding(.vertical, 12)
-                    } else {
-                        ForEach(feedVM.posts) { post in
-                            PostCard(
-                                post: post,
-                                currentUserId: authManager.currentUserId,
-                                onLike: { Task { await feedVM.toggleLike(post: post) } },
-                                onDislike: { Task { await feedVM.toggleDislike(post: post) } },
-                                onComment: { Task { await feedVM.loadComments(for: post) } }
-                            )
-                            .padding(.horizontal, responsive.spacing(16))
+                    if profileTab == .posts {
+                        if feedVM.isLoading {
+                            ProgressView().tint(Color.nostiaAccent).padding(.vertical, 12)
+                        } else if feedVM.posts.isEmpty {
+                            Text("No posts yet.")
+                                .font(.subheadline)
+                                .foregroundColor(Color.nostiaTextMuted)
+                                .padding(.vertical, 12)
+                        } else {
+                            ForEach(feedVM.posts) { post in
+                                PostCard(
+                                    post: post,
+                                    currentUserId: authManager.currentUserId,
+                                    onLike: { Task { await feedVM.toggleLike(post: post) } },
+                                    onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                                    onComment: { Task { await feedVM.loadComments(for: post) } }
+                                )
+                                .padding(.horizontal, responsive.spacing(16))
+                            }
                         }
+                    } else {
+                        // Owner-only visibility control for the Visited tab (D6 / Q-C).
+                        visitedVisibilityControl
+                        VisitedExperiencesView(userId: authManager.currentUserId ?? 0)
                     }
                 }
             }
@@ -320,9 +333,59 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Visited tab visibility control (owner only)
+
+    private var visitedVisibilityControl: some View {
+        VStack(alignment: .leading, spacing: responsive.spacing(8)) {
+            HStack(spacing: 6) {
+                Text("Who can see your Visited tab")
+                    .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                if isUpdatingVisibility {
+                    ProgressView().tint(Color.nostiaAccent).scaleEffect(0.7)
+                }
+            }
+            HStack(spacing: 8) {
+                ForEach(visitedVisibilityOptions, id: \.self) { opt in
+                    FilterChip(title: visibilityLabel(opt), isActive: visitedVisibility == opt) {
+                        guard visitedVisibility != opt else { return }
+                        Task { await updateVisitedVisibility(opt) }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, responsive.spacing(20))
+        .padding(.top, 4)
+    }
+
+    private let visitedVisibilityOptions = ["public", "followers", "private"]
+
+    private func visibilityLabel(_ value: String) -> String {
+        switch value {
+        case "public": return "Public"
+        case "private": return "Private"
+        default: return "Followers"
+        }
+    }
+
+    private func updateVisitedVisibility(_ value: String) async {
+        let previous = visitedVisibility
+        visitedVisibility = value
+        isUpdatingVisibility = true
+        do {
+            let updated = try await ProfileAPI.shared.setVisitedVisibility(value)
+            user = updated
+            visitedVisibility = updated.visitedTabVisibility
+        } catch {
+            visitedVisibility = previous
+        }
+        isUpdatingVisibility = false
+    }
+
     private func loadProfile() async {
         isLoading = true
         user = try? await AuthAPI.shared.getMe()
+        visitedVisibility = user?.visitedTabVisibility ?? "followers"
         isLoading = false
     }
 
@@ -476,6 +539,12 @@ private extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
+}
+
+// Profile tab switcher (spec §4): Posts | Visited.
+enum ProfileTab: Hashable {
+    case posts
+    case visited
 }
 
 extension Notification.Name {

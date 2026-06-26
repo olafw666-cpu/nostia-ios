@@ -10,6 +10,9 @@ struct PublicProfileView: View {
     @State private var isFollowActionInProgress = false
     @State private var isBlockedByMe = false
     @State private var showBlockConfirm = false
+    @State private var profileTab: ProfileTab = .posts
+    @State private var canViewVisited = false
+    @State private var visitedExperiences: [Experience] = []
     @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -72,33 +75,31 @@ struct PublicProfileView: View {
                         .disabled(isFollowActionInProgress)
                     }
 
-                    // Posts section
+                    // Posts / Visited section. The Visited tab only appears when the
+                    // viewer is permitted (server-gated; D6).
                     Divider()
                         .background(Color.white.opacity(0.15))
                         .padding(.horizontal, responsive.spacing(20))
 
-                    SectionHeader(title: "Posts")
-                        .padding(.horizontal, responsive.spacing(20))
-                        .padding(.top, 4)
-
-                    if feedVM.posts.isEmpty {
-                        Text("No posts yet.")
-                            .font(.subheadline)
-                            .foregroundColor(Color.nostiaTextMuted)
-                            .padding(.vertical, 12)
-                    } else {
-                        ForEach(feedVM.posts) { post in
-                            PostCard(
-                                post: post,
-                                currentUserId: currentUserId,
-                                onLike: { Task { await feedVM.toggleLike(post: post) } },
-                                onDislike: { Task { await feedVM.toggleDislike(post: post) } },
-                                onComment: { Task { await feedVM.loadComments(for: post) } },
-                                onReport: { feedVM.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
-                                onBlockUser: { Task { await blockUser() } }
-                            )
-                            .padding(.horizontal, responsive.spacing(16))
+                    if canViewVisited && !isBlockedByMe {
+                        Picker("", selection: $profileTab) {
+                            Text("Posts").tag(ProfileTab.posts)
+                            Text("Visited").tag(ProfileTab.visited)
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, responsive.spacing(20))
+                        .onChange(of: profileTab) { _, _ in Haptics.select() }
+
+                        if profileTab == .posts {
+                            postsSection
+                        } else {
+                            VisitedExperiencesView(userId: userId, preloaded: visitedExperiences)
+                        }
+                    } else {
+                        SectionHeader(title: "Posts")
+                            .padding(.horizontal, responsive.spacing(20))
+                            .padding(.top, 4)
+                        postsSection
                     }
                 }
             }
@@ -159,16 +160,46 @@ struct PublicProfileView: View {
         }
     }
 
+    // Shared posts list (used in both the gated tab layout and the no-tab fallback).
+    @ViewBuilder
+    private var postsSection: some View {
+        if feedVM.posts.isEmpty {
+            Text("No posts yet.")
+                .font(.subheadline)
+                .foregroundColor(Color.nostiaTextMuted)
+                .padding(.vertical, 12)
+        } else {
+            ForEach(feedVM.posts) { post in
+                PostCard(
+                    post: post,
+                    currentUserId: currentUserId,
+                    onLike: { Task { await feedVM.toggleLike(post: post) } },
+                    onDislike: { Task { await feedVM.toggleDislike(post: post) } },
+                    onComment: { Task { await feedVM.loadComments(for: post) } },
+                    onReport: { feedVM.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
+                    onBlockUser: { Task { await blockUser() } }
+                )
+                .padding(.horizontal, responsive.spacing(16))
+            }
+        }
+    }
+
     private func load() async {
         isLoading = true
         async let profileData = ProfileAPI.shared.getPublicProfile(userId: userId)
         async let statusData = FriendsAPI.shared.getFollowStatus(userId: userId)
         async let meData = AuthAPI.shared.getMe()
         async let postsData = FeedAPI.shared.getUserPosts(userId: userId)
+        // Probe Visited-tab permission: a non-nil result (incl. empty []) means the
+        // viewer is allowed to see it; a thrown 403 (→ nil) means hide the tab.
+        async let visitedData = ExperiencesAPI.shared.getVisited(userId: userId)
         user = try? await profileData
         followStatus = try? await statusData
         currentUserId = (try? await meData)?.id
         feedVM.posts = (try? await postsData) ?? []
+        let visited = try? await visitedData
+        canViewVisited = (visited != nil)
+        visitedExperiences = visited ?? []
         isBlockedByMe = user?.isBlockedByMe ?? false
         isLoading = false
     }

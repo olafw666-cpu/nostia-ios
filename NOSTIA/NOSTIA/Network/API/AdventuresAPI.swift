@@ -70,8 +70,22 @@ final class ExperiencesAPI {
         return try await client.request("/experiences", method: "POST", body: body)
     }
 
-    func rsvp(experienceId: Int, status: String) async throws -> Experience {
-        return try await client.request("/experiences/\(experienceId)/rsvp", method: "POST", body: ["status": status])
+    /// D1: set or clear the caller's status. `status` ∈ "visited" | "visiting" | "none"
+    /// ("none" clears it). Returns the updated experience incl. visitedCount.
+    func setStatus(experienceId: Int, status: String) async throws -> Experience {
+        return try await client.request("/experiences/\(experienceId)/status", method: "POST", body: ["status": status])
+    }
+
+    /// D2/D3: submit the caller's rating (0...5 in 0.5 steps). Returns the updated
+    /// experience incl. avgRating, ratingCount and myRating.
+    func rateExperience(experienceId: Int, rating: Double) async throws -> Experience {
+        return try await client.request("/experiences/\(experienceId)/rating", method: "POST", body: ["rating": rating])
+    }
+
+    /// D6: experiences a user marked Visited. The server gates visibility by the target
+    /// user's visitedVisibility relative to the caller (throws 403 when not permitted).
+    func getVisited(userId: Int) async throws -> [Experience] {
+        return try await client.request("/users/\(userId)/visited")
     }
 
     // Experience chat — reuses the FeedComment shape returned by the server.

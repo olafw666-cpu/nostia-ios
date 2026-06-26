@@ -30,8 +30,8 @@ struct NearbyExperiencesListView: View {
                                 if let type = event.visibility {
                                     Text("\(type.capitalized) experience")
                                 }
-                                if let going = event.goingCount, going > 0 {
-                                    Text("\(going) going")
+                                if let visited = event.visitedCount, visited > 0 {
+                                    Text("\(visited) visited")
                                 }
                             }
                             .font(.caption2).foregroundColor(Color.nostiaTextMuted)
@@ -60,7 +60,7 @@ struct NearbyExperiencesListView: View {
         var parts = [e.title]
         if let type = e.visibility { parts.append("\(type) experience") }
         if let dist = e.formattedDistance { parts.append("\(dist) away") }
-        if let going = e.goingCount, going > 0 { parts.append("\(going) going") }
+        if let visited = e.visitedCount, visited > 0 { parts.append("\(visited) visited") }
         return parts.joined(separator: ", ")
     }
 }

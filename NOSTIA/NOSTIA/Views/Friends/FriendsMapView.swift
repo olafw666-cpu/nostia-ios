@@ -459,10 +459,10 @@ struct ExperienceMapPin: View {
     private var defaultPin: some View {
         ZStack {
             Circle()
-                .fill(event.myRsvp == "going" ? Color.nostiaSuccess : typeColor)
+                .fill(event.myStatus == "visited" ? Color.nostiaSuccess : typeColor)
                 .frame(width: 40, height: 40)
                 .shadow(color: .black.opacity(0.4), radius: 4)
-            Image(systemName: event.myRsvp == "going" ? "checkmark.circle.fill" : "sparkles")
+            Image(systemName: event.myStatus == "visited" ? "checkmark.seal.fill" : "sparkles")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.white)
         }
