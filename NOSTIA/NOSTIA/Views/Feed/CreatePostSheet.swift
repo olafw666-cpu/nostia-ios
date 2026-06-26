@@ -83,7 +83,7 @@ struct CreatePostSheet: View {
                             Text("Post").fontWeight(.semibold).foregroundColor(Color.nostiaAccent)
                         }
                     }
-                    .disabled(vm.isSubmitting || vm.newPostImageData == nil)
+                    .disabled(vm.isSubmitting || (vm.newPostContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && vm.newPostImageData == nil))
                 }
             }
         }

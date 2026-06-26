@@ -63,11 +63,12 @@ final class FeedViewModel: ObservableObject {
     }
 
     func createPost() async {
-        guard newPostImageData != nil else { return }
+        let trimmedContent = newPostContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedContent.isEmpty || newPostImageData != nil else { return }
         isSubmitting = true
         do {
             _ = try await FeedAPI.shared.createPost(
-                content: newPostContent.isEmpty ? nil : newPostContent,
+                content: trimmedContent.isEmpty ? nil : trimmedContent,
                 imageData: newPostImageData
             )
             await CacheManager.shared.invalidate(CacheKey.homeFeed)
