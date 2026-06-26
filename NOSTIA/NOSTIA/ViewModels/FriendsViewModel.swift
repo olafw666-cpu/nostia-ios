@@ -90,7 +90,7 @@ final class FriendsViewModel: ObservableObject {
 
     func adminDeleteUser(id: Int) async {
         do {
-            try await AdventuresAPI.shared.adminDeleteUser(id: id)
+            try await ExperiencesAPI.shared.adminDeleteUser(id: id)
             followers.removeAll { $0.id == id }
             following.removeAll { $0.id == id }
             searchResults.removeAll { $0.id == id }

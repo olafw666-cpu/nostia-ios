@@ -6,8 +6,8 @@ import CoreLocation
 final class HomeViewModel: ObservableObject {
     @Published var user: User?
     @Published var trips: [Trip] = []
-    @Published var upcomingEvents: [Event] = []
-    @Published var nearbyEvents: [Event] = []
+    @Published var upcomingEvents: [Experience] = []
+    @Published var nearbyEvents: [Experience] = []
     @Published var followers: [FollowUser] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -25,7 +25,7 @@ final class HomeViewModel: ObservableObject {
         }
         // Load the rest concurrently, ignoring individual failures
         async let t = TripsAPI.shared.getAll()
-        async let e = AdventuresAPI.shared.getMyGoingEvents()
+        async let e = ExperiencesAPI.shared.getMyGoingExperiences()
         async let f = FriendsAPI.shared.getFollowers()
         trips = (try? await t) ?? []
         upcomingEvents = (try? await e) ?? []
@@ -33,9 +33,9 @@ final class HomeViewModel: ObservableObject {
         isLoading = false
     }
 
-    func adminDeleteEvent(id: Int) async {
+    func adminDeleteExperience(id: Int) async {
         do {
-            try await AdventuresAPI.shared.adminDeleteEvent(id: id)
+            try await ExperiencesAPI.shared.adminDeleteExperience(id: id)
             upcomingEvents.removeAll { $0.id == id }
             nearbyEvents.removeAll { $0.id == id }
         } catch {
@@ -49,7 +49,7 @@ final class HomeViewModel: ObservableObject {
                 "latitude": location.coordinate.latitude,
                 "longitude": location.coordinate.longitude
             ])
-            let nearby = try await AdventuresAPI.shared.getNearbyEvents(
+            let nearby = try await ExperiencesAPI.shared.getNearbyExperiences(
                 lat: location.coordinate.latitude,
                 lng: location.coordinate.longitude,
                 radius: 50

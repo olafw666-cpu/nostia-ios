@@ -255,7 +255,7 @@ struct PrivacyView: View {
             Button("Cancel", role: .cancel) {}
             Button("Continue") { showDeleteAccountStep2 = true }
         } message: {
-            Text("This will permanently delete your account and all associated data including your posts, events, vaults, messages, and follower relationships. This action cannot be undone.")
+            Text("This will permanently delete your account and all associated data including your posts, experiences, vaults, messages, and follower relationships. This action cannot be undone.")
         }
         .alert("Are You Absolutely Sure?", isPresented: $showDeleteAccountStep2) {
             Button("Cancel", role: .cancel) {}

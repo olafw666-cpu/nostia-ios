@@ -1,11 +1,11 @@
 import Combine
 import Foundation
 
-/// Drives an event's chat thread. Mirrors the post-comments flow
+/// Drives an experience's chat thread. Mirrors the post-comments flow
 /// (FeedViewModel.loadComments/submitComment) with light 5s polling so the
 /// thread feels live, like a chat.
 @MainActor
-final class EventChatViewModel: ObservableObject {
+final class ExperienceChatViewModel: ObservableObject {
     @Published var comments: [FeedComment] = []
     @Published var newComment = ""
     @Published var isLoading = false
@@ -18,28 +18,28 @@ final class EventChatViewModel: ObservableObject {
 
     private var pollTask: Task<Void, Never>?
 
-    func initialize(eventId: Int) async {
+    func initialize(experienceId: Int) async {
         isLoading = true
-        await load(eventId: eventId)
+        await load(experienceId: experienceId)
         isLoading = false
-        startPolling(eventId: eventId)
+        startPolling(experienceId: experienceId)
     }
 
-    func load(eventId: Int) async {
+    func load(experienceId: Int) async {
         do {
-            comments = try await AdventuresAPI.shared.getEventComments(eventId: eventId)
+            comments = try await ExperiencesAPI.shared.getExperienceComments(experienceId: experienceId)
         } catch {
             if comments.isEmpty { errorMessage = error.localizedDescription }
         }
     }
 
-    func submit(eventId: Int) async {
+    func submit(experienceId: Int) async {
         let text = newComment.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
         isSubmitting = true
         newComment = ""
         do {
-            let comment = try await AdventuresAPI.shared.addEventComment(eventId: eventId, content: text)
+            let comment = try await ExperiencesAPI.shared.addExperienceComment(experienceId: experienceId, content: text)
             comments.append(comment)
         } catch {
             errorMessage = error.localizedDescription
@@ -60,12 +60,12 @@ final class EventChatViewModel: ObservableObject {
         }
     }
 
-    func startPolling(eventId: Int) {
+    func startPolling(experienceId: Int) {
         pollTask?.cancel()
         pollTask = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
-                if !Task.isCancelled { await load(eventId: eventId) }
+                if !Task.isCancelled { await load(experienceId: experienceId) }
             }
         }
     }

@@ -30,7 +30,7 @@ enum CacheKey {
     static let vaultList = "vault:list"
     static let followersList = "friends:followers"
     static let followingList = "friends:following"
-    static let eventList = "events:list"
+    static let experienceList = "experiences:list"
 
     static func userPosts(_ id: Int) -> String { "feed:user:\(id)" }
     static func vaultDetail(_ id: Int) -> String { "vault:detail:\(id)" }

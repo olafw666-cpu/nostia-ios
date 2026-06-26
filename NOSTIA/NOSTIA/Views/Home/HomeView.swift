@@ -17,14 +17,14 @@ struct HomeView: View {
     @State private var showBackgroundPicker = false
     @State private var backgroundPickerItem: PhotosPickerItem?
     @State private var activeSheet: HomeSheet?
-    @State private var eventActionsVM = EventActionsViewModel()
+    @State private var eventActionsVM = ExperienceActionsViewModel()
     @State private var showOrganizations = false
 
     private var isIPad: Bool { hSizeClass == .regular }
 
     private enum HomeSheet: Identifiable {
         case comments(FeedPost)
-        case eventDetail(Event)
+        case eventDetail(Experience)
         case editPost(FeedPost)
         var id: String {
             switch self {
@@ -121,7 +121,7 @@ struct HomeView: View {
                 CommentsSheet(postId: post.id, vm: feedVM)
                     .onAppear { Task { await feedVM.loadComments(for: post) } }
             case .eventDetail(let event):
-                EventDetailSheet(event: event, vm: eventActionsVM)
+                ExperienceDetailSheet(event: event, vm: eventActionsVM)
             case .editPost(let post):
                 EditPostSheet(post: post, feedVM: feedVM)
             }
@@ -239,8 +239,8 @@ struct HomeView: View {
                      count: vm.followers.count, label: "Followers") {
                 selectedTab = 4
             }
-            StatCard(icon: "calendar", color: Color.nostiaWarning,
-                     count: vm.upcomingEvents.count, label: "Events") {
+            StatCard(icon: "figure.walk", color: Color.nostiaWarning,
+                     count: vm.upcomingEvents.count, label: "Experiences") {
                 selectedTab = 3
             }
         }
@@ -270,19 +270,19 @@ struct HomeView: View {
     @ViewBuilder
     private var nearbyEventsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Nearby Events")
+            SectionHeader(title: "Nearby Experiences")
             ForEach(vm.nearbyEvents.prefix(isIPad ? 5 : 3)) { event in
                 Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
-                    EventPreviewCard(event: event)
+                    ExperiencePreviewCard(event: event)
                 }
                 .buttonStyle(.plain)
                 .id("nearby-\(event.id)")
                 .contextMenu {
                     if authManager.isDev {
                         Button(role: .destructive) {
-                            Task { await vm.adminDeleteEvent(id: event.id) }
+                            Task { await vm.adminDeleteExperience(id: event.id) }
                         } label: {
-                            Label("Delete Event", systemImage: "trash")
+                            Label("Delete Experience", systemImage: "trash")
                         }
                     }
                 }
@@ -293,19 +293,19 @@ struct HomeView: View {
     @ViewBuilder
     private var upcomingEventsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Events You're Going To")
+            SectionHeader(title: "Experiences You're Going To")
             ForEach(vm.upcomingEvents.prefix(isIPad ? 5 : 3)) { event in
                 Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
-                    EventPreviewCard(event: event)
+                    ExperiencePreviewCard(event: event)
                 }
                 .buttonStyle(.plain)
                 .id("going-\(event.id)")
                 .contextMenu {
                     if authManager.isDev {
                         Button(role: .destructive) {
-                            Task { await vm.adminDeleteEvent(id: event.id) }
+                            Task { await vm.adminDeleteExperience(id: event.id) }
                         } label: {
-                            Label("Delete Event", systemImage: "trash")
+                            Label("Delete Experience", systemImage: "trash")
                         }
                     }
                 }
@@ -443,8 +443,8 @@ struct TripPreviewCard: View {
     }
 }
 
-struct EventPreviewCard: View {
-    let event: Event
+struct ExperiencePreviewCard: View {
+    let event: Experience
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -456,10 +456,12 @@ struct EventPreviewCard: View {
                         .background(Color.nostiaAccent).cornerRadius(12)
                 }
             }
+            if let tags = event.tags, !tags.isEmpty {
+                ExperienceTagChips(tags: tags)
+            }
             if let loc = event.location {
                 Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
-            Text(event.formattedDate).font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
         }
         .padding(16)
         .glassEffect(in: RoundedRectangle(cornerRadius: 16))

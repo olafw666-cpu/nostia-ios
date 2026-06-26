@@ -14,12 +14,11 @@ struct Adventure: Codable, Identifiable {
     var createdAt: String?
 }
 
-struct Event: Codable, Identifiable {
+struct Experience: Codable, Identifiable {
     let id: Int
     var title: String
     var description: String?
     var location: String?
-    var eventDate: String?
     var latitude: Double?
     var longitude: Double?
     var distance: Double?
@@ -30,22 +29,25 @@ struct Event: Codable, Identifiable {
     var goingCount: Int?
     var myRsvp: String?
     var flyerImage: String?
-
-    var formattedDate: String {
-        let fmt = ISO8601DateFormatter()
-        if let d = fmt.date(from: eventDate ?? "") {
-            let out = DateFormatter()
-            out.dateFormat = "MMM d, h:mm a"
-            return out.string(from: d)
-        }
-        return eventDate ?? ""
-    }
+    var tags: [String]?
 
     var formattedDistance: String? {
         guard let d = distance else { return nil }
         return d < 1 ? "\(Int(d * 1000))m" : String(format: "%.1fkm", d)
     }
 }
+
+// MARK: - Experience tags (D3)
+
+/// Fixed preset activity tags — no user-created tags. Single source of truth, reused by
+/// the create forms (multi-select picker) and the map tag-search bar.
+let experienceTags: [String] = [
+    "water", "outdoors", "hiking", "food", "culture", "music",
+    "sports", "nightlife", "art", "fitness", "nature", "social"
+]
+
+/// Maximum tags a single experience may carry.
+let maxExperienceTags = 3
 
 // MARK: - Heatmap (far-out zoom event density)
 

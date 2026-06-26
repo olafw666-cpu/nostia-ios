@@ -109,13 +109,13 @@ final class OrganizationsAPI {
         return try await client.request("/orgs/\(id)/posts", method: "POST", body: body)
     }
 
-    func getEvents(id: Int) async throws -> [Event] {
+    func getEvents(id: Int) async throws -> [Experience] {
         try await client.request("/orgs/\(id)/events")
     }
 
     func createEvent(id: Int, title: String, description: String?, location: String?,
                      eventDate: String, latitude: Double, longitude: Double,
-                     flyerImage: String?) async throws -> Event {
+                     flyerImage: String?) async throws -> Experience {
         var body: [String: Any] = [
             "title": title,
             "eventDate": eventDate,

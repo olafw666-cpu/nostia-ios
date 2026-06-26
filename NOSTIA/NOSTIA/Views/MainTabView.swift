@@ -41,13 +41,13 @@ struct MainTabView: View {
             .tag(2)
 
             NavigationStack {
-                EventsView()
-                    .navigationTitle("Events")
+                ExperiencesView()
+                    .navigationTitle("Experiences")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { tabBarToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Events", systemImage: "calendar") }
+            .tabItem { Label("Experiences", systemImage: "figure.walk") }
             .tag(3)
 
             NavigationStack {

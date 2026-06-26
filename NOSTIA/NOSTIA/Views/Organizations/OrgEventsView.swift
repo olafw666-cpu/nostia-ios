@@ -2,23 +2,23 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// Org-only events (Section 8). Members-only list; reuses EventDetailSheet for viewing,
+// Org-only events (Section 8). Members-only list; reuses ExperienceDetailSheet for viewing,
 // RSVP and chat. Org events are excluded from the public map/heatmap server-side.
 struct OrgEventsView: View {
     let org: Organization
 
-    @State private var events: [Event] = []
+    @State private var events: [Experience] = []
     @State private var isLoading = true
     @State private var showCreate = false
-    @State private var selectedEvent: Event?
-    @State private var eventActionsVM = EventActionsViewModel()
+    @State private var selectedEvent: Experience?
+    @State private var eventActionsVM = ExperienceActionsViewModel()
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 14) {
                 if org.canPost {
                     Button { showCreate = true } label: {
-                        Label("New Event", systemImage: "plus.circle.fill")
+                        Label("New Experience", systemImage: "plus.circle.fill")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .glassEffect(in: RoundedRectangle(cornerRadius: 14))
@@ -28,12 +28,12 @@ struct OrgEventsView: View {
                 if isLoading && events.isEmpty {
                     ProgressView().tint(Color.nostiaAccent).padding()
                 } else if events.isEmpty {
-                    EmptyStateView(icon: "calendar",
-                                   text: "No events yet",
-                                   sub: org.canPost ? "Create the first org event" : "Check back later")
+                    EmptyStateView(icon: "sparkles",
+                                   text: "No experiences yet",
+                                   sub: org.canPost ? "Create the first org experience" : "Check back later")
                 } else {
                     ForEach(events) { event in
-                        Button { selectedEvent = event } label: { EventPreviewCard(event: event) }
+                        Button { selectedEvent = event } label: { ExperiencePreviewCard(event: event) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -46,7 +46,7 @@ struct OrgEventsView: View {
             CreateOrgEventSheet(orgId: org.id) { Task { await load() } }
         }
         .sheet(item: $selectedEvent, onDismiss: { Task { await load() } }) { event in
-            EventDetailSheet(event: event, vm: eventActionsVM)
+            ExperienceDetailSheet(event: event, vm: eventActionsVM)
         }
     }
 
@@ -96,7 +96,7 @@ struct CreateOrgEventSheet: View {
                         .frame(height: 140).cornerRadius(14).allowsHitTesting(false)
                     }
 
-                    NostiaTextField(label: "Event Title *", placeholder: "What's happening?", text: $title)
+                    NostiaTextField(label: "Experience Title *", placeholder: "What's happening?", text: $title)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Location *").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
@@ -106,7 +106,7 @@ struct CreateOrgEventSheet: View {
                                 center: coord, span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)))
                         }
                         if coordinate == nil {
-                            Text("Search an address to place the event")
+                            Text("Search an address to place the experience")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
                     }
@@ -134,7 +134,7 @@ struct CreateOrgEventSheet: View {
                 .padding(20)
             }
             .background(.clear)
-            .navigationTitle("New Org Event")
+            .navigationTitle("New Org Experience")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {

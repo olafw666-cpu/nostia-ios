@@ -82,7 +82,7 @@ struct OrgDetailView: View {
             VStack(spacing: 0) {
                 Picker("", selection: $segment) {
                     Text("Posts").tag(0)
-                    Text("Events").tag(1)
+                    Text("Experiences").tag(1)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16).padding(.top, 12)

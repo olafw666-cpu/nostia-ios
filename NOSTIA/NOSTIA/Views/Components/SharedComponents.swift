@@ -149,7 +149,7 @@ struct ConsentSheet: View {
                     ConsentInfoRow(
                         icon: "location.fill",
                         title: "Location Services",
-                        description: "Nostia uses your location to show nearby events and share your position with friends. You'll be asked for permission, and you can change it anytime in Settings."
+                        description: "Nostia uses your location to show nearby experiences and share your position with friends. You'll be asked for permission, and you can change it anytime in Settings."
                     )
 
                     ConsentInfoRow(
@@ -699,7 +699,7 @@ struct FilterChip: View {
                 .overlay(isActive ? Capsule().stroke(Color.nostiaAccent, lineWidth: 1) : nil)
         }
         // State conveyed to VoiceOver, not by color alone (Section 1.2 / 1.4).
-        .accessibilityLabel("\(title) events filter")
+        .accessibilityLabel("\(title) filter")
         .accessibilityValue(isActive ? "On" : "Off")
         .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
@@ -994,7 +994,7 @@ struct VaultExpenseSkeletonView: View {
     }
 }
 
-struct EventListSkeletonView: View {
+struct ExperienceListSkeletonView: View {
     private var r: ResponsiveLayoutManager { ResponsiveLayoutManager.shared }
     var body: some View {
         ScrollView {
@@ -1041,5 +1041,54 @@ struct CommentSkeletonView: View {
         }
         .disabled(true)
         .background(.clear)
+    }
+}
+
+// MARK: - FlowLayout
+
+/// Left-to-right wrapping layout. Used for tag chip rows on experience cards/detail
+/// sheets and the multi-select tag picker. Wraps to a new line when the next subview
+/// would overflow the proposed width.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var rowWidth: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+        var totalHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if rowWidth > 0, rowWidth + spacing + size.width > maxWidth {
+                totalWidth = max(totalWidth, rowWidth)
+                totalHeight += rowHeight + spacing
+                rowWidth = size.width
+                rowHeight = size.height
+            } else {
+                rowWidth += (rowWidth > 0 ? spacing : 0) + size.width
+                rowHeight = max(rowHeight, size.height)
+            }
+        }
+        totalWidth = max(totalWidth, rowWidth)
+        totalHeight += rowHeight
+        return CGSize(width: min(totalWidth, maxWidth), height: totalHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }

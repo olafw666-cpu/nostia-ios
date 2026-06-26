@@ -2,31 +2,49 @@ import SwiftUI
 import MapKit
 import PhotosUI
 
-// Minimal view model — only the RSVP/delete/flyer actions needed by the map's EventDetailSheet.
-// Full AdventuresViewModel (search, list) lives in _disabled_features/adventures-ios.
+// Minimal view model — only the RSVP/delete/flyer actions needed by the map's ExperienceDetailSheet.
 @MainActor
-final class EventActionsViewModel {
-    func rsvpEvent(eventId: Int, status: String) async throws -> Event {
-        try await AdventuresAPI.shared.rsvp(eventId: eventId, status: status)
+final class ExperienceActionsViewModel {
+    func rsvpExperience(experienceId: Int, status: String) async throws -> Experience {
+        try await ExperiencesAPI.shared.rsvp(experienceId: experienceId, status: status)
     }
 
-    func deleteEvent(_ eventId: Int) async throws {
-        try await AdventuresAPI.shared.deleteEvent(eventId)
+    func deleteExperience(_ experienceId: Int) async throws {
+        try await ExperiencesAPI.shared.deleteExperience(experienceId)
     }
 
-    func updateEventFlyer(id: Int, flyerImage: String) async throws -> Event {
-        try await AdventuresAPI.shared.updateEvent(id: id, flyerImage: flyerImage)
+    func updateExperienceFlyer(id: Int, flyerImage: String) async throws -> Experience {
+        try await ExperiencesAPI.shared.updateExperience(id: id, flyerImage: flyerImage)
     }
 }
 
-// MARK: - EventDetailSheet
+// MARK: - Tag chips (D5)
 
-struct EventDetailSheet: View {
-    let event: Event
-    let vm: EventActionsViewModel
+/// Wrapping row of small capsule tag chips, muted accent tint. Shown on the card bubble
+/// and the detail sheet only — never on the map pin.
+struct ExperienceTagChips: View {
+    let tags: [String]
+    var body: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(tags, id: \.self) { tag in
+                Text(tag)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(Color.nostiaAccent)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Color.nostiaAccent.opacity(0.15), in: Capsule())
+            }
+        }
+    }
+}
+
+// MARK: - ExperienceDetailSheet
+
+struct ExperienceDetailSheet: View {
+    let event: Experience
+    let vm: ExperienceActionsViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
-    @State private var currentEvent: Event
+    @State private var currentEvent: Experience
     @State private var isRsvping = false
     @State private var showDeleteConfirm = false
     @State private var showCreatorProfile = false
@@ -39,7 +57,7 @@ struct EventDetailSheet: View {
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
     private var isCreator: Bool { currentEvent.createdBy != nil && currentEvent.createdBy == currentUserId }
 
-    init(event: Event, vm: EventActionsViewModel) {
+    init(event: Experience, vm: ExperienceActionsViewModel) {
         self.event = event
         self.vm = vm
         self._currentEvent = State(initialValue: event)
@@ -67,8 +85,9 @@ struct EventDetailSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: responsive.spacing(16)) {
-                        Label(currentEvent.formattedDate, systemImage: "calendar")
-                            .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
+                        if let tags = currentEvent.tags, !tags.isEmpty {
+                            ExperienceTagChips(tags: tags)
+                        }
 
                         if let loc = currentEvent.location {
                             Label(loc, systemImage: "location")
@@ -100,14 +119,14 @@ struct EventDetailSheet: View {
                             .font(.subheadline).foregroundColor(Color.nostiaSuccess)
 
                         Button { showFlyer = true } label: {
-                            Label("View Event Page", systemImage: "doc.richtext")
+                            Label("View Experience Page", systemImage: "doc.richtext")
                                 .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
                                 .frame(maxWidth: .infinity).padding(.vertical, 11)
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
                         }
 
                         Button { Haptics.tap(); showChat = true } label: {
-                            Label("Event Chat", systemImage: "bubble.left.and.bubble.right")
+                            Label("Experience Chat", systemImage: "bubble.left.and.bubble.right")
                                 .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
                                 .frame(maxWidth: .infinity).padding(.vertical, 11)
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
@@ -147,7 +166,7 @@ struct EventDetailSheet: View {
                                     } else {
                                         Image(systemName: "photo.badge.plus")
                                     }
-                                    Text(currentEvent.flyerImage != nil ? "Change Flyer" : "Add Event Flyer")
+                                    Text(currentEvent.flyerImage != nil ? "Change Flyer" : "Add Experience Flyer")
                                 }
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                                 .background(Color.nostiaInput)
@@ -161,7 +180,7 @@ struct EventDetailSheet: View {
                             }
 
                             Button(role: .destructive) { showDeleteConfirm = true } label: {
-                                Label("Delete Event", systemImage: "trash")
+                                Label("Delete Experience", systemImage: "trash")
                                     .frame(maxWidth: .infinity).padding(.vertical, 12)
                                     .background(Color.nostriaDanger.opacity(0.2))
                                     .foregroundColor(Color.nostriaDanger).cornerRadius(12)
@@ -182,17 +201,17 @@ struct EventDetailSheet: View {
                     Button("Done") { dismiss() }.foregroundColor(Color.nostiaAccent)
                 }
             }
-            .confirmationDialog("Delete this event?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            .confirmationDialog("Delete this experience?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
                 Button("Delete", role: .destructive) {
-                    Task { try? await vm.deleteEvent(currentEvent.id); dismiss() }
+                    Task { try? await vm.deleteExperience(currentEvent.id); dismiss() }
                 }
                 Button("Cancel", role: .cancel) {}
             }
             .sheet(isPresented: $showFlyer) {
-                EventFlyerView(event: currentEvent, vm: vm)
+                ExperienceFlyerView(event: currentEvent, vm: vm)
             }
             .sheet(isPresented: $showChat) {
-                EventChatSheet(eventId: currentEvent.id)
+                ExperienceChatSheet(experienceId: currentEvent.id)
             }
             .sheet(isPresented: $showCreatorProfile) {
                 if let creatorId = currentEvent.createdBy {
@@ -226,7 +245,7 @@ struct EventDetailSheet: View {
 
         isRsvping = true
         do {
-            let updated = try await vm.rsvpEvent(eventId: currentEvent.id, status: status)
+            let updated = try await vm.rsvpExperience(experienceId: currentEvent.id, status: status)
             currentEvent = updated
         } catch {
             currentEvent.myRsvp = previousRsvp
@@ -251,7 +270,7 @@ struct EventDetailSheet: View {
             return
         }
         do {
-            currentEvent = try await vm.updateEventFlyer(id: currentEvent.id, flyerImage: compressed.base64EncodedString())
+            currentEvent = try await vm.updateExperienceFlyer(id: currentEvent.id, flyerImage: compressed.base64EncodedString())
         } catch {
             flyerError = "Failed to upload flyer. Please try again."
         }
@@ -259,17 +278,17 @@ struct EventDetailSheet: View {
     }
 }
 
-// MARK: - EventFlyerView
+// MARK: - ExperienceFlyerView
 
-struct EventFlyerView: View {
-    let event: Event
-    let vm: EventActionsViewModel
+struct ExperienceFlyerView: View {
+    let event: Experience
+    let vm: ExperienceActionsViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
-    @State private var currentEvent: Event
+    @State private var currentEvent: Experience
     @State private var isRsvping = false
 
-    init(event: Event, vm: EventActionsViewModel) {
+    init(event: Experience, vm: ExperienceActionsViewModel) {
         self.event = event
         self.vm = vm
         self._currentEvent = State(initialValue: event)
@@ -299,7 +318,7 @@ struct EventFlyerView: View {
                         .frame(maxWidth: .infinity).frame(height: 220)
                         .overlay {
                             VStack(spacing: 12) {
-                                Image(systemName: "calendar.badge.clock")
+                                Image(systemName: "sparkles")
                                     .font(.system(size: 52)).foregroundColor(.white.opacity(0.5))
                                 Text("No flyer yet").font(.caption).foregroundColor(.white.opacity(0.4))
                             }
@@ -308,8 +327,9 @@ struct EventFlyerView: View {
 
                     VStack(alignment: .leading, spacing: responsive.spacing(16)) {
                         Text(currentEvent.title).font(.title.bold()).foregroundColor(.white)
-                        Label(currentEvent.formattedDate, systemImage: "calendar")
-                            .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
+                        if let tags = currentEvent.tags, !tags.isEmpty {
+                            ExperienceTagChips(tags: tags)
+                        }
                         if let loc = currentEvent.location {
                             Label(loc, systemImage: "location")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -383,7 +403,7 @@ struct EventFlyerView: View {
 
     private func rsvp(_ status: String) async {
         isRsvping = true
-        if let updated = try? await vm.rsvpEvent(eventId: currentEvent.id, status: status) {
+        if let updated = try? await vm.rsvpExperience(experienceId: currentEvent.id, status: status) {
             currentEvent = updated
         }
         isRsvping = false
@@ -414,10 +434,10 @@ struct LinkInsertBar: View {
     }
 }
 
-// MARK: - EventCard
+// MARK: - ExperienceCard
 
-struct EventCard: View {
-    let event: Event
+struct ExperienceCard: View {
+    let event: Experience
     var onCreatorTap: ((Int) -> Void)? = nil
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -427,12 +447,11 @@ struct EventCard: View {
                 Text(event.title).font(.headline).foregroundColor(.white)
                 Spacer()
                 if let vis = event.visibility, vis != "public" {
-                    let isFollower = vis == "friends" || vis == "followers"
-                    Label(isFollower ? "Followers" : "Private",
-                          systemImage: isFollower ? "person.2" : "lock")
+                    // Two-state visibility (D2/D6): anything non-public is "Private" (followers).
+                    Label("Private", systemImage: "person.2")
                         .font(.caption.bold()).foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(isFollower ? Color.blue.opacity(0.7) : Color.nostriaDanger)
+                        .background(Color.nostriaPurple)
                         .cornerRadius(12)
                 }
                 if let dist = event.formattedDistance {
@@ -441,6 +460,9 @@ struct EventCard: View {
                         .background(Color.nostiaAccent).cornerRadius(12)
                 }
             }
+            if let tags = event.tags, !tags.isEmpty {
+                ExperienceTagChips(tags: tags)
+            }
             if let desc = event.description, !desc.isEmpty {
                 Text(desc).font(.footnote).foregroundColor(Color.nostiaTextSecond).lineLimit(2)
             }
@@ -448,8 +470,6 @@ struct EventCard: View {
                 Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             HStack {
-                Label(event.formattedDate, systemImage: "calendar")
-                    .font(.footnote.bold()).foregroundColor(Color.nostiaWarning)
                 if let going = event.goingCount, going > 0 {
                     Label("\(going) going", systemImage: "checkmark.circle")
                         .font(.caption).foregroundColor(Color.nostiaSuccess)

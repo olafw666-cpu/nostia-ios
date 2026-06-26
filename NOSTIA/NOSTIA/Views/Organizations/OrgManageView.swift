@@ -71,7 +71,7 @@ struct OrgManageView: View {
             Button("Continue", role: .destructive) { showDeleteConfirm2 = true }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("All posts, events and membership records will be permanently deleted.")
+            Text("All posts, experiences and membership records will be permanently deleted.")
         }
         .confirmationDialog("This cannot be undone. Delete permanently?", isPresented: $showDeleteConfirm2, titleVisibility: .visible) {
             Button("Delete Organization", role: .destructive) { Task { await deleteOrg() } }

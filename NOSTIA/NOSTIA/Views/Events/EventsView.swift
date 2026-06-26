@@ -4,40 +4,40 @@ import Combine
 import PhotosUI
 
 @MainActor
-final class EventsViewModel: ObservableObject {
-    @Published var events: [Event] = []
-    @Published var goingEvents: [Event] = []
+final class ExperiencesViewModel: ObservableObject {
+    @Published var events: [Experience] = []
+    @Published var goingEvents: [Experience] = []
     @Published var isLoading = false
-    @Published var selectedEvent: Event?
+    @Published var selectedEvent: Experience?
     @Published var showCreate = false
     @Published var selectedCreatorId: Int?
 
     func loadAll() async {
-        if let cached: [Event] = await CacheManager.shared.get(CacheKey.eventList) {
+        if let cached: [Experience] = await CacheManager.shared.get(CacheKey.experienceList) {
             events = cached
         } else {
             isLoading = true
         }
-        async let allTask = AdventuresAPI.shared.getAllEvents()
-        async let goingTask = AdventuresAPI.shared.getMyGoingEvents()
+        async let allTask = ExperiencesAPI.shared.getAllExperiences()
+        async let goingTask = ExperiencesAPI.shared.getMyGoingExperiences()
         let fresh = (try? await allTask) ?? []
         let freshGoing = (try? await goingTask) ?? []
         if !fresh.isEmpty {
             events = fresh
-            await CacheManager.shared.set(CacheKey.eventList, value: fresh)
+            await CacheManager.shared.set(CacheKey.experienceList, value: fresh)
         }
         goingEvents = freshGoing
         isLoading = false
     }
 }
 
-struct EventsView: View {
-    @StateObject private var vm = EventsViewModel()
-    @State private var actionsVM = EventActionsViewModel()
+struct ExperiencesView: View {
+    @StateObject private var vm = ExperiencesViewModel()
+    @State private var actionsVM = ExperienceActionsViewModel()
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
-    // All events minus any that are already in goingEvents (avoid duplicates)
-    private var otherEvents: [Event] {
+    // All experiences minus any that are already in goingEvents (avoid duplicates)
+    private var otherEvents: [Experience] {
         let goingIds = Set(vm.goingEvents.map { $0.id })
         return vm.events.filter { !goingIds.contains($0.id) }
     }
@@ -46,16 +46,16 @@ struct EventsView: View {
         ZStack(alignment: .bottomTrailing) {
             Group {
                 if vm.isLoading && vm.events.isEmpty {
-                    EventListSkeletonView()
+                    ExperienceListSkeletonView()
                 } else if vm.events.isEmpty && vm.goingEvents.isEmpty {
-                    EmptyStateView(icon: "calendar", text: "No events yet", sub: "Tap + to create one!")
+                    EmptyStateView(icon: "sparkles", text: "No experiences yet", sub: "Tap + to create one!")
                 } else {
                     List {
                         if !vm.goingEvents.isEmpty {
                             Section {
                                 ForEach(vm.goingEvents) { event in
                                     Button { vm.selectedEvent = event } label: {
-                                        EventCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
+                                        ExperienceCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
                                     }
                                     .buttonStyle(.plain)
                                     .listRowBackground(Color.clear)
@@ -73,7 +73,7 @@ struct EventsView: View {
                             Section {
                                 ForEach(otherEvents) { event in
                                     Button { vm.selectedEvent = event } label: {
-                                        EventCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
+                                        ExperienceCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
                                     }
                                     .buttonStyle(.plain)
                                     .listRowBackground(Color.clear)
@@ -81,7 +81,7 @@ struct EventsView: View {
                                     .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
                                 }
                             } header: {
-                                Text(vm.goingEvents.isEmpty ? "All Events" : "Nearby Events")
+                                Text(vm.goingEvents.isEmpty ? "All Experiences" : "Nearby Experiences")
                                     .font(.subheadline.bold())
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .textCase(nil)
@@ -107,13 +107,13 @@ struct EventsView: View {
         }
         .task { await vm.loadAll() }
         .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
-            CreateEventFromDiscoverSheet { newEvent in
+            CreateExperienceFromDiscoverSheet { newEvent in
                 vm.events.insert(newEvent, at: 0)
-                Task { await CacheManager.shared.invalidate(CacheKey.eventList) }
+                Task { await CacheManager.shared.invalidate(CacheKey.experienceList) }
             }
         }
         .sheet(item: $vm.selectedEvent, onDismiss: { Task { await vm.loadAll() } }) { event in
-            EventDetailSheet(event: event, vm: actionsVM)
+            ExperienceDetailSheet(event: event, vm: actionsVM)
         }
         .sheet(item: Binding(
             get: { vm.selectedCreatorId.map { ProfileNavTarget(id: $0) } },
@@ -127,10 +127,10 @@ struct EventsView: View {
 
 private struct ProfileNavTarget: Identifiable { let id: Int }
 
-// MARK: - Create Event Sheet (2-step: map pick → form)
+// MARK: - Create Experience Sheet (2-step: map pick → form)
 
-struct CreateEventFromDiscoverSheet: View {
-    let onCreated: (Event) -> Void
+struct CreateExperienceFromDiscoverSheet: View {
+    let onCreated: (Experience) -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var locationManager: LocationManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
@@ -141,15 +141,16 @@ struct CreateEventFromDiscoverSheet: View {
     @State private var title = ""
     @State private var locationName = ""
     @State private var description = ""
-    @State private var eventDate = Date().addingTimeInterval(3600)
     @State private var visibility = "public"
+    @State private var selectedTags: [String] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var coverImageData: String?
     @State private var selectedCoverPhoto: PhotosPickerItem?
     @State private var isCoverPhotoLoading = false
 
-    let visibilityOptions = ["public", "followers", "private"]
+    // Public = wire "public"; Private = wire "followers" (D2). Only-me retired.
+    let visibilityOptions = ["public", "followers"]
 
     var body: some View {
         NavigationStack {
@@ -257,28 +258,21 @@ struct CreateEventFromDiscoverSheet: View {
                         }
                         .disabled(isCoverPhotoLoading)
 
-                        NostiaTextField(label: "Event Title *", placeholder: "What's happening?", text: $title)
+                        NostiaTextField(label: "Experience Title *", placeholder: "What's happening?", text: $title)
                         NostiaTextField(label: "Location Name", placeholder: "e.g. Central Park…", text: $locationName)
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Date & Time *")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
-                            DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
-                                .datePickerStyle(.compact).labelsHidden()
-                                .padding(responsive.spacing(12)).glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                                .colorScheme(.dark)
-                        }
+                        ExperienceTagPicker(selectedTags: $selectedTags)
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Visibility")
                                 .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             HStack(spacing: 8) {
                                 ForEach(visibilityOptions, id: \.self) { opt in
-                                    FilterChip(title: opt.capitalized, isActive: visibility == opt) { visibility = opt }
+                                    FilterChip(title: opt == "public" ? "Public" : "Private",
+                                               isActive: visibility == opt) { visibility = opt }
                                 }
                             }
-                            Text(visibility == "public" ? "Anyone can see this" :
-                                 visibility == "followers" ? "Only your followers" : "Only you")
+                            Text(visibility == "public" ? "Anyone can see this" : "Only your followers")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
 
@@ -301,19 +295,17 @@ struct CreateEventFromDiscoverSheet: View {
                                 errorMessage = "Title is required"; return
                             }
                             isLoading = true; errorMessage = nil
-                            let fmt = ISO8601DateFormatter()
-                            fmt.formatOptions = [.withInternetDateTime]
                             Task {
                                 do {
-                                    let event = try await AdventuresAPI.shared.createEvent(
+                                    let event = try await ExperiencesAPI.shared.createExperience(
                                         title: title.trimmingCharacters(in: .whitespaces),
                                         description: description.isEmpty ? nil : description,
                                         location: locationName.isEmpty ? nil : locationName,
-                                        eventDate: fmt.string(from: eventDate),
                                         lat: coord.latitude,
                                         lng: coord.longitude,
                                         visibility: visibility,
-                                        flyerImage: coverImageData
+                                        flyerImage: coverImageData,
+                                        tags: selectedTags
                                     )
                                     onCreated(event)
                                     dismiss()
@@ -325,7 +317,7 @@ struct CreateEventFromDiscoverSheet: View {
                         } label: {
                             HStack {
                                 if isLoading { ProgressView().tint(.white) }
-                                else { Text("Create Event").fontWeight(.bold) }
+                                else { Text("Create Experience").fontWeight(.bold) }
                             }
                             .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(title.isEmpty
@@ -341,7 +333,7 @@ struct CreateEventFromDiscoverSheet: View {
                     .frame(maxWidth: .infinity)
                 }
                 .background(.clear)
-                .navigationTitle("New Event")
+                .navigationTitle("New Experience")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
