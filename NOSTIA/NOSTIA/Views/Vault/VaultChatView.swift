@@ -133,7 +133,7 @@ struct SystemMessagePill: View {
             .foregroundColor(Color.nostiaTextMuted)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.07))
+            .background(Color.nostiaDivider)
             .clipShape(Capsule())
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)

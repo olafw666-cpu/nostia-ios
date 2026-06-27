@@ -99,7 +99,7 @@ struct CreateOrgEventSheet: View {
                     NostiaTextField(label: "Experience Title *", placeholder: "What's happening?", text: $title)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Location *").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                        Text("Location *").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         AddressSearchField(locationName: $locationName) { coord, _ in
                             coordinate = coord
                             previewPosition = .region(MKCoordinateRegion(
@@ -112,14 +112,14 @@ struct CreateOrgEventSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Date & Time *").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                        Text("Date & Time *").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                             .datePickerStyle(.compact).labelsHidden().padding(12)
-                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12)).colorScheme(.dark)
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12)).colorScheme(.light)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                        Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         TextEditor(text: $description)
                             .frame(minHeight: 72).padding(12)
                             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))

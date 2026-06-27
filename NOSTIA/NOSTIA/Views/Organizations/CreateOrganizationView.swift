@@ -117,7 +117,7 @@ struct CreateOrganizationView: View {
     private var descriptionField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Description")
-                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             TextEditor(text: $description)
                 .frame(minHeight: 80).padding(8)
                 .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
@@ -162,7 +162,7 @@ struct CreateOrganizationView: View {
 
     private var postPermissionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Who can post").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+            Text("Who can post").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             Picker("", selection: $postPermission) {
                 Text("All members").tag("members")
                 Text("Admins only").tag("locked")
@@ -177,7 +177,7 @@ struct CreateOrganizationView: View {
 
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Privacy").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+            Text("Privacy").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             Picker("", selection: $privacy) {
                 Text("Public").tag("public")
                 Text("Private").tag("private")
@@ -193,7 +193,7 @@ struct CreateOrganizationView: View {
     private var rulesField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Rules / Guidelines (optional)")
-                .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             TextEditor(text: $rulesText)
                 .frame(minHeight: 60).padding(8)
                 .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)

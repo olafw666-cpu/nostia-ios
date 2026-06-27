@@ -102,7 +102,7 @@ struct PaymentSetupPromptView: View {
     private func featureRow(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon).foregroundColor(Color.nostiaAccent).frame(width: 24)
-            Text(text).font(.subheadline).foregroundColor(.white.opacity(0.85))
+            Text(text).font(.subheadline).foregroundColor(Color.nostiaTextSecond)
             Spacer(minLength: 0)
         }
     }

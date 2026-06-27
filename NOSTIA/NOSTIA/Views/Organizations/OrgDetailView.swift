@@ -40,7 +40,7 @@ struct OrgDetailView: View {
                         NavigationLink {
                             OrgManageView(orgId: org.id, onChanged: { Task { await load() }; onChanged?() })
                         } label: {
-                            Image(systemName: "gearshape").foregroundColor(.white)
+                            Image(systemName: "gearshape").foregroundColor(Color.nostiaTextPrimary)
                         }
                     } else if org.myRole == "member" {
                         Menu {
@@ -48,7 +48,7 @@ struct OrgDetailView: View {
                                 Label("Leave organization", systemImage: "rectangle.portrait.and.arrow.right")
                             }
                         } label: {
-                            Image(systemName: "ellipsis").foregroundColor(.white)
+                            Image(systemName: "ellipsis").foregroundColor(Color.nostiaTextPrimary)
                         }
                     }
                 }
@@ -111,7 +111,7 @@ struct OrgDetailView: View {
     private func header(_ org: Organization) -> some View {
         VStack(spacing: 12) {
             UserAvatarView(imageData: org.imageUrl, initial: org.initial, color: Color.nostriaPurple, size: 96)
-            Text(org.name).font(.title2.bold()).foregroundColor(.white)
+            Text(org.name).font(.nostiaDisplay(22, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
             HStack(spacing: 12) {
                 Label("\(org.memberCount) member\(org.memberCount == 1 ? "" : "s")", systemImage: "person.2")
                 Label(org.privacy.capitalized, systemImage: org.privacy == "private" ? "lock" : "globe")

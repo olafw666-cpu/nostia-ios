@@ -103,14 +103,14 @@ struct OrgManageView: View {
             NostiaTextField(label: "Name", placeholder: "Organization name", text: $name)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                 TextEditor(text: $description).frame(minHeight: 70).padding(8)
                     .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Rules & Guidelines").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                Text("Rules & Guidelines").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                 TextEditor(text: $rulesText).frame(minHeight: 60).padding(8)
                     .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)

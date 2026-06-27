@@ -61,7 +61,7 @@ struct PublicProfileView: View {
                             } else {
                                 Text(status.isFollowing ? "Unfollow" : "Follow")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.white)
+                                    .foregroundColor(status.isFollowing ? Color.nostiaTextSecond : .white)
                                     .frame(width: 120)
                                     .padding(.vertical, 10)
                                     .background(status.isFollowing ? Color.clear : Color.nostiaAccent)
@@ -78,7 +78,7 @@ struct PublicProfileView: View {
                     // Posts / Visited section. The Visited tab only appears when the
                     // viewer is permitted (server-gated; D6).
                     Divider()
-                        .background(Color.white.opacity(0.15))
+                        .background(Color.nostiaDivider)
                         .padding(.horizontal, responsive.spacing(20))
 
                     if canViewVisited && !isBlockedByMe {
