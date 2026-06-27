@@ -138,6 +138,7 @@ final class FeedViewModel: ObservableObject {
         do {
             try await FeedAPI.shared.deletePost(id: post.id)
             await CacheManager.shared.invalidate(CacheKey.homeFeed)
+            await CacheManager.shared.invalidate(CacheKey.userPosts(post.userId))
         } catch {
             posts.insert(post, at: idx)
         }
@@ -162,6 +163,7 @@ final class FeedViewModel: ObservableObject {
         do {
             try await FeedAPI.shared.adminDeletePost(id: post.id)
             await CacheManager.shared.invalidate(CacheKey.homeFeed)
+            await CacheManager.shared.invalidate(CacheKey.userPosts(post.userId))
         } catch {
             posts.insert(post, at: idx)
         }

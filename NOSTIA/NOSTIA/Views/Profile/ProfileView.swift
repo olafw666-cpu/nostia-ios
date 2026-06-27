@@ -7,9 +7,7 @@ struct ProfileView: View {
     @State private var user: User?
     @State private var isLoading = true
     @State private var isEditing = false
-    @State private var showSettings = false
-    @State private var showAnalytics = false
-    @State private var showOrganizations = false
+    @State private var activeSheet: ProfileSheet?
     @State private var editBio = ""
     @State private var editImageData: String?
     @State private var selectedPhoto: PhotosPickerItem?
@@ -160,7 +158,7 @@ struct ProfileView: View {
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
-                                feedVM.showCreateSheet = true
+                                activeSheet = .createPost
                             } label: {
                                 Label("Post", systemImage: "plus.square")
                                     .font(.subheadline.bold())
@@ -174,7 +172,7 @@ struct ProfileView: View {
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
-                                showOrganizations = true
+                                activeSheet = .organizations
                             } label: {
                                 Label("Organizations", systemImage: "building.2")
                                     .font(.subheadline.bold())
@@ -187,7 +185,7 @@ struct ProfileView: View {
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
-                                showSettings = true
+                                activeSheet = .settings
                             } label: {
                                 Label("Settings", systemImage: "gear")
                                     .font(.subheadline)
@@ -227,9 +225,18 @@ struct ProfileView: View {
                                 PostCard(
                                     post: post,
                                     currentUserId: authManager.currentUserId,
+                                    isCurrentUserDev: authManager.isDev,
                                     onLike: { Task { await feedVM.toggleLike(post: post) } },
                                     onDislike: { Task { await feedVM.toggleDislike(post: post) } },
-                                    onComment: { Task { await feedVM.loadComments(for: post) } }
+                                    onDelete: {
+                                        if authManager.isDev && post.userId != authManager.currentUserId {
+                                            Task { await feedVM.adminDeletePost(post: post) }
+                                        } else {
+                                            Task { await feedVM.deletePost(post: post) }
+                                        }
+                                    },
+                                    onEdit: post.userId == authManager.currentUserId ? { activeSheet = .editPost(post) } : nil,
+                                    onComment: { activeSheet = .comments(post) }
                                 )
                                 .padding(.horizontal, responsive.spacing(16))
                             }
@@ -275,53 +282,58 @@ struct ProfileView: View {
                 }
             }
         }
-        .sheet(isPresented: $showSettings) {
-            NavigationStack {
-                PrivacyView()
-                    .navigationTitle("Settings")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showSettings = false }
-                                .foregroundColor(Color.nostiaAccent)
+        // A single enum-driven sheet. Stacking many `.sheet(isPresented:)` modifiers on
+        // one view is unreliable in SwiftUI (later modifiers shadow earlier ones, which is
+        // why the Organizations button silently did nothing) — one `.sheet(item:)` is the
+        // robust pattern and matches HomeView.
+        .sheet(item: $activeSheet, onDismiss: {
+            Task { await feedVM.loadUserPosts(userId: authManager.currentUserId ?? 0) }
+        }) { sheet in
+            switch sheet {
+            case .settings:
+                NavigationStack {
+                    PrivacyView()
+                        .navigationTitle("Settings")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Close") { activeSheet = nil }
+                                    .foregroundColor(Color.nostiaAccent)
+                            }
+                            if user?.isAdmin == true {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button("Analytics") { activeSheet = .analytics }
+                                        .foregroundColor(Color.nostiaAccent)
+                                }
+                            }
                         }
-                        if user?.isAdmin == true {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Analytics") { showAnalytics = true }
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                }
+                .presentationBackground(Color.nostiaBackground)
+            case .organizations:
+                OrganizationsHubView()
+            case .analytics:
+                NavigationStack {
+                    AnalyticsView()
+                        .navigationTitle("Analytics")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Close") { activeSheet = nil }
                                     .foregroundColor(Color.nostiaAccent)
                             }
                         }
-                    }
-                    .toolbarBackground(.hidden, for: .navigationBar)
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                }
+                .presentationBackground(Color.nostiaBackground)
+            case .createPost:
+                CreatePostSheet(vm: feedVM)
+            case .editPost(let post):
+                EditPostSheet(post: post, feedVM: feedVM)
+            case .comments(let post):
+                CommentsSheet(postId: post.id, vm: feedVM)
+                    .onAppear { Task { await feedVM.loadComments(for: post) } }
             }
-            .presentationBackground(Color.nostiaBackground)
-        }
-        .sheet(isPresented: $showOrganizations) {
-            OrganizationsHubView()
-        }
-        .sheet(isPresented: $showAnalytics) {
-            NavigationStack {
-                AnalyticsView()
-                    .navigationTitle("Analytics")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Close") { showAnalytics = false }
-                                .foregroundColor(Color.nostiaAccent)
-                        }
-                    }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .presentationBackground(Color.nostiaBackground)
-        }
-        .sheet(isPresented: $feedVM.showCreateSheet, onDismiss: {
-            Task { await feedVM.loadUserPosts(userId: authManager.currentUserId ?? 0) }
-        }) {
-            CreatePostSheet(vm: feedVM)
-        }
-        .sheet(item: $feedVM.selectedPost) { post in
-            CommentsSheet(postId: post.id, vm: feedVM)
-                .onAppear { Task { await feedVM.loadComments(for: post) } }
         }
         .alert("Error", isPresented: Binding(
             get: { feedVM.errorMessage != nil },
@@ -545,6 +557,27 @@ private extension Comparable {
 enum ProfileTab: Hashable {
     case posts
     case visited
+}
+
+// Every modal the Profile screen can present, driven through one `.sheet(item:)`.
+enum ProfileSheet: Identifiable {
+    case settings
+    case organizations
+    case analytics
+    case createPost
+    case editPost(FeedPost)
+    case comments(FeedPost)
+
+    var id: String {
+        switch self {
+        case .settings:           return "settings"
+        case .organizations:      return "organizations"
+        case .analytics:          return "analytics"
+        case .createPost:         return "createPost"
+        case .editPost(let post): return "editPost-\(post.id)"
+        case .comments(let post): return "comments-\(post.id)"
+        }
+    }
 }
 
 extension Notification.Name {

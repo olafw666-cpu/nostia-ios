@@ -222,37 +222,32 @@ struct AtlasTabBar: View {
                     Haptics.select()
                     selected = item.tab
                 } label: {
-                    VStack(spacing: 3) {
-                        ZStack {
+                    // Icon-only (labels removed per design). The active tab keeps its
+                    // soft-green pill so the selection is still obvious without text.
+                    Image(systemName: item.icon)
+                        .font(.system(size: 23, weight: .semibold))
+                        .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextSecond)
+                        .frame(width: 54, height: 40)
+                        .background {
                             if on {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .fill(Color.nostiaAccentSoft)
                             }
-                            Image(systemName: item.icon)
-                                .font(.system(size: 21, weight: .semibold))
-                                .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextMuted)
                         }
-                        .frame(width: 44, height: 30)
-                        Text(item.label)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextMuted)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .contentShape(Rectangle())
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(item.label)
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }
         }
-        .padding(.horizontal, 6)
-        .frame(height: 74)
-        .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color.nostiaCard)
-                .shadow(color: Color.nostiaShadow.opacity(0.20), radius: 34, x: 0, y: 14)
-        )
+        .padding(.horizontal, 8)
+        .frame(height: 60)
+        // iOS 26 Liquid Glass: the floating bar refracts the content scrolling behind it.
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .shadow(color: Color.nostiaShadow.opacity(0.18), radius: 28, x: 0, y: 12)
         .padding(.horizontal, 14)
         .padding(.bottom, 6)
     }

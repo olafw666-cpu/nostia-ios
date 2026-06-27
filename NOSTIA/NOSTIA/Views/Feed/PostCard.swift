@@ -85,19 +85,17 @@ struct PostCard: View {
             }
             .padding(.horizontal, responsive.spacing(14)).padding(.top, responsive.spacing(14)).padding(.bottom, responsive.spacing(10))
 
-            // Image (if any)
+            // Image (if any) — shown in full (scaledToFit) so vertical phone photos and
+            // user-cropped images aren't cut off. The image bytes already reflect the
+            // crop / scale-to-fit choice made when the post was created.
             if let imgData = post.imageData,
                let data = Data(base64Encoded: imgData),
                let uiImage = UIImage(data: data) {
-                Color.clear
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
                     .frame(maxWidth: .infinity)
-                    .frame(height: responsive.spacing(200))
-                    .overlay(
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                    )
-                    .clipped()
+                    .frame(maxHeight: responsive.spacing(440))
             }
 
             // Content
