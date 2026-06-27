@@ -449,7 +449,7 @@ struct CreateExpenseSheet: View {
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(Color.nostiaAccent)
-                            .colorScheme(.dark)
+                            .colorScheme(.light)
                             .padding(responsive.spacing(12))
                             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }

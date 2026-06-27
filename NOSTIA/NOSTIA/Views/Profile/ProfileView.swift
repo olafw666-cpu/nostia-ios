@@ -135,7 +135,7 @@ struct ProfileView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(responsive.spacing(16))
-                                .background(editBio.count > 100 ? Color.nostiaInput : Color.nostiaAccent)
+                                .background(editBio.count > 100 ? Color.nostiaTextMuted : Color.nostiaAccent)
                                 .foregroundColor(.white)
                                 .cornerRadius(14)
                             }

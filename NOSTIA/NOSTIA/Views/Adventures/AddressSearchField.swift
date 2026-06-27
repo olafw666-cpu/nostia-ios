@@ -96,7 +96,7 @@ struct AddressSearchField: View {
                             .padding(.vertical, 10)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        Divider().background(Color.white.opacity(0.1))
+                        Divider().background(Color.nostiaDivider)
                     }
                 }
                 .nostiaCard(in: RoundedRectangle(cornerRadius: 12))

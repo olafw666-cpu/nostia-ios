@@ -66,7 +66,7 @@ struct PrivacyView: View {
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
-                            .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
+                            .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
                         }
                         .navigationDestination(isPresented: $navigateToPaymentMethods) {
                             PaymentMethodsView()
@@ -185,7 +185,7 @@ struct PrivacyView: View {
                         }
                         .font(.subheadline)
                         .padding(responsive.spacing(16))
-                        .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
+                        .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
 
                         Button { showTermsSheet = true } label: {
                             HStack {
@@ -606,6 +606,6 @@ struct GlassRow: View {
         }
         .font(.subheadline)
         .padding(responsive.spacing(16))
-        .overlay(Divider().background(Color.white.opacity(0.08)), alignment: .bottom)
+        .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
     }
 }
