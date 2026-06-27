@@ -34,9 +34,10 @@ final class ExperiencesViewModel: ObservableObject {
 struct ExperiencesView: View {
     @StateObject private var vm = ExperiencesViewModel()
     @State private var actionsVM = ExperienceActionsViewModel()
-    @State private var selectedCat = "all"
+    @State private var selectedTags: Set<String> = []
     @State private var searchText = ""
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @EnvironmentObject var router: DeepLinkRouter
 
     // Going experiences first, then everything else (de-duplicated).
     private var allEvents: [Experience] {
@@ -46,16 +47,25 @@ struct ExperiencesView: View {
 
     private var filtered: [Experience] {
         allEvents.filter { event in
-            let catOK = selectedCat == "all" || (event.tags ?? []).contains(selectedCat)
+            // ANY-match: no tags selected → show all; otherwise keep experiences whose
+            // tags intersect the selected set.
+            let tagOK = selectedTags.isEmpty
+                || !Set(event.tags ?? []).isDisjoint(with: selectedTags)
             let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
             let searchOK = q.isEmpty
                 || event.title.lowercased().contains(q)
                 || (event.location?.lowercased().contains(q) ?? false)
-            return catOK && searchOK
+            return tagOK && searchOK
         }
     }
 
-    private let chips: [String] = ["all"] + experienceTags
+    /// Copy a pending themed selection from Home into the filter, then clear the channel
+    /// so a later manual visit to Explore isn't re-filtered.
+    private func consumePendingTags() {
+        guard !router.pendingExploreTags.isEmpty else { return }
+        selectedTags = Set(router.pendingExploreTags)
+        router.pendingExploreTags = []
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -72,10 +82,15 @@ struct ExperiencesView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(chips, id: \.self) { cat in
-                                NostiaChip(label: cat == "all" ? "All" : cat.capitalized,
-                                           isActive: selectedCat == cat) {
-                                    Haptics.select(); selectedCat = cat
+                            NostiaChip(label: "All", isActive: selectedTags.isEmpty) {
+                                Haptics.select(); selectedTags.removeAll()
+                            }
+                            ForEach(experienceTags, id: \.self) { tag in
+                                NostiaChip(label: tag.capitalized,
+                                           isActive: selectedTags.contains(tag)) {
+                                    Haptics.select()
+                                    if selectedTags.contains(tag) { selectedTags.remove(tag) }
+                                    else { selectedTags.insert(tag) }
                                 }
                             }
                         }
@@ -86,8 +101,8 @@ struct ExperiencesView: View {
                         ExperienceListSkeletonView()
                     } else if filtered.isEmpty {
                         EmptyStateView(icon: "sparkles",
-                                       text: searchText.isEmpty && selectedCat == "all" ? "No experiences yet" : "No matches",
-                                       sub: searchText.isEmpty && selectedCat == "all" ? "Tap + to create one!" : "Try a different filter")
+                                       text: searchText.isEmpty && selectedTags.isEmpty ? "No experiences yet" : "No matches",
+                                       sub: searchText.isEmpty && selectedTags.isEmpty ? "Tap + to create one!" : "Try a different filter")
                     } else {
                         ForEach(filtered) { event in
                             Button { vm.selectedEvent = event } label: {
@@ -116,6 +131,8 @@ struct ExperiencesView: View {
             .padding(.bottom, 100)
         }
         .task { await vm.loadAll() }
+        .onAppear { consumePendingTags() }
+        .onChange(of: router.pendingExploreTags) { _, _ in consumePendingTags() }
         .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
             CreateExperienceFromDiscoverSheet { newEvent in
                 vm.events.insert(newEvent, at: 0)

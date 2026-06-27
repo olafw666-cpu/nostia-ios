@@ -82,6 +82,9 @@ struct RootView: View {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
         }
+        // Atlas is a light design system; lock the whole UI to light so a device in Dark
+        // Mode can't bleed black through system surfaces (List/Form/Navigation/materials).
+        .preferredColorScheme(.light)
     }
 
     @MainActor

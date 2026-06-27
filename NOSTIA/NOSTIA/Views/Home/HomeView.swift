@@ -8,6 +8,7 @@ struct HomeView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @EnvironmentObject var router: DeepLinkRouter
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -49,6 +50,9 @@ struct HomeView: View {
             }
         }
         .background {
+            // Base off-white canvas so the screen never shows the system surface (black in
+            // Dark Mode) when no custom photo is set; the optional photo layers on top.
+            Color.nostiaBackground.ignoresSafeArea()
             if let bgImage = backgroundImage {
                 Image(uiImage: bgImage)
                     .resizable()
@@ -159,6 +163,7 @@ struct HomeView: View {
                     orgsButton
                     if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
                     if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
+                    themedSections
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity)
@@ -180,6 +185,7 @@ struct HomeView: View {
             NostiaSearchBar(placeholder: "Search places & experiences…") { selectedTab = 1 }
             if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
+            themedSections
             orgsButton
             feedSection
         }
@@ -268,6 +274,49 @@ struct HomeView: View {
     private var upcomingEventsSection: some View {
         experienceRow(title: "Experiences you're visiting", events: Array(vm.upcomingEvents.prefix(8)), idPrefix: "going") {
             selectedTab = 1
+        }
+    }
+
+    // MARK: - Themed category rows (batch 4 §4/§5)
+
+    /// A tag-themed Home row. "See all" opens Explore with `tags` pre-checked.
+    private struct HomeCategory: Identifiable {
+        let title: String
+        let icon: String
+        let tags: [String]
+        var id: String { title }
+    }
+
+    /// Default grouping covering all 12 preset experience tags (batch 4 §5).
+    private let homeCategories: [HomeCategory] = [
+        .init(title: "Outdoors",        icon: "leaf.fill",         tags: ["outdoors", "hiking", "nature"]),
+        .init(title: "On the Water",    icon: "drop.fill",         tags: ["water"]),
+        .init(title: "Food & Nightlife", icon: "fork.knife",       tags: ["food", "nightlife"]),
+        .init(title: "Arts & Culture",  icon: "theatermasks.fill", tags: ["culture", "art", "music"]),
+        .init(title: "Active",          icon: "figure.run",        tags: ["sports", "fitness"]),
+        .init(title: "Social",          icon: "person.2.fill",     tags: ["social"]),
+    ]
+
+    /// Broad experience pool the Home VM already loads (nearby + visiting, de-duplicated)
+    /// used to populate the themed rows without an extra fetch (Q-B default).
+    private var themePool: [Experience] {
+        var seen = Set<Int>()
+        return (vm.nearbyEvents + vm.upcomingEvents).filter { seen.insert($0.id).inserted }
+    }
+
+    @ViewBuilder
+    private var themedSections: some View {
+        ForEach(homeCategories) { category in
+            let tagSet = Set(category.tags)
+            let matches = themePool.filter { !Set($0.tags ?? []).isDisjoint(with: tagSet) }
+            if !matches.isEmpty {
+                experienceRow(title: category.title,
+                              events: Array(matches.prefix(8)),
+                              idPrefix: "theme-\(category.id)") {
+                    router.pendingExploreTags = category.tags
+                    selectedTab = 1
+                }
+            }
         }
     }
 
