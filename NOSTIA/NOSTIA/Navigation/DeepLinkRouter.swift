@@ -19,6 +19,10 @@ final class DeepLinkRouter: ObservableObject {
     @Published var selectedTab: Int = 0
     /// The most recent deep-link target awaiting presentation.
     @Published var pendingTarget: Target?
+    /// Tags a themed Home "See all" wants Explore to pre-check. `ExperiencesView`
+    /// consumes a non-empty value into its filter, then clears it so a later manual
+    /// visit to Explore isn't re-filtered.
+    @Published var pendingExploreTags: [String] = []
 
     private init() {}
 
