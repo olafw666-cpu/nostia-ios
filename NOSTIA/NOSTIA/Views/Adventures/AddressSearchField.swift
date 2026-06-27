@@ -46,7 +46,7 @@ struct AddressSearchField: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(Color.nostiaTextSecond)
                 TextField("Search address or place…", text: $completer.query)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.nostiaTextPrimary)
                     .autocorrectionDisabled()
                     .focused($focused)
                     .onChange(of: completer.query) { _, q in
@@ -65,7 +65,7 @@ struct AddressSearchField: View {
                 }
             }
             .padding(12)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
 
             if showResults && !completer.results.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
@@ -85,7 +85,7 @@ struct AddressSearchField: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(result.title)
                                     .font(.subheadline)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.nostiaTextPrimary)
                                 if !result.subtitle.isEmpty {
                                     Text(result.subtitle)
                                         .font(.caption)
@@ -99,7 +99,7 @@ struct AddressSearchField: View {
                         Divider().background(Color.white.opacity(0.1))
                     }
                 }
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 .padding(.top, 4)
             }
         }

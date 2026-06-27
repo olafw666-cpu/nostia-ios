@@ -21,7 +21,7 @@ struct OrgEventsView: View {
                         Label("New Experience", systemImage: "plus.circle.fill")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
 
@@ -115,15 +115,15 @@ struct CreateOrgEventSheet: View {
                         Text("Date & Time *").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                         DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                             .datePickerStyle(.compact).labelsHidden().padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12)).colorScheme(.dark)
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12)).colorScheme(.dark)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                         TextEditor(text: $description)
                             .frame(minHeight: 72).padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                            .foregroundColor(.white).scrollContentBackground(.hidden)
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
                     }
 
                     if let errorMessage {
@@ -157,7 +157,7 @@ struct CreateOrgEventSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     private func create() async {

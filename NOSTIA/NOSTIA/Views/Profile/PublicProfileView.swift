@@ -31,13 +31,13 @@ struct PublicProfileView: View {
                     .padding(.top, responsive.spacing(20))
 
                     Text("@\(u.username)")
-                        .font(.title2.bold())
-                        .foregroundColor(.white)
+                        .font(.nostiaDisplay(22, weight: .heavy))
+                        .foregroundColor(Color.nostiaTextPrimary)
 
                     let bioText = u.bio?.isEmpty == false ? u.bio! : nil
                     Text(bioText ?? "No bio yet")
                         .font(.body)
-                        .foregroundColor(bioText != nil ? .white : Color.nostiaTextMuted)
+                        .foregroundColor(bioText != nil ? Color.nostiaTextPrimary : Color.nostiaTextMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, responsive.spacing(24))
 

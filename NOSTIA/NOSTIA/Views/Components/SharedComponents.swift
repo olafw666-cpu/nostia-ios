@@ -118,7 +118,7 @@ struct EmptyStateView: View {
             Image(systemName: icon)
                 .font(.system(size: responsive.fontSize(56)))
                 .foregroundStyle(Color.nostiaAccent.opacity(0.7))
-            Text(text).font(.title3.bold()).foregroundColor(.white)
+            Text(text).font(.title3.bold()).foregroundColor(Color.nostiaTextPrimary)
             if !sub.isEmpty {
                 Text(sub)
                     .font(.subheadline)
@@ -185,7 +185,7 @@ struct ConsentSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .interactiveDismissDisabled()
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }
 
@@ -199,13 +199,13 @@ struct ConsentInfoRow: View {
         VStack(alignment: .leading, spacing: responsive.spacing(12)) {
             HStack {
                 Image(systemName: icon).foregroundColor(Color.nostiaAccent)
-                Text(title).font(.headline).foregroundColor(.white)
+                Text(title).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                 Spacer()
             }
             Text(description).font(.footnote).foregroundColor(Color.nostiaTextSecond)
         }
         .padding(responsive.spacing(16))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
@@ -258,7 +258,7 @@ struct CreateTripSheet: View {
                 friendsStep
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     private var detailsStep: some View {
@@ -268,11 +268,11 @@ struct CreateTripSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
                         .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(Color.nostiaTextSecond)
                     TextEditor(text: $description)
                         .frame(minHeight: responsive.spacing(80)).padding(responsive.spacing(12))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundColor(.white).scrollContentBackground(.hidden)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
                 }
             }
             .padding(responsive.spacing(20))
@@ -317,7 +317,7 @@ struct CreateTripSheet: View {
                         HStack(spacing: responsive.spacing(12)) {
                             AvatarView(initial: follower.initial, color: Color.nostiaAccent, size: responsive.spacing(38))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(follower.name).font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
+                                Text(follower.name).font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                                 Text("@\(follower.username)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                             }
                             Spacer()
@@ -326,7 +326,7 @@ struct CreateTripSheet: View {
                                 .foregroundColor(selectedFriendIds.contains(follower.id) ? Color.nostiaAccent : Color.nostiaTextMuted)
                         }
                         .padding(responsive.spacing(14))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                         .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -429,13 +429,13 @@ struct CreateExpenseSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Amount *")
                             .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         HStack {
                             Text("$").foregroundColor(Color.nostiaTextSecond).font(.title3)
-                            TextField("0.00", text: $amountText).keyboardType(.decimalPad).foregroundColor(.white)
+                            TextField("0.00", text: $amountText).keyboardType(.decimalPad).foregroundColor(Color.nostiaTextPrimary)
                         }
                         .padding(responsive.spacing(16))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }
                     .onChange(of: amountText) { _ in
                         if !isCustomMode { recomputeEvenSplit() }
@@ -444,21 +444,21 @@ struct CreateExpenseSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Date *")
                             .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         DatePicker("", selection: $dateValue, displayedComponents: .date)
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(Color.nostiaAccent)
                             .colorScheme(.dark)
                             .padding(responsive.spacing(12))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }
 
                     if showCategory {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Category")
                                 .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundColor(Color.nostiaTextSecond)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(categories, id: \.self) { cat in
@@ -507,7 +507,7 @@ struct CreateExpenseSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .onAppear { initializeSplit() }
     }
 
@@ -518,7 +518,7 @@ struct CreateExpenseSheet: View {
             HStack {
                 Text("Split Between")
                     .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Color.nostiaTextSecond)
                 Spacer()
                 if isCustomMode {
                     Button("Split Evenly") {
@@ -534,14 +534,14 @@ struct CreateExpenseSheet: View {
             Button { toggleEveryone() } label: {
                 HStack(spacing: 10) {
                     AvatarView(initial: "A", color: Color.nostriaPurple, size: responsive.spacing(36))
-                    Text("Everyone").font(.subheadline.bold()).foregroundColor(.white)
+                    Text("Everyone").font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
                     Spacer()
                     Image(systemName: allMembersSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(allMembersSelected ? Color.nostiaAccent : Color.nostiaTextMuted)
                         .font(.title3)
                 }
                 .padding(responsive.spacing(12))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
 
@@ -597,7 +597,7 @@ struct CreateExpenseSheet: View {
                         size: responsive.spacing(36)
                     )
                     HStack(spacing: 4) {
-                        Text(displayName).font(.subheadline).foregroundColor(.white)
+                        Text(displayName).font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
                         if isMe {
                             Text("(you)").font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
@@ -622,7 +622,7 @@ struct CreateExpenseSheet: View {
                         .font(.title3)
                 }
                 .padding(responsive.spacing(12))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 .opacity(isSelected ? 1.0 : 0.6)
             }
             .buttonStyle(.plain)
@@ -692,11 +692,12 @@ struct FilterChip: View {
         Button(action: action) {
             Text(title)
                 .font(.caption.bold())
-                .foregroundColor(isActive ? .white : Color.nostiaTextSecond)
-                .padding(.horizontal, 12).padding(.vertical, 6)
+                .foregroundColor(isActive ? .white : Color(hex: "4B5563"))
+                .padding(.horizontal, 14).padding(.vertical, 8)
                 .frame(minHeight: 32)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(isActive ? Capsule().stroke(Color.nostiaAccent, lineWidth: 1) : nil)
+                .background(Capsule().fill(isActive ? Color.nostiaAccent : Color.nostiaCard))
+                .overlay(isActive ? nil : Capsule().stroke(Color.nostriaBorder, lineWidth: 1))
+                .shadow(color: Color.nostiaShadow.opacity(0.06), radius: 6, x: 0, y: 1)
         }
         // State conveyed to VoiceOver, not by color alone (Section 1.2 / 1.4).
         .accessibilityLabel("\(title) filter")
@@ -813,7 +814,7 @@ struct FeedPostCardSkeleton: View {
             SkeletonBar(width: 110, height: 10)
                 .padding(.horizontal, r.spacing(14)).padding(.bottom, r.spacing(14))
         }
-        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
@@ -846,7 +847,7 @@ struct ProfileSkeletonView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(r.spacing(20))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
 
                 ForEach(0..<2, id: \.self) { _ in
                     FeedPostCardSkeleton()
@@ -874,7 +875,7 @@ struct NotificationSkeletonView: View {
                         Spacer()
                     }
                     .padding(r.spacing(14))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .padding(r.spacing(16))
@@ -897,7 +898,7 @@ struct FollowSkeletonView: View {
                         SkeletonBar(width: 70, height: 28)
                     }
                     .padding(r.spacing(14))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .padding(r.spacing(16))
@@ -918,7 +919,7 @@ struct SearchSkeletonView: View {
                     Spacer()
                 }
                 .padding(r.spacing(14))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
             }
         }
         .padding(.horizontal, r.spacing(16))
@@ -937,7 +938,7 @@ struct VaultListSkeletonView: View {
                         SkeletonBar(width: i % 2 == 0 ? 130 : 100, height: 12)
                     }
                     .padding(r.spacing(18))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
                 }
             }
             .padding(r.spacing(16))
@@ -962,7 +963,7 @@ struct VaultDetailSkeletonView: View {
                     if i % 2 != 0 { Spacer() }
                 }
                 .padding(r.spacing(12))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
             }
         }
         .padding(r.spacing(16))
@@ -984,7 +985,7 @@ struct VaultExpenseSkeletonView: View {
                         SkeletonBar(width: 60, height: 13)
                     }
                     .padding(r.spacing(14))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .padding(r.spacing(16))
@@ -1009,7 +1010,7 @@ struct ExperienceListSkeletonView: View {
                         Spacer()
                     }
                     .padding(r.spacing(14))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
                 }
             }
             .padding(r.spacing(16))
@@ -1034,7 +1035,7 @@ struct CommentSkeletonView: View {
                         Spacer()
                     }
                     .padding(r.spacing(12))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .padding(r.spacing(16))

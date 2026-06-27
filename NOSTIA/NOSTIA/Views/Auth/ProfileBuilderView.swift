@@ -39,14 +39,14 @@ struct ProfileBuilderView: View {
                     if !username.isEmpty {
                         Text("@\(username)")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.nostiaTextPrimary)
                     }
 
                     // Bio field
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bio")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         ZStack(alignment: .topLeading) {
                             if bio.isEmpty {
                                 Text("Write a short bio...")
@@ -57,10 +57,10 @@ struct ProfileBuilderView: View {
                             TextEditor(text: $bio)
                                 .frame(minHeight: 88)
                                 .padding(8)
-                                .foregroundColor(.white)
+                                .foregroundColor(Color.nostiaTextPrimary)
                                 .scrollContentBackground(.hidden)
                         }
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
 
                         HStack {
                             Spacer()
@@ -84,7 +84,7 @@ struct ProfileBuilderView: View {
                         .padding()
                         .background(
                             bio.count > 100
-                                ? AnyShapeStyle(Color.nostiaInput)
+                                ? AnyShapeStyle(Color(hex: "C2CAD3"))
                                 : AnyShapeStyle(LinearGradient(
                                     colors: [Color.nostiaAccent, Color.nostriaPurple],
                                     startPoint: .leading, endPoint: .trailing
@@ -118,7 +118,7 @@ struct ProfileBuilderView: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .task { await loadUsername() }
         .onChange(of: selectedPhoto) { _, item in
             Task {

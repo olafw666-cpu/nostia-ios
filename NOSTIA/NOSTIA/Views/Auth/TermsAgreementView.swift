@@ -25,7 +25,7 @@ struct TermsAgreementView: View {
             VStack(spacing: 0) {
                 Text("Terms & Agreements")
                     .font(.system(size: responsive.fontSize(20), weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.nostiaTextPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, responsive.spacing(20))
                     .padding(.top, responsive.spacing(16))
@@ -51,7 +51,7 @@ struct TermsAgreementView: View {
                         VStack(alignment: .leading, spacing: responsive.spacing(10)) {
                             Text(doc.header)
                                 .font(.system(size: responsive.fontSize(17), weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(Color.nostiaTextPrimary)
 
                             Text(doc.body)
                                 .font(.system(size: max(13, responsive.fontSize(13))))

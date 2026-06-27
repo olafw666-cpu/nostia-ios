@@ -41,11 +41,8 @@ struct VaultDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Tab selector
-            HStack(spacing: 8) {
-                TabButton(title: "Vault", isActive: selectedTab == 0) { selectedTab = 0 }
-                TabButton(title: "Chat", isActive: selectedTab == 1) { selectedTab = 1 }
-            }
-            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
+            AtlasSegmented(segments: ["Vault", "Chat"], selection: $selectedTab)
+                .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
 
             if selectedTab == 0 {
                 VaultContentView(tripId: currentTrip.id, isKicked: isKicked, participants: currentTrip.activeParticipants)
@@ -63,14 +60,14 @@ struct VaultDetailView: View {
             if isActiveMember {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showQRInvite = true } label: {
-                        Image(systemName: "qrcode").foregroundColor(.white)
+                        Image(systemName: "qrcode").foregroundColor(Color.nostiaTextPrimary)
                     }
                 }
             }
             if isLeader {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditMenu = true } label: {
-                        Image(systemName: "ellipsis.circle").foregroundColor(.white)
+                        Image(systemName: "ellipsis.circle").foregroundColor(Color.nostiaTextPrimary)
                     }
                 }
             }
@@ -168,15 +165,14 @@ struct AddMemberSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
+                    Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextMuted)
                     TextField("Search followers", text: $searchText)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.nostiaTextPrimary)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                 }
-                .padding(10)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(10)
+                .padding(12)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, responsive.spacing(16))
                 .padding(.vertical, 8)
 
@@ -201,7 +197,7 @@ struct AddMemberSheet: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(follower.name)
                                             .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(Color.nostiaTextPrimary)
                                         Text("@\(follower.username)")
                                             .font(.system(size: responsive.fontSize(12)))
                                             .foregroundColor(Color.nostiaTextSecond)
@@ -212,7 +208,7 @@ struct AddMemberSheet: View {
                                         .font(.system(size: 22))
                                 }
                                 .padding(responsive.spacing(14))
-                                .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                                .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                                 .padding(.horizontal, responsive.spacing(16))
                                 .padding(.vertical, 4)
                                 .contentShape(Rectangle())
@@ -280,7 +276,7 @@ struct AddMemberSheet: View {
                 isLoading = false
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }
 
@@ -314,7 +310,7 @@ struct KickMemberSheet: View {
                                     color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
+                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                                     if let uname = participant.username {
                                         Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
@@ -340,7 +336,7 @@ struct KickMemberSheet: View {
                                 }
                             }
                             .padding(responsive.spacing(14))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         }
                     }
@@ -363,7 +359,7 @@ struct KickMemberSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }
 
@@ -397,7 +393,7 @@ struct TransferLeadershipSheet: View {
                                     color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white)
+                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                                     if let uname = participant.username {
                                         Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
@@ -423,7 +419,7 @@ struct TransferLeadershipSheet: View {
                                 }
                             }
                             .padding(responsive.spacing(14))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             .padding(.horizontal, responsive.spacing(16)).padding(.vertical, 4)
                         }
                     }
@@ -446,6 +442,6 @@ struct TransferLeadershipSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }

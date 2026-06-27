@@ -12,7 +12,7 @@ struct AnalyticsView: View {
                     // No access state
                     VStack(spacing: 16) {
                         Image(systemName: "chart.bar.xaxis").font(.system(size: 56)).foregroundColor(Color.nostiaTextMuted)
-                        Text("Analytics Dashboard").font(.title2.bold()).foregroundColor(.white)
+                        Text("Analytics Dashboard").font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
                         Text("Analytics access is available for admins and subscribers.")
                             .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                             .multilineTextAlignment(.center)
@@ -43,10 +43,10 @@ struct AnalyticsView: View {
                     // Funnel
                     if !vm.funnelSteps.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Funnel").font(.headline).foregroundColor(.white)
+                            Text("Funnel").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                             ForEach(vm.funnelSteps) { step in
                                 HStack {
-                                    Text(step.step.capitalized).font(.subheadline).foregroundColor(.white)
+                                    Text(step.step.capitalized).font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
                                     Spacer()
                                     Text("\(step.count)").font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                                     if let pct = step.percentage {
@@ -63,10 +63,10 @@ struct AnalyticsView: View {
                     // Retention
                     if !vm.retention.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Retention").font(.headline).foregroundColor(.white)
+                            Text("Retention").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                             ForEach(vm.retention) { row in
                                 HStack {
-                                    Text(row.period.capitalized).font(.subheadline).foregroundColor(.white)
+                                    Text(row.period.capitalized).font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
                                     Spacer()
                                     if let rate = row.rate {
                                         Text(String(format: "%.0f%%", rate * 100))
@@ -94,7 +94,7 @@ struct MetricCard: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(value.map { "\($0)" } ?? "—")
-                .font(.system(size: 28, weight: .bold)).foregroundColor(.white)
+                .font(.system(size: 28, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
             Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
         }
         .frame(maxWidth: .infinity)

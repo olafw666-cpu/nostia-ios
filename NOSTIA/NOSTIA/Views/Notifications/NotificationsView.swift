@@ -15,7 +15,7 @@ struct NotificationsView: View {
                         .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
                 }
                 .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
-                .overlay(Divider().background(Color.white.opacity(0.1)), alignment: .bottom)
+                .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
             }
 
             if vm.isLoading && vm.notifications.isEmpty {
@@ -54,12 +54,12 @@ struct NotificationRow: View {
                     .font(.title3)
                     .foregroundColor(Color(hex: notification.iconColorHex))
                     .frame(width: responsive.spacing(48), height: responsive.spacing(48))
-                    .glassEffect(in: Circle())
+                    .nostiaCard(in: Circle())
                     .overlay(Circle().stroke(Color(hex: notification.iconColorHex).opacity(0.3), lineWidth: 1))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(notification.title).font(.headline).foregroundColor(.white)
-                    Text(notification.body).font(.footnote).foregroundColor(Color(hex: "D1D5DB")).lineLimit(2)
+                    Text(notification.title).font(.headline).foregroundColor(Color.nostiaTextPrimary)
+                    Text(notification.body).font(.footnote).foregroundColor(Color.nostiaTextSecond).lineLimit(2)
                     Text(notification.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 Spacer()
@@ -69,7 +69,7 @@ struct NotificationRow: View {
                 }
             }
             .padding(responsive.spacing(16))
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
             .overlay(
                 notification.read ? nil :
                 RoundedRectangle(cornerRadius: 16).stroke(Color.nostiaAccent.opacity(0.3), lineWidth: 1)

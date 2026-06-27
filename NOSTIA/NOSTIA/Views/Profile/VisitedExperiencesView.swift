@@ -55,7 +55,7 @@ struct VisitedExperiencesView: View {
             set: { selectedCreatorId = $0?.id }
         )) { target in
             NavigationStack { PublicProfileView(userId: target.id) }
-                .presentationBackground(.ultraThinMaterial)
+                .presentationBackground(Color.nostiaBackground)
         }
     }
 
@@ -63,7 +63,7 @@ struct VisitedExperiencesView: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextMuted)
             TextField("", text: $searchText, prompt: Text("Search visited").foregroundColor(Color.nostiaTextMuted))
-                .foregroundColor(.white)
+                .foregroundColor(Color.nostiaTextPrimary)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
             if !searchText.isEmpty {
@@ -74,7 +74,7 @@ struct VisitedExperiencesView: View {
             }
         }
         .padding(responsive.spacing(12))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, responsive.spacing(16))
     }
 

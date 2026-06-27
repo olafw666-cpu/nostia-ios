@@ -49,7 +49,7 @@ struct OrganizationsHubView: View {
         HStack {
             Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextMuted)
             TextField("Find organizations", text: $vm.searchQuery)
-                .foregroundColor(.white)
+                .foregroundColor(Color.nostiaTextPrimary)
                 .autocorrectionDisabled()
                 .onChange(of: vm.searchQuery) { _, _ in
                     searchTask?.cancel()
@@ -65,7 +65,7 @@ struct OrganizationsHubView: View {
             }
         }
         .padding(12)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -83,7 +83,7 @@ struct OrganizationsHubView: View {
 
     @ViewBuilder
     private var myOrgsSection: some View {
-        Text("Your Organizations").font(.headline).foregroundColor(.white)
+        Text("Your Organizations").font(.headline).foregroundColor(Color.nostiaTextPrimary)
         if vm.isLoading && vm.myOrgs.isEmpty {
             ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding()
         } else if vm.myOrgs.isEmpty {
@@ -107,7 +107,7 @@ struct OrgRow: View {
             UserAvatarView(imageData: org.imageUrl, initial: org.initial, color: Color.nostriaPurple, size: 48)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(org.name).font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                    Text(org.name).font(.system(size: 16, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     if let role = org.myRole {
                         Text(role.capitalized)
                             .font(.system(size: 10, weight: .bold))
@@ -127,6 +127,6 @@ struct OrgRow: View {
             Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
         }
         .padding(12)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
     }
 }

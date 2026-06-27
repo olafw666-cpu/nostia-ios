@@ -53,14 +53,22 @@ struct StatusButtons: View {
     private func statusButton(value: String, title: String, icon: String, selectedColor: Color) -> some View {
         let isSelected = myStatus == value
         Button { onSelect(value) } label: {
-            HStack {
-                if isBusy { ProgressView().tint(.white).scaleEffect(0.8) }
-                else { Image(systemName: icon) }
-                Text(title)
+            HStack(spacing: 6) {
+                if isBusy { ProgressView().tint(isSelected ? .white : selectedColor).scaleEffect(0.8) }
+                else { Image(systemName: icon).foregroundColor(isSelected ? .white : selectedColor) }
+                Text(title).fontWeight(.bold)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 12)
-            .background(isSelected ? selectedColor : Color.nostiaInput)
-            .foregroundColor(.white).cornerRadius(12)
+            .font(.system(size: 15))
+            .frame(maxWidth: .infinity).padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? selectedColor : Color.nostiaCard)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? selectedColor : Color.nostriaBorder, lineWidth: 1)
+            )
+            .foregroundColor(isSelected ? .white : Color(hex: "4B5563"))
         }
         .disabled(isBusy)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
@@ -180,9 +188,9 @@ struct ExperienceDetailSheet: View {
                                     interpretedSyntax: .inlineOnlyPreservingWhitespace
                                 )
                             ) {
-                                Text(attributed).font(.body).foregroundColor(.white).tint(Color.nostiaAccent)
+                                Text(attributed).font(.body).foregroundColor(Color.nostiaTextPrimary).tint(Color.nostiaAccent)
                             } else {
-                                Text(desc).font(.body).foregroundColor(.white)
+                                Text(desc).font(.body).foregroundColor(Color.nostiaTextPrimary)
                             }
                         }
 
@@ -209,7 +217,7 @@ struct ExperienceDetailSheet: View {
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
                         }
 
-                        Divider().background(Color.white.opacity(0.2))
+                        Divider().background(Color.nostiaDivider)
 
                         // D1: two-state Visited / Visiting control.
                         StatusButtons(myStatus: currentEvent.myStatus, isBusy: isStatusUpdating) { value in
@@ -281,7 +289,7 @@ struct ExperienceDetailSheet: View {
             .sheet(isPresented: $showCreatorProfile) {
                 if let creatorId = currentEvent.createdBy {
                     NavigationStack { PublicProfileView(userId: creatorId) }
-                        .presentationBackground(.ultraThinMaterial)
+                        .presentationBackground(Color.nostiaBackground)
                 }
             }
             .onChange(of: selectedFlyerItem) { _, item in
@@ -289,7 +297,7 @@ struct ExperienceDetailSheet: View {
                 Task { await uploadFlyer(item) }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     // D1: tap a state to select it; tap the selected state again to clear it ("none").
@@ -410,7 +418,7 @@ struct ExperienceFlyerView: View {
                     }
 
                     VStack(alignment: .leading, spacing: responsive.spacing(16)) {
-                        Text(currentEvent.title).font(.title.bold()).foregroundColor(.white)
+                        Text(currentEvent.title).font(.nostiaDisplay(26)).foregroundColor(Color.nostiaTextPrimary)
                         if let tags = currentEvent.tags, !tags.isEmpty {
                             ExperienceTagChips(tags: tags)
                         }
@@ -429,19 +437,19 @@ struct ExperienceFlyerView: View {
                                                ratingCount: currentEvent.ratingCount, starSize: 14)
                         }
                         if let desc = currentEvent.description, !desc.isEmpty {
-                            Divider().background(Color.white.opacity(0.2))
+                            Divider().background(Color.nostiaDivider)
                             if let attributed = try? AttributedString(
                                 markdown: desc,
                                 options: AttributedString.MarkdownParsingOptions(
                                     interpretedSyntax: .inlineOnlyPreservingWhitespace
                                 )
                             ) {
-                                Text(attributed).font(.body).foregroundColor(.white).tint(Color.nostiaAccent)
+                                Text(attributed).font(.body).foregroundColor(Color.nostiaTextPrimary).tint(Color.nostiaAccent)
                             } else {
-                                Text(desc).font(.body).foregroundColor(.white)
+                                Text(desc).font(.body).foregroundColor(Color.nostiaTextPrimary)
                             }
                         }
-                        Divider().background(Color.white.opacity(0.2))
+                        Divider().background(Color.nostiaDivider)
                         // D1: two-state Visited / Visiting control (kept in sync with the detail sheet).
                         StatusButtons(myStatus: currentEvent.myStatus, isBusy: isStatusUpdating) { value in
                             Task { await toggleStatus(value) }
@@ -472,7 +480,7 @@ struct ExperienceFlyerView: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     // D1: tap a state to select it; tap the selected state again to clear it ("none").
@@ -534,7 +542,7 @@ struct LinkInsertBar: View {
         .sheet(isPresented: $showSheet) {
             LinkInsertSheet { markdown in text += (text.isEmpty ? "" : " ") + markdown }
                 .presentationDetents([.height(260)])
-                .presentationBackground(.ultraThinMaterial)
+                .presentationBackground(Color.nostiaBackground)
         }
     }
 }
@@ -549,7 +557,7 @@ struct ExperienceCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: responsive.spacing(8)) {
             HStack {
-                Text(event.title).font(.headline).foregroundColor(.white)
+                Text(event.title).font(.nostiaDisplay(17, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                 Spacer()
                 // D4/Q-A: average rating star sits top-right of the card.
                 AverageRatingBadge(avgRating: event.avgRating, ratingCount: event.ratingCount)
@@ -596,7 +604,7 @@ struct ExperienceCard: View {
             }
         }
         .padding(responsive.spacing(16))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -612,11 +620,11 @@ struct LinkInsertSheet: View {
                 NostiaTextField(label: "Display Text", placeholder: "e.g. Click here", text: $displayText)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("URL *")
-                        .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                        .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                     TextField("https://...", text: $url)
-                        .foregroundColor(.white).autocorrectionDisabled()
+                        .foregroundColor(Color.nostiaTextPrimary).autocorrectionDisabled()
                         .textInputAutocapitalization(.never).keyboardType(.URL)
-                        .padding(12).glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .padding(12).nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 }
             }
             .padding(20)

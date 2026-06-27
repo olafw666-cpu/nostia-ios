@@ -25,14 +25,14 @@ struct NotificationSettingsView: View {
                         set: { newValue in pushEnabled = newValue; Task { await save(newValue) } }
                     )) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Push Notifications").foregroundColor(.white)
+                            Text("Push Notifications").foregroundColor(Color.nostiaTextPrimary)
                             Text("Get notified about reminders, follows, invites, and payments.")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
                     }
                     .tint(Color.nostiaAccent)
                     .padding(responsive.spacing(16))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     .accessibilityHint("Turns all push notifications on or off")
 
                     if systemDenied {

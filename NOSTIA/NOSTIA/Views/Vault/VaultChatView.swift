@@ -56,13 +56,13 @@ struct VaultChatView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 0))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 0))
             } else {
                 HStack(spacing: 10) {
                     TextField("Message...", text: $inputText)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.nostiaTextPrimary)
                         .padding(.horizontal, 14).padding(.vertical, 10)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 22))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 22))
                     Button {
                         guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
                         Task { await sendMessage() }
@@ -178,9 +178,9 @@ struct VaultChatBubble: View {
                     Text(name).font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
                 }
                 Text(message.content)
-                    .font(.subheadline).foregroundColor(.white)
+                    .font(.subheadline).foregroundColor(isMe ? .white : Color.nostiaTextPrimary)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(isMe ? Color.nostiaAccent : Color.white.opacity(0.1))
+                    .background(isMe ? Color.nostiaAccent : Color(hex: "E7ECF1"))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                 Text(timeString).font(.system(size: 10)).foregroundColor(Color.nostiaTextMuted)
             }

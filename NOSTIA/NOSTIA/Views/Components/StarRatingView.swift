@@ -95,7 +95,7 @@ struct AverageRatingBadge: View {
                     .foregroundColor(Color.nostiaWarning)
                 Text(String(format: "%.1f", avg))
                     .font(.caption.bold())
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.nostiaTextPrimary)
                 if showCount, let count = ratingCount {
                     Text("(\(count))")
                         .font(.caption2)

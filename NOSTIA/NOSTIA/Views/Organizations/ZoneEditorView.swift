@@ -148,7 +148,7 @@ struct ZoneEditorView: View {
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
         .padding(12)
     }
 
@@ -176,7 +176,7 @@ struct ZoneEditorView: View {
                 Label("Add zone", systemImage: "plus.circle.fill")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(draftCenter == nil ? AnyShapeStyle(Color.nostiaInput)
+                    .background(draftCenter == nil ? AnyShapeStyle(Color(hex: "C2CAD3"))
                                                    : AnyShapeStyle(Color.nostiaAccent))
                     .foregroundColor(.white)
                     .cornerRadius(12)
