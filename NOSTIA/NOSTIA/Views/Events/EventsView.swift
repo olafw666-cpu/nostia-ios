@@ -215,7 +215,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                         .padding(.top, responsive.spacing(12))
 
                         Text(selectedCoord == nil ? "Search or tap to place pin" : "Tap to move pin")
-                            .font(.caption).foregroundColor(.white.opacity(0.8))
+                            .font(.caption).foregroundColor(Color.nostiaTextSecond)
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             .nostiaCard(in: Capsule())
 
@@ -348,7 +348,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                             }
                             .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(title.isEmpty
-                                ? AnyShapeStyle(Color.nostiaInput)
+                                ? AnyShapeStyle(Color(hex: "C2CAD3"))
                                 : AnyShapeStyle(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                                startPoint: .leading, endPoint: .trailing)))
                             .foregroundColor(.white).cornerRadius(14)

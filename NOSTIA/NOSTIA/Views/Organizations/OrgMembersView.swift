@@ -89,7 +89,7 @@ struct OrgMembersView: View {
                     Text(member.role.capitalized)
                         .font(.system(size: 10, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(member.role == "owner" ? Color.nostiaAccent : Color.nostiaInput)
+                        .background(member.role == "owner" ? Color.nostiaAccent : Color.nostiaTextSecond)
                         .foregroundColor(.white).cornerRadius(6)
                 }
                 Text("Joined \(shortDate(member.joinedAt))").font(.caption).foregroundColor(Color.nostiaTextMuted)

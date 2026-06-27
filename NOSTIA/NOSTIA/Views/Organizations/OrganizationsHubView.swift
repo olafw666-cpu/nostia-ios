@@ -112,7 +112,7 @@ struct OrgRow: View {
                         Text(role.capitalized)
                             .font(.system(size: 10, weight: .bold))
                             .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(role == "owner" ? Color.nostiaAccent : Color.nostiaInput)
+                            .background(role == "owner" ? Color.nostiaAccent : Color.nostiaTextSecond)
                             .foregroundColor(.white).cornerRadius(6)
                     }
                 }

@@ -165,7 +165,7 @@ struct ZoneEditorView: View {
                     Slider(value: $draftRadius, in: 50...20000, step: 50)
                         .tint(Color.nostiaAccent)
                     Text(radiusLabel(draftRadius))
-                        .font(.caption.bold()).foregroundColor(.white)
+                        .font(.caption.bold()).foregroundColor(Color.nostiaTextPrimary)
                         .frame(width: 64, alignment: .trailing)
                 }
             }
@@ -202,8 +202,8 @@ struct ZoneEditorView: View {
                 } label: {
                     Label(isDrawing ? "Drawing…" : "Draw", systemImage: "scribble")
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(isDrawing ? Color.nostriaPurple : Color.nostiaInput)
-                        .foregroundColor(.white).cornerRadius(12)
+                        .background(isDrawing ? Color.nostriaPurple : Color.nostiaAccentSoft)
+                        .foregroundColor(isDrawing ? .white : Color.nostiaAccent).cornerRadius(12)
                 }
                 Button {
                     commitFreehand()
@@ -211,7 +211,7 @@ struct ZoneEditorView: View {
                     Label("Add zone", systemImage: "plus.circle.fill")
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(freehandPoints.count >= 3 ? AnyShapeStyle(Color.nostiaAccent)
-                                                              : AnyShapeStyle(Color.nostiaInput))
+                                                              : AnyShapeStyle(Color(hex: "C2CAD3")))
                         .foregroundColor(.white).cornerRadius(12)
                 }
                 .disabled(freehandPoints.count < 3)
