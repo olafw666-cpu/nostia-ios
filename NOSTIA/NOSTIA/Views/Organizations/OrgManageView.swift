@@ -83,7 +83,7 @@ struct OrgManageView: View {
 
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Profile").font(.headline).foregroundColor(.white)
+            Text("Profile").font(.headline).foregroundColor(Color.nostiaTextPrimary)
 
             HStack {
                 Spacer()
@@ -105,15 +105,15 @@ struct OrgManageView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                 TextEditor(text: $description).frame(minHeight: 70).padding(8)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundColor(.white).scrollContentBackground(.hidden)
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Rules & Guidelines").font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                 TextEditor(text: $rulesText).frame(minHeight: 60).padding(8)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundColor(.white).scrollContentBackground(.hidden)
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
             }
 
             Button { Task { await saveProfile() } } label: {
@@ -126,12 +126,12 @@ struct OrgManageView: View {
             .disabled(isSaving)
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Settings").font(.headline).foregroundColor(.white)
+            Text("Settings").font(.headline).foregroundColor(Color.nostiaTextPrimary)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Who can post").font(.caption).foregroundColor(Color.nostiaTextSecond)
@@ -160,7 +160,7 @@ struct OrgManageView: View {
             }
 
             Toggle(isOn: $locationEnabled) {
-                Text("Location Verification").foregroundColor(.white)
+                Text("Location Verification").foregroundColor(Color.nostiaTextPrimary)
             }
             .tint(Color.nostiaAccent)
             .onChange(of: locationEnabled) { _, v in
@@ -174,36 +174,36 @@ struct OrgManageView: View {
                 HStack {
                     Image(systemName: "map.circle.fill").foregroundColor(Color.nostiaAccent)
                     Text(zones.isEmpty ? "Define verification zones" : "\(zones.count) zone\(zones.count == 1 ? "" : "s")")
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.nostiaTextPrimary)
                     Spacer()
                     Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
                 }
-                .padding(14).glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .padding(14).nostiaCard(in: RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var membersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Members").font(.headline).foregroundColor(.white)
+            Text("Members").font(.headline).foregroundColor(Color.nostiaTextPrimary)
             if let org {
                 NavigationLink {
                     OrgMembersView(org: org, onChanged: { Task { await load() }; onChanged?() })
                 } label: {
                     HStack {
                         Image(systemName: "person.2.fill").foregroundColor(Color.nostiaAccent)
-                        Text("Manage members & requests").foregroundColor(.white)
+                        Text("Manage members & requests").foregroundColor(Color.nostiaTextPrimary)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
                     }
-                    .padding(14).glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                    .padding(14).nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 }
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
     }
 
     @ViewBuilder

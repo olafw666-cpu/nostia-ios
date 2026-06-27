@@ -17,7 +17,7 @@ struct CommentsSheet: View {
                         Image(systemName: "bubble.right")
                             .font(.system(size: responsive.fontSize(48)))
                             .foregroundColor(Color.nostiaAccent.opacity(0.7))
-                        Text("No comments yet").font(.headline).foregroundColor(.white)
+                        Text("No comments yet").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Be the first to comment!").font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,8 +58,8 @@ struct CommentsSheet: View {
                 TextField("Add a comment...", text: $vm.newComment, axis: .vertical)
                     .lineLimit(1...4)
                     .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(10))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 20))
-                    .foregroundColor(.white)
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
+                    .foregroundColor(Color.nostiaTextPrimary)
                     .focused($inputFocused)
                 Button {
                     Task { await vm.submitComment(postId: postId) }
@@ -84,7 +84,7 @@ struct CommentsSheet: View {
             .padding(.horizontal, responsive.spacing(12)).padding(.vertical, responsive.spacing(8))
             .background(.ultraThinMaterial.opacity(0.9))
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .sheet(item: $vm.reportTarget) { target in
             ReportSheet(target: target)
         }
@@ -102,7 +102,7 @@ struct CommentRow: View {
             AvatarView(initial: String(comment.name.prefix(1)).uppercased(), color: Color.nostriaPurple, size: 34)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
+                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     Text(comment.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 Text(comment.content).font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)
@@ -135,6 +135,6 @@ struct CommentRow: View {
             }
         }
         .padding(responsive.spacing(12))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
     }
 }

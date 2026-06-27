@@ -53,8 +53,8 @@ struct ProfileView: View {
 
                     // Username (read-only)
                     Text("@\(u.username)")
-                        .font(.title2.bold())
-                        .foregroundColor(.white)
+                        .font(.nostiaDisplay(22, weight: .heavy))
+                        .foregroundColor(Color.nostiaTextPrimary)
 
                     // Bio
                     if isEditing {
@@ -69,8 +69,8 @@ struct ProfileView: View {
                                 TextEditor(text: $editBio)
                                     .frame(minHeight: responsive.spacing(80))
                                     .padding(8)
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                                    .foregroundColor(.white)
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                                    .foregroundColor(Color.nostiaTextPrimary)
                                     .scrollContentBackground(.hidden)
                             }
                             HStack {
@@ -85,7 +85,7 @@ struct ProfileView: View {
                         let bioText = u.bio?.isEmpty == false ? u.bio! : nil
                         Text(bioText ?? "No bio yet")
                             .font(.body)
-                            .foregroundColor(bioText != nil ? .white : Color.nostiaTextMuted)
+                            .foregroundColor(bioText != nil ? Color.nostiaTextPrimary : Color.nostiaTextMuted)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, responsive.spacing(24))
                     }
@@ -103,7 +103,7 @@ struct ProfileView: View {
                     }
 
                     Divider()
-                        .background(Color.white.opacity(0.15))
+                        .background(Color.nostiaDivider)
                         .padding(.horizontal, responsive.spacing(20))
 
                     // Buttons
@@ -119,7 +119,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
 
@@ -151,10 +151,10 @@ struct ProfileView: View {
                             } label: {
                                 Label("Edit Profile", systemImage: "pencil")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.nostiaTextPrimary)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))
@@ -178,10 +178,10 @@ struct ProfileView: View {
                             } label: {
                                 Label("Organizations", systemImage: "building.2")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.nostiaTextPrimary)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))
@@ -194,7 +194,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))
@@ -203,7 +203,7 @@ struct ProfileView: View {
 
                     // Posts / Visited tab switcher (D6)
                     Divider()
-                        .background(Color.white.opacity(0.15))
+                        .background(Color.nostiaDivider)
                         .padding(.horizontal, responsive.spacing(20))
 
                     Picker("", selection: $profileTab) {
@@ -294,7 +294,7 @@ struct ProfileView: View {
                     }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .presentationBackground(.ultraThinMaterial)
+            .presentationBackground(Color.nostiaBackground)
         }
         .sheet(isPresented: $showOrganizations) {
             OrganizationsHubView()
@@ -312,7 +312,7 @@ struct ProfileView: View {
                     }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .presentationBackground(.ultraThinMaterial)
+            .presentationBackground(Color.nostiaBackground)
         }
         .sheet(isPresented: $feedVM.showCreateSheet, onDismiss: {
             Task { await feedVM.loadUserPosts(userId: authManager.currentUserId ?? 0) }

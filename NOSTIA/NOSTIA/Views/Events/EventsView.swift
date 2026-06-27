@@ -34,76 +34,86 @@ final class ExperiencesViewModel: ObservableObject {
 struct ExperiencesView: View {
     @StateObject private var vm = ExperiencesViewModel()
     @State private var actionsVM = ExperienceActionsViewModel()
+    @State private var selectedCat = "all"
+    @State private var searchText = ""
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
-    // All experiences minus any that are already in goingEvents (avoid duplicates)
-    private var otherEvents: [Experience] {
+    // Going experiences first, then everything else (de-duplicated).
+    private var allEvents: [Experience] {
         let goingIds = Set(vm.goingEvents.map { $0.id })
-        return vm.events.filter { !goingIds.contains($0.id) }
+        return vm.goingEvents + vm.events.filter { !goingIds.contains($0.id) }
     }
+
+    private var filtered: [Experience] {
+        allEvents.filter { event in
+            let catOK = selectedCat == "all" || (event.tags ?? []).contains(selectedCat)
+            let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+            let searchOK = q.isEmpty
+                || event.title.lowercased().contains(q)
+                || (event.location?.lowercased().contains(q) ?? false)
+            return catOK && searchOK
+        }
+    }
+
+    private let chips: [String] = ["all"] + experienceTags
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            Group {
-                if vm.isLoading && vm.events.isEmpty {
-                    ExperienceListSkeletonView()
-                } else if vm.events.isEmpty && vm.goingEvents.isEmpty {
-                    EmptyStateView(icon: "sparkles", text: "No experiences yet", sub: "Tap + to create one!")
-                } else {
-                    List {
-                        if !vm.goingEvents.isEmpty {
-                            Section {
-                                ForEach(vm.goingEvents) { event in
-                                    Button { vm.selectedEvent = event } label: {
-                                        ExperienceCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
-                                    }
-                                    .buttonStyle(.plain)
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NostiaScreenTitle(title: "Explore")
+                        Text("\(filtered.count) experiences near you · from people you follow")
+                            .font(.system(size: 14)).foregroundColor(Color.nostiaTextSecond)
+                    }
+                    .padding(.top, 4)
+
+                    NostiaSearchField(placeholder: "Search experiences & places…", text: $searchText)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(chips, id: \.self) { cat in
+                                NostiaChip(label: cat == "all" ? "All" : cat.capitalized,
+                                           isActive: selectedCat == cat) {
+                                    Haptics.select(); selectedCat = cat
                                 }
-                            } header: {
-                                Text("Going")
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(Color.nostiaSuccess)
-                                    .textCase(nil)
                             }
                         }
-                        if !otherEvents.isEmpty {
-                            Section {
-                                ForEach(otherEvents) { event in
-                                    Button { vm.selectedEvent = event } label: {
-                                        ExperienceCard(event: event, onCreatorTap: { id in vm.selectedCreatorId = id })
-                                    }
-                                    .buttonStyle(.plain)
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
-                                }
-                            } header: {
-                                Text(vm.goingEvents.isEmpty ? "All Experiences" : "Nearby Experiences")
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(Color.nostiaTextSecond)
-                                    .textCase(nil)
+                        .padding(.vertical, 2)
+                    }
+
+                    if vm.isLoading && vm.events.isEmpty {
+                        ExperienceListSkeletonView()
+                    } else if filtered.isEmpty {
+                        EmptyStateView(icon: "sparkles",
+                                       text: searchText.isEmpty && selectedCat == "all" ? "No experiences yet" : "No matches",
+                                       sub: searchText.isEmpty && selectedCat == "all" ? "Tap + to create one!" : "Try a different filter")
+                    } else {
+                        ForEach(filtered) { event in
+                            Button { vm.selectedEvent = event } label: {
+                                AtlasExperienceCard(event: event)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .listStyle(.plain)
-                    .background(.clear)
-                    .scrollContentBackground(.hidden)
-                    .refreshable { await vm.loadAll() }
                 }
+                .padding(.horizontal, responsive.spacing(16))
+                .padding(.bottom, 120)
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(.clear)
+            .refreshable { await vm.loadAll() }
 
             Button { vm.showCreate = true } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: responsive.fontSize(22), weight: .bold)).foregroundColor(.white)
-                    .frame(width: responsive.spacing(56), height: responsive.spacing(56))
+                    .font(.system(size: responsive.fontSize(31), weight: .semibold)).foregroundColor(.white)
+                    .frame(width: 60, height: 60)
                     .background(Color.nostiaAccent).clipShape(Circle())
-                    .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 12, y: 6)
+                    .shadow(color: Color.nostiaAccent.opacity(0.6), radius: 18, y: 8)
             }
-            .padding(responsive.spacing(20))
+            .padding(.trailing, responsive.spacing(22))
+            .padding(.bottom, 100)
         }
         .task { await vm.loadAll() }
         .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
@@ -120,7 +130,7 @@ struct ExperiencesView: View {
             set: { vm.selectedCreatorId = $0?.id }
         )) { target in
             NavigationStack { PublicProfileView(userId: target.id) }
-                .presentationBackground(.ultraThinMaterial)
+                .presentationBackground(Color.nostiaBackground)
         }
     }
 }
@@ -190,7 +200,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                         Text(selectedCoord == nil ? "Search or tap to place pin" : "Tap to move pin")
                             .font(.caption).foregroundColor(.white.opacity(0.8))
                             .padding(.horizontal, 14).padding(.vertical, 8)
-                            .glassEffect(in: Capsule())
+                            .nostiaCard(in: Capsule())
 
                         Spacer()
                     }
@@ -265,7 +275,7 @@ struct CreateExperienceFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Visibility")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                             HStack(spacing: 8) {
                                 ForEach(visibilityOptions, id: \.self) { opt in
                                     FilterChip(title: opt == "public" ? "Public" : "Private",
@@ -278,12 +288,12 @@ struct CreateExperienceFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                             LinkInsertBar(text: $description)
                             TextEditor(text: $description)
                                 .frame(minHeight: responsive.spacing(72)).padding(8)
-                                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                                .foregroundColor(.white).scrollContentBackground(.hidden)
+                                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                                .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
                         }
 
                         if let err = errorMessage {
@@ -343,7 +353,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .onChange(of: selectedCoverPhoto) { _, item in
             guard let item else { return }
             isCoverPhotoLoading = true

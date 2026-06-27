@@ -37,7 +37,7 @@ struct ChatView: View {
                                         Text(msg.dayString)
                                             .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                             .padding(.horizontal, 12).padding(.vertical, 4)
-                                            .glassEffect(in: Capsule())
+                                            .nostiaCard(in: Capsule())
                                             .padding(.vertical, 12)
                                     }
                                     MessageBubble(message: msg, isFromMe: vm.isFromMe(msg))
@@ -70,13 +70,13 @@ struct ChatView: View {
 
             // Input bar
             VStack(spacing: 0) {
-                Divider().background(Color.white.opacity(0.08))
+                Divider().background(Color.nostiaDivider)
                 HStack(alignment: .bottom, spacing: 12) {
                     TextField("Type a message...", text: $vm.newMessage, axis: .vertical)
                         .lineLimit(1...5)
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
-                        .foregroundColor(.white)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
+                        .foregroundColor(Color.nostiaTextPrimary)
                         .disabled(vm.isLocked)
 
                     Button {
@@ -90,7 +90,7 @@ struct ChatView: View {
                                 .frame(width: 44, height: 44)
                                 .background(
                                     (vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isLocked)
-                                        ? AnyShapeStyle(Color.nostiaInput)
+                                        ? AnyShapeStyle(Color(hex: "C2CAD3"))
                                         : AnyShapeStyle(LinearGradient(
                                             colors: [Color.nostiaAccent, Color.nostriaPurple],
                                             startPoint: .topLeading, endPoint: .bottomTrailing
@@ -185,7 +185,7 @@ struct MessageBubble: View {
             VStack(alignment: isFromMe ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
                     .font(.body)
-                    .foregroundColor(.white)
+                    .foregroundColor(isFromMe ? .white : Color.nostiaTextPrimary)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(
                         isFromMe
@@ -196,7 +196,7 @@ struct MessageBubble: View {
                             : AnyShapeStyle(Color.clear)
                     )
                     .if(!isFromMe) { view in
-                        view.glassEffect(in: UnevenRoundedRectangle(
+                        view.nostiaCard(in: UnevenRoundedRectangle(
                             topLeadingRadius: 18, bottomLeadingRadius: 4,
                             bottomTrailingRadius: 18, topTrailingRadius: 18
                         ))

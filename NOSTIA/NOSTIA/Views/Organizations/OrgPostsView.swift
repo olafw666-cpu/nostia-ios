@@ -20,7 +20,7 @@ struct OrgPostsView: View {
                         Label("New Post", systemImage: "plus.circle.fill")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
 
@@ -87,7 +87,7 @@ struct CreateOrgPostSheet: View {
                 VStack(spacing: 16) {
                     TextField("Say something (optional)", text: $content, axis: .vertical)
                         .lineLimit(3...8).padding(14)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 14)).foregroundColor(.white)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 14)).foregroundColor(Color.nostiaTextPrimary)
 
                     if let imageData, let data = Data(base64Encoded: imageData), let img = UIImage(data: data) {
                         ZStack(alignment: .topTrailing) {
@@ -102,7 +102,7 @@ struct CreateOrgPostSheet: View {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Label("Add Photo", systemImage: "photo.on.rectangle")
                             .foregroundColor(Color.nostiaAccent).frame(maxWidth: .infinity).padding(14)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     }
 
                     if let errorMessage {
@@ -140,7 +140,7 @@ struct CreateOrgPostSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     private func submit() async {

@@ -22,8 +22,8 @@ struct EditPostSheet: View {
                     TextEditor(text: $content)
                         .frame(minHeight: 120)
                         .padding(12)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                        .foregroundColor(.white)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundColor(Color.nostiaTextPrimary)
                         .scrollContentBackground(.hidden)
 
                     if let err = errorMessage {
@@ -31,7 +31,7 @@ struct EditPostSheet: View {
                             .font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
                 .padding(20)
@@ -64,6 +64,6 @@ struct EditPostSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }

@@ -23,7 +23,7 @@ struct PaymentMethodsView: View {
                                         .foregroundColor(Color.nostiaAccent).frame(width: 24)
                                     VStack(alignment: .leading, spacing: 2) {
                                         HStack {
-                                            Text(method.displayName).foregroundColor(.white).font(.subheadline)
+                                            Text(method.displayName).foregroundColor(Color.nostiaTextPrimary).font(.subheadline)
                                             if method.isDefault == true {
                                                 Text("Default")
                                                     .font(.caption.bold()).foregroundColor(.white)
@@ -79,7 +79,7 @@ struct PaymentMethodsView: View {
                         VStack(alignment: .leading, spacing: responsive.spacing(8)) {
                             HStack {
                                 Image(systemName: "banknote.fill").foregroundColor(Color.nostiaSuccess).frame(width: 24)
-                                Text("Payout Account").foregroundColor(.white)
+                                Text("Payout Account").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 if vm.onboardingStatus?.complete == true {
                                     Text("Active").font(.caption.bold()).foregroundColor(.white)

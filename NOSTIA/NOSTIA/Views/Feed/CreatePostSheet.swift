@@ -14,8 +14,8 @@ struct CreatePostSheet: View {
                     TextField("What's on your mind?", text: $vm.newPostContent, axis: .vertical)
                         .lineLimit(4...10)
                         .padding(responsive.spacing(14))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundColor(.white)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                        .foregroundColor(Color.nostiaTextPrimary)
 
                     // Photo preview
                     if let imgData = vm.newPostImageData,
@@ -43,7 +43,7 @@ struct CreatePostSheet: View {
                             .foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity)
                             .padding(responsive.spacing(14))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     }
                     .onChange(of: selectedPhoto) { _, item in
                         Task {
@@ -87,6 +87,6 @@ struct CreatePostSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }

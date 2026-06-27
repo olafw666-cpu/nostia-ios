@@ -169,21 +169,22 @@ struct HomeView: View {
             }
         }
         .padding(responsive.spacing(24))
-        .padding(.bottom, 40)
+        .padding(.bottom, 120)
     }
 
     @ViewBuilder
     private var phoneLayout: some View {
-        LazyVStack(spacing: responsive.spacing(16)) {
+        LazyVStack(spacing: responsive.spacing(18)) {
             welcomeHeader
             statCards
-            orgsButton
+            NostiaSearchBar(placeholder: "Search places & experiences…") { selectedTab = 1 }
             if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
+            orgsButton
             feedSection
         }
         .padding(responsive.spacing(16))
-        .padding(.bottom, 40)
+        .padding(.bottom, 120)
         .frame(maxWidth: responsive.contentMaxWidth)
         .frame(maxWidth: .infinity)
     }
@@ -192,123 +193,109 @@ struct HomeView: View {
 
     @ViewBuilder
     private var welcomeHeader: some View {
-        LinearGradient(colors: [Color.nostiaAccent.opacity(0.85), Color.nostriaPurple.opacity(0.85)],
-                       startPoint: .topLeading, endPoint: .bottomTrailing)
-            .cornerRadius(20)
-            .frame(height: responsive.spacing(isIPad ? 180 : 150))
-            .overlay {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Welcome back,")
-                            .font(.subheadline)
-                            .foregroundColor(Color(hex: "E0E7FF"))
-                        Text(vm.user?.name ?? "Adventurer")
-                            .font(.system(size: responsive.fontSize(isIPad ? 34 : 28), weight: .bold))
-                            .foregroundColor(.white)
-                        Text("Your next adventure awaits")
-                            .font(isIPad ? .callout : .subheadline)
-                            .foregroundColor(Color(hex: "E0E7FF"))
-                    }
-                    Spacer()
-                    NavigationLink {
-                        ProfileView()
-                            .navigationBarTitleDisplayMode(.inline)
-                            .toolbarBackground(.hidden, for: .navigationBar)
-                    } label: {
-                        ProfilePictureView(
-                            urlString: vm.user?.profilePictureUrl,
-                            initial: vm.user?.initial ?? "?",
-                            size: isIPad ? 110 : 88
-                        )
-                    }
-                    .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
-                }
-                .padding(responsive.spacing(20))
-            }
-            .shadow(color: Color.nostiaAccent.opacity(0.35), radius: 20, y: 8)
+        VStack(alignment: .leading, spacing: 5) {
+            Text("NOSTIA")
+                .font(.nostiaBody(15, weight: .medium))
+                .tracking(2.7)
+                .foregroundColor(Color.nostiaAccent)
+            Text("Welcome back, \(vm.user?.name ?? "Adventurer")")
+                .font(.nostiaDisplay(isIPad ? 34 : 28))
+                .foregroundColor(Color.nostiaTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
     }
 
     @ViewBuilder
     private var statCards: some View {
-        HStack(spacing: 12) {
-            StatCard(icon: "creditcard", color: Color.nostiaAccent,
+        HStack(spacing: 10) {
+            StatCard(icon: "wallet.bifold.fill", color: Color.nostiaAccent,
                      count: vm.trips.count, label: "Vaults") {
-                selectedTab = 1
+                selectedTab = 2
             }
-            StatCard(icon: "person.2.fill", color: Color.nostiaSuccess,
-                     count: vm.followers.count, label: "Followers") {
+            StatCard(icon: "person.2.fill", color: Color.nostiaBlue,
+                     count: vm.followers.count, label: "Following") {
                 selectedTab = 4
             }
-            StatCard(icon: "figure.walk", color: Color.nostiaWarning,
+            StatCard(icon: "location.north.fill", color: Color.nostiaWarning,
                      count: vm.upcomingEvents.count, label: "Experiences") {
-                selectedTab = 3
+                selectedTab = 1
             }
         }
     }
 
     @ViewBuilder
     private var orgsButton: some View {
-        Button { Haptics.tap(); showOrganizations = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "building.2.fill")
-                    .font(.title3).foregroundColor(Color.nostriaPurple)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Organizations")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
-                    Text("Join or create location-gated groups")
-                        .font(.caption).foregroundColor(Color.nostiaTextSecond)
-                }
-                Spacer()
-                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
+        VStack(alignment: .leading, spacing: 10) {
+            NostiaRowHeader(title: "Organizations", actionTitle: "See all") {
+                Haptics.tap(); showOrganizations = true
             }
-            .padding(16)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            Text("Location-gated groups with their own events & experiences.")
+                .font(.system(size: 13)).foregroundColor(Color.nostiaTextSecond)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button { Haptics.tap(); showOrganizations = true } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(Color.nostiaAccentSoft).frame(width: 46, height: 46)
+                        Image(systemName: "plus").font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(Color.nostiaAccent)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Create or join an org")
+                            .font(.system(size: 15, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                        Text("Host your own events")
+                            .font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundColor(Color(hex: "C2CAD3"))
+                }
+                .padding(16)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private var nearbyEventsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Nearby Experiences")
-            ForEach(vm.nearbyEvents.prefix(isIPad ? 5 : 3)) { event in
-                Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
-                    ExperiencePreviewCard(event: event)
-                }
-                .buttonStyle(.plain)
-                .id("nearby-\(event.id)")
-                .contextMenu {
-                    if authManager.isDev {
-                        Button(role: .destructive) {
-                            Task { await vm.adminDeleteExperience(id: event.id) }
-                        } label: {
-                            Label("Delete Experience", systemImage: "trash")
-                        }
-                    }
-                }
-            }
+        experienceRow(title: "Trending near you", events: Array(vm.nearbyEvents.prefix(8)), idPrefix: "nearby") {
+            selectedTab = 1
         }
     }
 
     @ViewBuilder
     private var upcomingEventsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Experiences You're Going To")
-            ForEach(vm.upcomingEvents.prefix(isIPad ? 5 : 3)) { event in
-                Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
-                    ExperiencePreviewCard(event: event)
-                }
-                .buttonStyle(.plain)
-                .id("going-\(event.id)")
-                .contextMenu {
-                    if authManager.isDev {
-                        Button(role: .destructive) {
-                            Task { await vm.adminDeleteExperience(id: event.id) }
-                        } label: {
-                            Label("Delete Experience", systemImage: "trash")
+        experienceRow(title: "Experiences you're visiting", events: Array(vm.upcomingEvents.prefix(8)), idPrefix: "going") {
+            selectedTab = 1
+        }
+    }
+
+    /// Atlas horizontal photo-card row with a "See all" header.
+    @ViewBuilder
+    private func experienceRow(title: String, events: [Experience], idPrefix: String, seeAll: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NostiaRowHeader(title: title, action: seeAll)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 13) {
+                    ForEach(events) { event in
+                        Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
+                            AtlasExperienceMiniCard(event: event)
+                        }
+                        .buttonStyle(.plain)
+                        .id("\(idPrefix)-\(event.id)")
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    Task { await vm.adminDeleteExperience(id: event.id) }
+                                } label: {
+                                    Label("Delete Experience", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }
+                .padding(.vertical, 2)
             }
         }
     }
@@ -317,7 +304,7 @@ struct HomeView: View {
     private var feedSection: some View {
         VStack(spacing: responsive.spacing(16)) {
             HStack {
-                SectionHeader(title: "Feed")
+                NostiaRowHeader(title: "Feed", actionTitle: nil)
                 Button {
                     Haptics.tap()
                     feedVM.showCreateSheet = true
@@ -395,14 +382,17 @@ struct StatCard: View {
         Button {
             onTap?()
         } label: {
-            VStack(spacing: 8) {
-                Image(systemName: icon).font(.title2).foregroundColor(color)
-                Text("\(count)").font(.system(size: responsive.fontSize(24), weight: .bold)).foregroundColor(.white)
-                Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
+            VStack(alignment: .leading, spacing: 4) {
+                Image(systemName: icon).font(.system(size: 20)).foregroundColor(color)
+                Text("\(count)")
+                    .font(.system(size: responsive.fontSize(24), weight: .heavy))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                    .padding(.top, 4)
+                Text(label).font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
             }
-            .frame(maxWidth: .infinity)
-            .padding(responsive.spacing(16))
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
     }
@@ -411,7 +401,7 @@ struct StatCard: View {
 struct SectionHeader: View {
     let title: String
     var body: some View {
-        Text(title).font(.headline).foregroundColor(.white)
+        Text(title).font(.nostiaDisplay(19, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -422,7 +412,7 @@ struct TripPreviewCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(trip.title).font(.headline).foregroundColor(.white)
+                    Text(trip.title).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                     if let dest = trip.destination, !dest.isEmpty {
                         Text(dest).font(.footnote).foregroundColor(Color.nostiaTextSecond)
                     }
@@ -439,7 +429,7 @@ struct TripPreviewCard: View {
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -448,7 +438,7 @@ struct ExperiencePreviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(event.title).font(.headline).foregroundColor(.white)
+                Text(event.title).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                 Spacer()
                 if let dist = event.formattedDistance {
                     Text(dist).font(.caption.bold()).foregroundColor(.white)
@@ -464,6 +454,6 @@ struct ExperiencePreviewCard: View {
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }

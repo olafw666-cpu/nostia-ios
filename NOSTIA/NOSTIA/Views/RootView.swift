@@ -12,17 +12,9 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            // Rich gradient base — gives liquid glass surfaces something beautiful to refract
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: "0C1120"), location: 0.0),
-                    .init(color: Color(hex: "1A0E35"), location: 0.5),
-                    .init(color: Color(hex: "0A1628"), location: 1.0)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Atlas (Light) canvas — soft off-white base behind every screen.
+            LinearGradient.nostiaGradient
+                .ignoresSafeArea()
 
             Group {
                 if authManager.isAuthenticated {

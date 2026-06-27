@@ -45,7 +45,7 @@ struct SignupView: View {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaDanger.opacity(0.5), lineWidth: 1))
                     }
 
@@ -67,7 +67,7 @@ struct SignupView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaSuccess.opacity(0.4), lineWidth: 1))
                     }
 

@@ -24,40 +24,49 @@ extension Color {
     }
 }
 
-// Design tokens
+// MARK: - Atlas (Light) design tokens
+//
+// The app uses a light, card-based system: a soft off-white canvas, solid white
+// surfaces with gentle drop shadows, a green primary, an orange star/accent and a
+// blue secondary. Token *names* are kept stable so the hundreds of existing call
+// sites flip to the light palette automatically; only the values changed.
 extension Color {
-    // Backgrounds — deep navy/indigo for rich glass refraction
-    static let nostiaBackground  = Color(hex: "0C1120")
-    static let nostiaCard        = Color(hex: "1C2537")
+    // Canvas & surfaces
+    static let nostiaBackground  = Color(hex: "F4F6F9")   // app canvas
+    static let nostiaCard        = Color(hex: "FFFFFF")   // cards / sheets surfaces
 
-    // Borders & inputs
-    static let nostriaBorder     = Color(hex: "374151")
-    static let nostiaInput       = Color(hex: "1E2A3A")
+    // Borders, dividers & inputs
+    static let nostriaBorder     = Color(hex: "E7ECF1")   // control / card hairline
+    static let nostiaDivider     = Color(hex: "EEF1F5")   // in-card separators
+    static let nostiaInput       = Color(hex: "FFFFFF")   // input fields are white cards
 
     // Accents & semantic
-    static let nostiaAccent      = Color(hex: "3B82F6")
-    static let nostiaSuccess     = Color(hex: "10B981")
-    static let nostiaWarning     = Color(hex: "F59E0B")
-    static let nostriaDanger     = Color(hex: "EF4444")
-    static let nostriaPurple     = Color(hex: "8B5CF6")
+    static let nostiaAccent      = Color(hex: "0E9F6E")   // primary green
+    static let nostiaAccentSoft  = Color(hex: "E7F6EF")   // green tint background
+    static let nostiaSuccess     = Color(hex: "0E9F6E")
+    static let nostiaWarning     = Color(hex: "E8843C")   // orange — stars / warnings
+    static let nostiaStar        = Color(hex: "E8843C")
+    static let nostriaDanger     = Color(hex: "E5484D")
+    static let nostiaBlue        = Color(hex: "3B82C4")   // secondary blue
+    static let nostriaPurple     = Color(hex: "3B82C4")   // legacy alias → secondary blue
 
     // Text
-    static let nostiaTextPrimary = Color.white
-    static let nostiaTextSecond  = Color(hex: "9CA3AF")
-    static let nostiaTextMuted   = Color(hex: "6B7280")
+    static let nostiaTextPrimary = Color(hex: "14181F")   // near-black ink
+    static let nostiaTextSecond  = Color(hex: "8A93A0")
+    static let nostiaTextMuted   = Color(hex: "A6AEB9")
+
+    // Soft shadow colour used by cards (rgba(30,50,70,…))
+    static let nostiaShadow      = Color(hex: "1E3246")
 }
 
-// Shared gradient used as the base for all liquid glass screens
+// Shared gradient used as the base canvas for all screens. Kept as a (now nearly
+// flat) light gradient so any view still referencing `.nostiaGradient` stays light.
 extension ShapeStyle where Self == LinearGradient {
     static var nostiaGradient: LinearGradient {
         LinearGradient(
-            stops: [
-                .init(color: Color(hex: "0C1120"), location: 0.0),
-                .init(color: Color(hex: "1A0E35"), location: 0.5),
-                .init(color: Color(hex: "0A1628"), location: 1.0)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+            colors: [Color(hex: "F6F8FB"), Color(hex: "F4F6F9"), Color(hex: "EEF1F5")],
+            startPoint: .top,
+            endPoint: .bottom
         )
     }
 }

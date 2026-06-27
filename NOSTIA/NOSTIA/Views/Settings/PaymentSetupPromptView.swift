@@ -32,7 +32,7 @@ struct PaymentSetupPromptView: View {
 
                 VStack(spacing: responsive.spacing(10)) {
                     Text("Set Up Payments")
-                        .font(.title.bold()).foregroundColor(.white)
+                        .font(.title.bold()).foregroundColor(Color.nostiaTextPrimary)
                     Text("Connect a payout account and add a card so you can split trip expenses and get reimbursed. You can always do this later in Settings.")
                         .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                         .multilineTextAlignment(.center)
@@ -46,7 +46,7 @@ struct PaymentSetupPromptView: View {
                 }
                 .padding(responsive.spacing(18))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
 
                 Spacer()
 
@@ -95,7 +95,7 @@ struct PaymentSetupPromptView: View {
                 )
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .task { user = try? await AuthAPI.shared.getMe() }
     }
 

@@ -17,30 +17,36 @@ struct TripsView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            if vm.isLoading && vm.trips.isEmpty {
-                VaultListSkeletonView()
-            } else {
-                List {
-                    ForEach(vm.trips) { trip in
-                        TripCard(trip: trip) {
-                            Haptics.tap()
-                            tripToDetail = trip
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: responsive.spacing(16), bottom: 6, trailing: responsive.spacing(16)))
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NostiaScreenTitle(title: "Vaults")
+                        Text("Shared pots. Add followers, split costs, settle up.")
+                            .font(.system(size: 14)).foregroundColor(Color.nostiaTextSecond)
                     }
-                }
-                .listStyle(.plain)
-                .background(.clear)
-                .scrollContentBackground(.hidden)
-                .refreshable { await vm.loadTrips() }
-                .overlay {
-                    if vm.trips.isEmpty {
+                    .padding(.top, 4)
+                    .padding(.bottom, 2)
+
+                    if vm.isLoading && vm.trips.isEmpty {
+                        VaultListSkeletonView()
+                    } else if vm.trips.isEmpty {
                         EmptyStateView(icon: "creditcard", text: "No vaults yet", sub: "Create your first vault!")
+                    } else {
+                        ForEach(vm.trips) { trip in
+                            TripCard(trip: trip) {
+                                Haptics.tap()
+                                tripToDetail = trip
+                            }
+                        }
                     }
                 }
+                .padding(.horizontal, responsive.spacing(16))
+                .padding(.bottom, 120)
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
+            .background(.clear)
+            .refreshable { await vm.loadTrips() }
 
             Menu {
                 Button { Haptics.tap(); showCreateSheet = true } label: {
@@ -50,13 +56,13 @@ struct TripsView: View {
                     Label("Scan QR to Join", systemImage: "qrcode.viewfinder")
                 }
             } label: {
-                LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .frame(width: responsive.spacing(60), height: responsive.spacing(60)).clipShape(Circle())
-                    .overlay(Image(systemName: "plus").font(.title2.bold()).foregroundColor(.white))
-                    .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 12, y: 6)
+                Circle().fill(Color.nostiaAccent)
+                    .frame(width: 60, height: 60)
+                    .overlay(Image(systemName: "plus").font(.system(size: 31, weight: .semibold)).foregroundColor(.white))
+                    .shadow(color: Color.nostiaAccent.opacity(0.6), radius: 18, y: 8)
             }
-            .padding(responsive.spacing(20))
+            .padding(.trailing, responsive.spacing(22))
+            .padding(.bottom, 100)
         }
         .background(.clear)
         .task { await vm.loadTrips() }
@@ -134,9 +140,9 @@ struct TripCard: View {
             VStack(alignment: .leading, spacing: responsive.spacing(12)) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(trip.title).font(.headline).foregroundColor(.white)
+                        Text(trip.title).font(.nostiaDisplay(21, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                         if let desc = trip.description, !desc.isEmpty {
-                            Text(desc).font(.footnote).foregroundColor(Color(hex: "D1D5DB")).lineLimit(2)
+                            Text(desc).font(.footnote).foregroundColor(Color.nostiaTextSecond).lineLimit(2)
                         }
                     }
                     Spacer()
@@ -147,23 +153,23 @@ struct TripCard: View {
                             Image(systemName: "key.fill").font(.system(size: 10))
                             Text("Leader")
                         }
-                        .font(.caption.bold()).foregroundColor(Color.nostiaWarning)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .glassEffect(in: Capsule())
-                        .overlay(Capsule().stroke(Color.nostiaWarning.opacity(0.4), lineWidth: 1))
+                        .font(.caption.bold()).foregroundColor(Color(hex: "D97A26"))
+                        .padding(.horizontal, 11).padding(.vertical, 5)
+                        .background(Capsule().fill(Color(hex: "FEF3E2")))
                     }
                 }
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(Color.nostiaDivider)
                 HStack {
-                    Label("\(trip.activeParticipants.count) members", systemImage: "person.2")
-                        .font(.footnote).foregroundColor(Color(hex: "D1D5DB"))
+                    Label("\(trip.activeParticipants.count) members", systemImage: "person.2.fill")
+                        .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color(hex: "4B5563"))
+                        .labelStyle(AtlasLeadingIconLabel(tint: Color.nostiaBlue))
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                        .font(.system(size: 18)).foregroundColor(Color(hex: "C2CAD3"))
                 }
             }
-            .padding(responsive.spacing(16))
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+            .padding(responsive.spacing(18))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
     }

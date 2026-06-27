@@ -61,7 +61,7 @@ struct PrivacyView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "creditcard.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Payment Methods").foregroundColor(.white)
+                                Text("Payment Methods").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
@@ -81,7 +81,7 @@ struct PrivacyView: View {
                         Button { navigateToNotifications = true } label: {
                             HStack {
                                 Image(systemName: "bell.badge.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Notifications").foregroundColor(.white)
+                                Text("Notifications").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
@@ -98,7 +98,7 @@ struct PrivacyView: View {
                         Button { navigateToBlockedUsers = true } label: {
                             HStack {
                                 Image(systemName: "nosign").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Blocked Users").foregroundColor(.white)
+                                Text("Blocked Users").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
@@ -140,7 +140,7 @@ struct PrivacyView: View {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(responsive.spacing(12))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     // Data section
@@ -148,7 +148,7 @@ struct PrivacyView: View {
                         Button { Task { await requestDataExport() } } label: {
                             HStack {
                                 Image(systemName: "square.and.arrow.down").foregroundColor(Color.nostiaAccent)
-                                Text("Request Data Export").foregroundColor(.white)
+                                Text("Request Data Export").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
@@ -171,7 +171,7 @@ struct PrivacyView: View {
                         HStack {
                             Image(systemName: "hand.raised.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Allow Data Tracking").foregroundColor(.white)
+                                Text("Allow Data Tracking").foregroundColor(Color.nostiaTextPrimary)
                                 Text("Used to personalise your experience")
                                     .font(.caption).foregroundColor(Color.nostiaTextSecond)
                             }
@@ -190,7 +190,7 @@ struct PrivacyView: View {
                         Button { showTermsSheet = true } label: {
                             HStack {
                                 Image(systemName: "doc.text.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Terms of Service").foregroundColor(.white)
+                                Text("Terms of Service").foregroundColor(Color.nostiaTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
                             }
@@ -216,7 +216,7 @@ struct PrivacyView: View {
                         Text(msg).font(.footnote).foregroundColor(Color.nostiaSuccess)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaSuccess.opacity(0.4), lineWidth: 1))
                     }
                 }
@@ -395,7 +395,7 @@ struct EmailCaptureSheet: View {
                         .font(.system(size: responsive.fontSize(48)))
                         .foregroundStyle(Color.nostiaAccent)
                     Text("Email Required")
-                        .font(.title2.bold()).foregroundColor(.white)
+                        .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
                     Text("An email address is required to set up payment methods. This email is used by Stripe for account verification.")
                         .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                         .multilineTextAlignment(.center)
@@ -445,7 +445,7 @@ struct EmailCaptureSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .presentationDetents([.medium])
     }
 }
@@ -478,7 +478,7 @@ struct AddressCaptureSheet: View {
                         .font(.system(size: responsive.fontSize(48)))
                         .foregroundStyle(Color.nostiaAccent)
                     Text("Home Address Required")
-                        .font(.title2.bold()).foregroundColor(.white)
+                        .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
                     Text("Your home address is required to set up your payout account with Stripe for receiving payments.")
                         .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                         .multilineTextAlignment(.center)
@@ -546,7 +546,7 @@ struct AddressCaptureSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .presentationDetents([.large])
     }
 }
@@ -585,7 +585,7 @@ struct GlassSection<Content: View>: View {
             VStack(spacing: 0) {
                 content()
             }
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         }
     }
 }
@@ -600,7 +600,7 @@ struct GlassRow: View {
     var body: some View {
         HStack {
             Image(systemName: icon).foregroundColor(Color.nostiaAccent).frame(width: 24)
-            Text(label).foregroundColor(.white)
+            Text(label).foregroundColor(Color.nostiaTextPrimary)
             Spacer()
             Text(value).foregroundColor(valueColor)
         }

@@ -127,7 +127,7 @@ struct OrgDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
     }
 
     private func joinCard(_ org: Organization) -> some View {
@@ -161,17 +161,17 @@ struct OrgDetailView: View {
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func infoBlock(title: String, text: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.headline).foregroundColor(.white)
+            Text(title).font(.headline).foregroundColor(Color.nostiaTextPrimary)
             Text(text).font(.subheadline).foregroundColor(Color.nostiaTextSecond)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Actions

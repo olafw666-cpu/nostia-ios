@@ -12,12 +12,16 @@ struct FriendsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            NostiaScreenTitle(title: "Following")
+                .padding(.horizontal, responsive.spacing(16))
+                .padding(.top, 6)
+
             // Search bar
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
                     TextField("Search users...", text: $vm.searchQuery)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.nostiaTextPrimary)
                         .submitLabel(.search)
                         .onSubmit { Task { await vm.search() } }
                         .autocorrectionDisabled().textInputAutocapitalization(.never)
@@ -28,7 +32,7 @@ struct FriendsView: View {
                     }
                 }
                 .padding(responsive.spacing(12))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
 
                 Button("Search") { Task { await vm.search() } }
                     .font(.subheadline.bold()).foregroundColor(.white)
@@ -152,6 +156,7 @@ struct FriendsView: View {
             }
         }
         .background(.clear)
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
         .task { await vm.loadAll() }
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
@@ -215,7 +220,7 @@ struct FriendsView: View {
         } label: {
             Image(systemName: "person.badge.minus")
                 .foregroundColor(Color.nostiaTextSecond).padding(8)
-                .background(Color.white.opacity(0.1)).clipShape(Circle())
+                .background(Color.nostiaBackground).clipShape(Circle())
         }
     }
 }
@@ -244,7 +249,7 @@ struct FollowUserRow<Trailing: View>: View {
                 HStack(spacing: 12) {
                     AvatarView(initial: user.initial, color: Color.nostiaAccent, size: responsive.spacing(50))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(user.name).font(.headline).foregroundColor(.white)
+                        Text(user.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
                     }
                 }
@@ -254,7 +259,7 @@ struct FollowUserRow<Trailing: View>: View {
             trailingContent()
         }
         .padding(responsive.spacing(16))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
     }
 }
@@ -268,7 +273,7 @@ struct UserSearchRow: View {
         HStack(spacing: 12) {
             AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(50))
             VStack(alignment: .leading, spacing: 2) {
-                Text(user.name).font(.headline).foregroundColor(.white)
+                Text(user.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                 Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
@@ -279,7 +284,7 @@ struct UserSearchRow: View {
             }
         }
         .padding(responsive.spacing(16))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
     }
 }
@@ -290,10 +295,14 @@ struct TabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.bold())
-                .foregroundColor(isActive ? .white : Color.nostiaTextSecond)
-                .frame(maxWidth: .infinity).padding(.vertical, 10)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 10))
-                .overlay(isActive ? RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent, lineWidth: 1) : nil)
+                .foregroundColor(isActive ? .white : Color(hex: "4B5563"))
+                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(isActive ? Color.nostiaAccent : Color.nostiaCard)
+                )
+                .overlay(isActive ? nil : RoundedRectangle(cornerRadius: 12).stroke(Color.nostriaBorder, lineWidth: 1))
+                .shadow(color: Color.nostiaShadow.opacity(isActive ? 0.0 : 0.05), radius: 8, y: 2)
         }
     }
 }
@@ -388,7 +397,7 @@ struct ContactsPickerView: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .task { await loadContacts() }
     }
 
@@ -482,7 +491,7 @@ private struct ContactOnNostiaRow: View {
         HStack(spacing: 12) {
             AvatarView(initial: String(match.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 44)
             VStack(alignment: .leading, spacing: 2) {
-                Text(match.name).font(.headline).foregroundColor(.white)
+                Text(match.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                 Text("@\(match.nostiaUser.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
@@ -490,7 +499,7 @@ private struct ContactOnNostiaRow: View {
                 Text("Following")
                     .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
                     .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1)).cornerRadius(8)
+                    .background(Color.nostiaBackground).cornerRadius(8)
             } else {
                 Button(action: onFollow) {
                     Text("Follow")
@@ -501,7 +510,7 @@ private struct ContactOnNostiaRow: View {
             }
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
     }
 }
@@ -533,7 +542,7 @@ private struct ContactInviteRow: View {
         HStack(spacing: 12) {
             AvatarView(initial: String(contact.name.prefix(1)).uppercased(), color: Color.nostiaTextSecond.opacity(0.6), size: 44)
             VStack(alignment: .leading, spacing: 2) {
-                Text(contact.name).font(.headline).foregroundColor(.white)
+                Text(contact.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
                 if let phone = contact.phone {
                     Text(phone).font(.footnote).foregroundColor(Color.nostiaTextSecond)
                 } else if let email = contact.email {
@@ -544,7 +553,7 @@ private struct ContactInviteRow: View {
             trailingButton
         }
         .padding(16)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
         .onChange(of: inviteState) { _, new in
             if case .shareReady = new { showShareSheet = true }
@@ -577,7 +586,7 @@ private struct ContactInviteRow: View {
             }
             .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(Color.white.opacity(0.08)).cornerRadius(8)
+            .background(Color.nostiaBackground).cornerRadius(8)
         case .shareReady:
             EmptyView()
         }

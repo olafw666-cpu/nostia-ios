@@ -65,8 +65,8 @@ struct ExperienceChatSheet: View {
                 TextField("Message...", text: $vm.newComment, axis: .vertical)
                     .lineLimit(1...4)
                     .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(10))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 20))
-                    .foregroundColor(.white)
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
+                    .foregroundColor(Color.nostiaTextPrimary)
                     .focused($inputFocused)
                 Button {
                     Haptics.tap()
@@ -92,7 +92,7 @@ struct ExperienceChatSheet: View {
             .padding(.horizontal, responsive.spacing(12)).padding(.vertical, responsive.spacing(8))
             .background(.ultraThinMaterial.opacity(0.9))
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .task { await vm.initialize(experienceId: experienceId) }
         .onDisappear { vm.stopPolling() }
         .sheet(item: $vm.reportTarget) { target in

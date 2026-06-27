@@ -25,25 +25,42 @@ struct VaultContentView: View {
                 if vm.isLoading && vm.vaultData == nil {
                     VaultExpenseSkeletonView()
                 } else if let data = vm.vaultData {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Total Expenses").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                    ZStack(alignment: .bottomTrailing) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Total expenses")
+                                .font(.system(size: 13)).foregroundColor(.white.opacity(0.85))
                             Text(String(format: "$%.2f", data.totalAmount ?? 0))
-                                .font(.system(size: responsive.fontSize(34), weight: .bold)).foregroundColor(.white)
+                                .font(.nostiaDisplay(40, weight: .heavy)).foregroundColor(.white)
+                            if let mine = data.balances.first(where: { $0.id == currentUserId }), abs(mine.balance) > 0.005 {
+                                Text(mine.balance >= 0
+                                     ? String(format: "You're owed $%.2f", mine.balance)
+                                     : String(format: "You owe $%.2f", abs(mine.balance)))
+                                    .font(.system(size: 12.5)).foregroundColor(.white.opacity(0.92))
+                                    .padding(.top, 4)
+                            }
                         }
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                         if !isKicked {
                             Button { Haptics.impact(.medium); showAddExpense = true } label: {
-                                Label("Add Expense", systemImage: "plus")
-                                    .font(.subheadline.bold()).foregroundColor(.white)
-                                    .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
-                                    .background(Color.nostiaAccent).cornerRadius(12)
-                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                                Label("Add", systemImage: "plus")
+                                    .font(.system(size: 14, weight: .bold)).foregroundColor(Color.nostiaAccent)
+                                    .padding(.horizontal, 16).padding(.vertical, 11)
+                                    .background(Capsule().fill(Color.white))
                             }
                         }
                     }
-                    .padding(responsive.spacing(16))
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color.nostiaAccent)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .fill(RadialGradient(colors: [Color.white.opacity(0.18), .clear],
+                                                         center: .topTrailing, startRadius: 0, endRadius: 240))
+                            )
+                    )
+                    .shadow(color: Color.nostiaAccent.opacity(0.25), radius: 18, y: 8)
 
                     if isKicked {
                         HStack(spacing: 6) {
@@ -53,13 +70,13 @@ struct VaultContentView: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity)
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaTextMuted.opacity(0.3), lineWidth: 1))
                     }
 
                     let nonZeroBalances = data.balances.filter { abs($0.balance) > 0.005 }
                     if !nonZeroBalances.isEmpty {
-                        Text("Balances").font(.headline).foregroundColor(.white)
+                        Text("Balances").font(.nostiaDisplay(18, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         ForEach(nonZeroBalances) { bal in
                             BalanceRow(
@@ -78,7 +95,7 @@ struct VaultContentView: View {
                     }
 
                     if !data.entries.isEmpty {
-                        Text("Expenses").font(.headline).foregroundColor(.white)
+                        Text("Expenses").font(.nostiaDisplay(18, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         ForEach(data.entries) { entry in
                             ExpenseCard(
@@ -275,7 +292,7 @@ struct BalanceRow: View {
             HStack(spacing: 12) {
                 AvatarView(initial: String(balance.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(44))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(displayName).font(.headline).foregroundColor(.white)
+                    Text(displayName).font(.system(size: 16, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                     HStack(spacing: 4) {
                         Text("Paid: ").foregroundColor(Color.nostiaTextSecond)
                         Text(String(format: "$%.2f", balance.paid)).foregroundColor(Color.nostiaSuccess)
@@ -298,7 +315,7 @@ struct BalanceRow: View {
                 }
             }
             .padding(responsive.spacing(16))
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
             .accessibilityHint(accessibilityActionHint)
@@ -335,16 +352,19 @@ struct ExpenseCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: responsive.spacing(12)) {
             HStack {
-                Image(systemName: "doc.text").foregroundColor(Color.nostiaWarning).font(.title3)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(Color(hex: "FEF3E2")).frame(width: 40, height: 40)
+                    Image(systemName: "doc.text").foregroundColor(Color.nostiaStar).font(.system(size: 21))
+                }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.description).font(.headline).foregroundColor(.white)
+                    Text(entry.description).font(.system(size: 15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                     Text(entry.formattedDate).font(.caption).foregroundColor(Color.nostiaTextSecond)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(String(format: "$%.2f", entry.amount))
-                        .font(.headline.bold()).foregroundColor(.white)
-                    Text(entry.currency).font(.caption).foregroundColor(Color.nostiaTextSecond)
+                        .font(.system(size: 17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(entry.currency).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 if canDelete {
                     Button { showDeleteAlert = true } label: {
@@ -354,28 +374,28 @@ struct ExpenseCard: View {
             }
 
             HStack {
-                Text("Paid by \(Text(paidByDisplay).bold().foregroundColor(.white))")
+                Text("Paid by \(Text(paidByDisplay).bold().foregroundColor(Color.nostiaTextPrimary))")
                     .foregroundColor(Color.nostiaTextSecond)
                 Spacer()
                 if let cat = entry.category {
                     Text(cat).font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .glassEffect(in: Capsule())
+                        .background(Capsule().fill(Color.nostiaBackground))
                 }
             }
             .font(.caption)
 
             if let splits = entry.splits, !splits.isEmpty {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(Color.nostiaDivider)
                 ForEach(splits) { split in
                     let splitDisplay = split.userUsername.map { "@\($0)" } ?? split.userName ?? "User \(split.userId)"
                     let isOwnSplit = split.userId == currentUserId
                     HStack {
                         Text(splitDisplay)
-                            .font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                            .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color(hex: "4B5563"))
                         Spacer()
                         Text(String(format: "$%.2f", split.amount))
-                            .font(.footnote.bold()).foregroundColor(.white)
+                            .font(.system(size: 14, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                         if split.paid {
                             Label("Paid", systemImage: "checkmark.circle.fill")
                                 .font(.subheadline.bold()).foregroundColor(Color.nostiaSuccess)
@@ -383,10 +403,10 @@ struct ExpenseCard: View {
                             HStack(spacing: 8) {
                                 Button { onMarkPaid(split.id) } label: {
                                     Text("Cash")
-                                        .font(.subheadline.bold()).foregroundColor(.white)
+                                        .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                                         .padding(.horizontal, 16).padding(.vertical, 8)
-                                        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
-                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaBorder, lineWidth: 1))
                                 }
                                 if vaultLeaderHasStripe {
                                     Button { onPayWithCard(split.id) } label: {
@@ -411,7 +431,7 @@ struct ExpenseCard: View {
             }
         }
         .padding(responsive.spacing(16))
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .alert("Delete Expense", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { onDelete() }
@@ -448,15 +468,15 @@ struct PayTotalSheet: View {
                         ForEach(unpaidSplits) { split in
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(split.description).font(.subheadline.bold()).foregroundColor(.white)
+                                    Text(split.description).font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
                                     Text(split.formattedDate).font(.caption).foregroundColor(Color.nostiaTextSecond)
                                 }
                                 Spacer()
                                 Text(String(format: "$%.2f", split.amount))
-                                    .font(.subheadline.bold()).foregroundColor(.white)
+                                    .font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
                             }
                             .padding(responsive.spacing(14))
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                         }
 
                         VStack(spacing: 4) {
@@ -464,14 +484,14 @@ struct PayTotalSheet: View {
                                 Text("Total").font(.headline).foregroundColor(Color.nostiaTextSecond)
                                 Spacer()
                                 Text(String(format: "$%.2f", total))
-                                    .font(.system(size: responsive.fontSize(28), weight: .bold)).foregroundColor(.white)
+                                    .font(.nostiaDisplay(28, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                             }
                             Text(String(format: "Card charge: $%.2f (includes Stripe fee)", calculateChargedAmount(total)))
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .padding(responsive.spacing(16))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
 
                         VStack(spacing: responsive.spacing(12)) {
                             HStack(spacing: 12) {
@@ -479,10 +499,10 @@ struct PayTotalSheet: View {
                                     onMarkAllPaid(splitIds)
                                 } label: {
                                     Text("Pay Cash")
-                                        .font(.headline.bold()).foregroundColor(.white)
+                                        .font(.headline.bold()).foregroundColor(Color.nostiaAccent)
                                         .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
-                                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.nostiaCard))
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.nostiaAccent, lineWidth: 1.5))
                                 }
                                 if vaultLeaderHasStripe {
                                     Button {
@@ -518,7 +538,7 @@ struct PayTotalSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }
 
@@ -543,6 +563,6 @@ struct AddCardReturnView: View {
                     }
                 }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }

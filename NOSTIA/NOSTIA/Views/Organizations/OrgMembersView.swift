@@ -46,12 +46,12 @@ struct OrgMembersView: View {
 
     private var requestsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Join Requests").font(.headline).foregroundColor(.white)
+            Text("Join Requests").font(.headline).foregroundColor(Color.nostiaTextPrimary)
             ForEach(requests) { req in
                 HStack(spacing: 12) {
                     UserAvatarView(imageData: req.profilePictureUrl, initial: req.initial, color: Color.nostiaAccent, size: 40)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(req.name).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                        Text(req.name).font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                         Text("@\(req.username)").font(.caption).foregroundColor(Color.nostiaTextMuted)
                     }
                     Spacer()
@@ -62,7 +62,7 @@ struct OrgMembersView: View {
                         Image(systemName: "xmark.circle.fill").font(.title3).foregroundColor(Color.nostriaDanger)
                     }
                 }
-                .padding(12).glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                .padding(12).nostiaCard(in: RoundedRectangle(cornerRadius: 14))
             }
         }
     }
@@ -71,7 +71,7 @@ struct OrgMembersView: View {
 
     private var membersSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Members (\(members.count))").font(.headline).foregroundColor(.white)
+            Text("Members (\(members.count))").font(.headline).foregroundColor(Color.nostiaTextPrimary)
             if isLoading && members.isEmpty {
                 ProgressView().tint(Color.nostiaAccent).frame(maxWidth: .infinity).padding()
             } else {
@@ -85,7 +85,7 @@ struct OrgMembersView: View {
             UserAvatarView(imageData: member.profilePictureUrl, initial: member.initial, color: Color.nostriaPurple, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(member.name).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                    Text(member.name).font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     Text(member.role.capitalized)
                         .font(.system(size: 10, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -97,7 +97,7 @@ struct OrgMembersView: View {
             Spacer()
             rowMenu(member)
         }
-        .padding(12).glassEffect(in: RoundedRectangle(cornerRadius: 14))
+        .padding(12).nostiaCard(in: RoundedRectangle(cornerRadius: 14))
     }
 
     @ViewBuilder

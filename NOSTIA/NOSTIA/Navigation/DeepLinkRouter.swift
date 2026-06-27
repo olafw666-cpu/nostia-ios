@@ -46,8 +46,8 @@ final class DeepLinkRouter: ObservableObject {
 
     func route(_ target: Target) {
         switch target {
-        case .vault:  selectedTab = 1   // Vaults tab
-        case .event:  selectedTab = 3   // Events tab
+        case .vault:  selectedTab = 2   // Vaults tab (Atlas order: Home·Explore·Vaults·Map·Following)
+        case .event:  selectedTab = 1   // Explore / Experiences tab
         case .profile, .notifications:
             break                       // presented modally over the current tab
         }

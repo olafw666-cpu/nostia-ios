@@ -74,7 +74,7 @@ struct VaultQRView: View {
             }
             .task { await loadToken() }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     private func loadToken() async {

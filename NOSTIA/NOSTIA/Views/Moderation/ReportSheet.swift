@@ -33,7 +33,7 @@ struct ReportSheet: View {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.system(size: responsive.fontSize(52)))
                             .foregroundColor(Color.nostiaSuccess)
-                        Text("Report submitted").font(.headline).foregroundColor(.white)
+                        Text("Report submitted").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Thank you for helping keep Nostia safe.\nWe review all reports within 24 hours.")
                             .font(.subheadline)
                             .foregroundColor(Color.nostiaTextSecond)
@@ -47,7 +47,7 @@ struct ReportSheet: View {
                                 Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(12)
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                             }
 
                             Text("Why are you reporting this?")
@@ -65,13 +65,13 @@ struct ReportSheet: View {
                                                 .frame(width: 24)
                                             Text(reason.displayName)
                                                 .font(.system(size: responsive.fontSize(15), weight: .medium))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(Color.nostiaTextPrimary)
                                             Spacer()
                                             Image(systemName: selectedReason == reason ? "checkmark.circle.fill" : "circle")
                                                 .foregroundColor(selectedReason == reason ? Color.nostiaAccent : Color.nostiaTextMuted)
                                         }
                                         .padding(responsive.spacing(14))
-                                        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(selectedReason == reason ? Color.nostiaAccent.opacity(0.6) : Color.clear, lineWidth: 1)
@@ -85,8 +85,8 @@ struct ReportSheet: View {
                                 TextField("Tell us more (optional)...", text: $details, axis: .vertical)
                                     .lineLimit(3...6)
                                     .padding(responsive.spacing(12))
-                                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                                    .foregroundColor(.white)
+                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                                    .foregroundColor(Color.nostiaTextPrimary)
                             }
 
                             Button {
@@ -127,7 +127,7 @@ struct ReportSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
         .presentationDetents([.medium, .large])
     }
 

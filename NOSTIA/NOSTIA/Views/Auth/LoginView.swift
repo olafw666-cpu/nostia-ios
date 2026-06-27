@@ -41,7 +41,7 @@ struct LoginView: View {
                             .foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color.nostriaDanger.opacity(0.5), lineWidth: 1)
@@ -112,12 +112,12 @@ struct NostiaTextField: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.nostiaTextSecond)
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .padding(responsive.spacing(16))
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                .foregroundColor(.white)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                .foregroundColor(Color.nostiaTextPrimary)
         }
     }
 }
@@ -133,20 +133,20 @@ struct NostiaSecureField: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.system(size: responsive.fontSize(14), weight: .semibold))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.nostiaTextSecond)
             HStack {
                 Group {
                     if show { TextField(placeholder, text: $text) }
                     else { SecureField(placeholder, text: $text) }
                 }
-                .foregroundColor(.white)
+                .foregroundColor(Color.nostiaTextPrimary)
                 Button { show.toggle() } label: {
                     Image(systemName: show ? "eye.slash" : "eye")
                         .foregroundColor(Color.nostiaTextMuted)
                 }
             }
             .padding(responsive.spacing(16))
-            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
         }
     }
 }

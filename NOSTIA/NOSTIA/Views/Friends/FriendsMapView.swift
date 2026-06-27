@@ -65,9 +65,9 @@ struct FriendsMapView: View {
                                     .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 2))
                                     .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8)
                                 Text(friend.name.components(separatedBy: " ").first ?? friend.name)
-                                    .font(.caption.bold()).foregroundColor(.white)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .glassEffect(in: Capsule())
+                                    .font(.caption.bold()).foregroundColor(Color.nostiaTextPrimary)
+                                    .padding(.horizontal, 8).padding(.vertical, 3)
+                                    .nostiaCard(in: Capsule())
                             }
                         }
                     }
@@ -87,8 +87,9 @@ struct FriendsMapView: View {
                                             Text(event.title)
                                                 .font(.caption.bold()).foregroundColor(.white)
                                                 .lineLimit(1)
-                                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                                .glassEffect(in: Capsule())
+                                                .padding(.horizontal, 10).padding(.vertical, 4)
+                                                .background(Capsule().fill(Color.nostiaAccent))
+                                                .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8, y: 3)
                                         }
                                     }
                                     .buttonStyle(.plain)
@@ -160,7 +161,7 @@ struct FriendsMapView: View {
             if isLoading {
                 ProgressView().tint(Color.nostiaAccent)
                     .padding(16)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     .padding(.bottom, 100)
             }
 
@@ -171,13 +172,13 @@ struct FriendsMapView: View {
                 && friendLocations.isEmpty && events.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "map").font(.system(size: 48)).foregroundColor(Color.nostiaAccent.opacity(0.8))
-                    Text("Nothing on the map yet").font(.headline).foregroundColor(.white)
+                    Text("Nothing on the map yet").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                     Text("People you follow who share location appear here")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
                         .multilineTextAlignment(.center)
                 }
                 .padding(24)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
                 .padding()
                 .padding(.bottom, 60)
             }
@@ -194,7 +195,7 @@ struct FriendsMapView: View {
                     }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
-                .glassEffect(in: Capsule())
+                .nostiaCard(in: Capsule())
 
                 // Tag search bar — narrows the experiences shown on the map (server-side).
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -214,9 +215,9 @@ struct FriendsMapView: View {
             // Hint label
             Text("Hold map to create an experience")
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.nostiaTextSecond)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .glassEffect(in: Capsule())
+                .nostiaCard(in: Capsule())
                 .padding(.bottom, 12)
 
             // Location-denied notice
@@ -224,7 +225,7 @@ struct FriendsMapView: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "location.slash.fill").foregroundColor(Color.nostiaWarning)
-                        Text("Location is off").font(.subheadline.bold()).foregroundColor(.white)
+                        Text("Location is off").font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
                     }
                     Text("Enable location in Settings to see nearby experiences and share your location.")
                         .font(.caption).foregroundColor(Color.nostiaTextSecond)
@@ -245,7 +246,7 @@ struct FriendsMapView: View {
                     }
                 }
                 .padding(16)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
                 .padding(.top, 104)   // sit below the visibility pills + tag search
                 .frame(maxHeight: .infinity, alignment: .top)
@@ -283,7 +284,7 @@ struct FriendsMapView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button { showEventsList = true } label: {
                     Image(systemName: "list.bullet")
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.nostiaTextPrimary)
                 }
                 .accessibilityLabel("Nearby experiences list")
                 .accessibilityHint("Shows a list of nearby experiences for screen-reader navigation")
@@ -529,7 +530,7 @@ struct CreateExperienceSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Location Name")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         AddressSearchField(locationName: $locationName) { coord, _ in
                             adjustedCoord = coord
                         }
@@ -540,7 +541,7 @@ struct CreateExperienceSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Visibility")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         HStack(spacing: 8) {
                             ForEach(visibilityOptions, id: \.self) { opt in
                                 FilterChip(title: opt == "public" ? "Public" : "Private",
@@ -554,19 +555,19 @@ struct CreateExperienceSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.nostiaTextSecond)
                         LinkInsertBar(text: $description)
                         TextEditor(text: $description)
                             .frame(minHeight: 72).padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
-                            .foregroundColor(.white).scrollContentBackground(.hidden)
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
                     }
 
                     if let err = errorMessage {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
                 .padding(20)
@@ -611,7 +612,7 @@ struct CreateExperienceSheet: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 }
 
@@ -626,7 +627,7 @@ struct ExperienceTagPicker: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tags")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.nostiaTextSecond)
             FlowLayout(spacing: 8) {
                 ForEach(experienceTags, id: \.self) { tag in
                     FilterChip(title: tag.capitalized, isActive: selectedTags.contains(tag)) {

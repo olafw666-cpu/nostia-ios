@@ -15,7 +15,7 @@ struct BlockedUsersView: View {
                     Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(responsive.spacing(12))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 10))
                 }
 
                 if isLoading {
@@ -25,7 +25,7 @@ struct BlockedUsersView: View {
                         Image(systemName: "nosign")
                             .font(.system(size: responsive.fontSize(48)))
                             .foregroundColor(Color.nostiaAccent.opacity(0.7))
-                        Text("No blocked users").font(.headline).foregroundColor(.white)
+                        Text("No blocked users").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Users you block won't see your content,\nand you won't see theirs.")
                             .font(.subheadline)
                             .foregroundColor(Color.nostiaTextSecond)
@@ -41,7 +41,7 @@ struct BlockedUsersView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(user.name)
                                     .font(.system(size: responsive.fontSize(15), weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(Color.nostiaTextPrimary)
                                 Text("@\(user.username)")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                             }
@@ -64,7 +64,7 @@ struct BlockedUsersView: View {
                             .disabled(unblockingIds.contains(user.id))
                         }
                         .padding(responsive.spacing(14))
-                        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
             }

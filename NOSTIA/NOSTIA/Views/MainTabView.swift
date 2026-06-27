@@ -9,59 +9,39 @@ struct MainTabView: View {
     @State private var headerImageData: String?
     @State private var headerInitial: String = "U"
 
+    // Atlas bottom-nav order: Home · Explore · Vaults · Map · Following.
+    private let tabs: [AtlasTabBar.Item] = [
+        .init(tab: 0, icon: "house.fill", label: "Home"),
+        .init(tab: 1, icon: "safari.fill", label: "Explore"),
+        .init(tab: 2, icon: "wallet.bifold.fill", label: "Vaults"),
+        .init(tab: 3, icon: "map.fill", label: "Map"),
+        .init(tab: 4, icon: "person.2.fill", label: "Following"),
+    ]
+
     var body: some View {
-        TabView(selection: $deepLinkRouter.selectedTab) {
-            NavigationStack {
-                HomeView(selectedTab: $deepLinkRouter.selectedTab)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
+        ZStack(alignment: .bottom) {
+            TabView(selection: $deepLinkRouter.selectedTab) {
+                tab(0) {
+                    HomeView(selectedTab: $deepLinkRouter.selectedTab)
+                }
+                tab(1) {
+                    ExperiencesView()
+                }
+                tab(2) {
+                    TripsView()
+                }
+                tab(3) {
+                    FriendsMapView()
+                }
+                tab(4) {
+                    FriendsView()
+                }
             }
-            .tabItem { Label("Home", systemImage: "house") }
-            .tag(0)
+            .tint(Color.nostiaAccent)
 
-            NavigationStack {
-                TripsView()
-                    .navigationTitle("My Vaults")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .tabItem { Label("Vaults", systemImage: "creditcard") }
-            .tag(1)
-
-            NavigationStack {
-                FriendsMapView()
-                    .navigationTitle("Map")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .tabItem { Label("Map", systemImage: "map") }
-            .tag(2)
-
-            NavigationStack {
-                ExperiencesView()
-                    .navigationTitle("Experiences")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .tabItem { Label("Experiences", systemImage: "figure.walk") }
-            .tag(3)
-
-            NavigationStack {
-                FriendsView()
-                    .navigationTitle("Following")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { tabBarToolbar }
-                    .toolbarBackground(.hidden, for: .navigationBar)
-            }
-            .tabItem { Label("Following", systemImage: "person.2") }
-            .tag(4)
+            AtlasTabBar(selected: $deepLinkRouter.selectedTab, items: tabs)
+                .ignoresSafeArea(.keyboard)
         }
-        .tabViewStyle(.sidebarAdaptable)
-        .tint(Color.nostiaAccent)
         .onChange(of: deepLinkRouter.selectedTab) { Haptics.select() }
         .onAppear {
             LocationManager.shared.requestPermission()
@@ -86,7 +66,7 @@ struct MainTabView: View {
                     }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .presentationBackground(.ultraThinMaterial)
+            .presentationBackground(Color.nostiaBackground)
         }
         .sheet(item: deepLinkProfileBinding) { wrapper in
             NavigationStack {
@@ -98,12 +78,11 @@ struct MainTabView: View {
                         }
                     }
             }
-            .presentationBackground(.ultraThinMaterial)
+            .presentationBackground(Color.nostiaBackground)
         }
         .sheet(isPresented: $showProfile, onDismiss: { loadHeaderUser() }) {
             NavigationStack {
                 ProfileView()
-                    .navigationTitle("Profile")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -113,14 +92,28 @@ struct MainTabView: View {
                     }
                     .toolbarBackground(.hidden, for: .navigationBar)
             }
-            .presentationBackground(.ultraThinMaterial)
+            .presentationBackground(Color.nostiaBackground)
         }
+    }
+
+    // Each tab: a NavigationStack with the system tab bar hidden (we draw our own),
+    // a transparent nav bar, and the floating bell + avatar cluster top-right.
+    @ViewBuilder
+    private func tab<Content: View>(_ tag: Int, @ViewBuilder _ content: () -> Content) -> some View {
+        NavigationStack {
+            content()
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { tabBarToolbar }
+                .toolbarBackground(.hidden, for: .navigationBar)
+                .toolbar(.hidden, for: .tabBar)
+        }
+        .tag(tag)
     }
 
     @ToolbarContentBuilder
     var tabBarToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Button {
                     Haptics.tap()
                     showNotifications = true
@@ -128,8 +121,15 @@ struct MainTabView: View {
                     PushNotificationManager.shared.clearBadge()
                 } label: {
                     ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell")
-                            .foregroundColor(.white)
+                        Circle()
+                            .fill(Color.nostiaCard)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: Color.nostiaShadow.opacity(0.08), radius: 8, y: 2)
+                            .overlay(
+                                Image(systemName: "bell")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(Color(hex: "4B5563"))
+                            )
                         if unreadCount > 0 {
                             Text(unreadCount > 9 ? "9+" : "\(unreadCount)")
                                 .font(.system(size: 10, weight: .bold))
@@ -137,7 +137,7 @@ struct MainTabView: View {
                                 .padding(3)
                                 .background(Color.nostriaDanger)
                                 .clipShape(Circle())
-                                .offset(x: 8, y: -8)
+                                .offset(x: 4, y: -4)
                         }
                     }
                 }
@@ -148,7 +148,7 @@ struct MainTabView: View {
                         imageData: headerImageData,
                         initial: headerInitial,
                         color: Color.nostiaAccent,
-                        size: 30
+                        size: 40
                     )
                 }
                 .accessibilityLabel("Profile")
@@ -198,5 +198,62 @@ struct MainTabView: View {
                 AuthManager.shared.isDev = user?.isDev ?? false
             }
         }
+    }
+}
+
+// MARK: - Atlas floating bottom nav
+
+struct AtlasTabBar: View {
+    struct Item: Identifiable {
+        let tab: Int
+        let icon: String
+        let label: String
+        var id: Int { tab }
+    }
+
+    @Binding var selected: Int
+    let items: [Item]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(items) { item in
+                let on = selected == item.tab
+                Button {
+                    Haptics.select()
+                    selected = item.tab
+                } label: {
+                    VStack(spacing: 3) {
+                        ZStack {
+                            if on {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(Color.nostiaAccentSoft)
+                            }
+                            Image(systemName: item.icon)
+                                .font(.system(size: 21, weight: .semibold))
+                                .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextMuted)
+                        }
+                        .frame(width: 44, height: 30)
+                        Text(item.label)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextMuted)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.label)
+                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+            }
+        }
+        .padding(.horizontal, 6)
+        .frame(height: 74)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color.nostiaCard)
+                .shadow(color: Color.nostiaShadow.opacity(0.20), radius: 34, x: 0, y: 14)
+        )
+        .padding(.horizontal, 14)
+        .padding(.bottom, 6)
     }
 }

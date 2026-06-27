@@ -53,7 +53,7 @@ struct CreateOrganizationView: View {
                         Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 8))
                     }
 
                     createButton
@@ -92,7 +92,7 @@ struct CreateOrganizationView: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     // MARK: - Sections
@@ -120,8 +120,8 @@ struct CreateOrganizationView: View {
                 .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
             TextEditor(text: $description)
                 .frame(minHeight: 80).padding(8)
-                .foregroundColor(.white).scrollContentBackground(.hidden)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
@@ -129,7 +129,7 @@ struct CreateOrganizationView: View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle(isOn: $locationEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Location Verification").font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+                    Text("Location Verification").font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     Text("Require members to be inside an allowed area to join")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
@@ -143,12 +143,12 @@ struct CreateOrganizationView: View {
                     HStack {
                         Image(systemName: "map.circle.fill").foregroundColor(Color.nostiaAccent)
                         Text(zones.isEmpty ? "Define verification zones" : "\(zones.count) zone\(zones.count == 1 ? "" : "s") defined")
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.nostiaTextPrimary)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
                     }
                     .padding(14)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                    .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                 }
                 if zones.isEmpty {
                     Text("At least one zone is required when verification is on.")
@@ -157,7 +157,7 @@ struct CreateOrganizationView: View {
             }
         }
         .padding(14)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 14))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var postPermissionSection: some View {
@@ -196,8 +196,8 @@ struct CreateOrganizationView: View {
                 .font(.system(size: 14, weight: .semibold)).foregroundColor(.white.opacity(0.7))
             TextEditor(text: $rulesText)
                 .frame(minHeight: 60).padding(8)
-                .foregroundColor(.white).scrollContentBackground(.hidden)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+                .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
         }
     }
 

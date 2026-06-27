@@ -21,7 +21,7 @@ struct NearbyExperiencesListView: View {
                     List(events) { event in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(event.title)
-                                .font(.headline).foregroundColor(.white)
+                                .font(.headline).foregroundColor(Color.nostiaTextPrimary)
                             if let dist = event.formattedDistance {
                                 Label(dist, systemImage: "location")
                                     .font(.caption).foregroundColor(Color.nostiaTextSecond)
@@ -53,7 +53,7 @@ struct NearbyExperiencesListView: View {
                 }
             }
         }
-        .presentationBackground(.ultraThinMaterial)
+        .presentationBackground(Color.nostiaBackground)
     }
 
     private func accessibilityLabel(for e: Experience) -> String {
