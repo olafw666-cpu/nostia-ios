@@ -2,8 +2,10 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showProfileBuilder = false
     @State private var showPaymentSetupPrompt = false
+    @State private var showThemePrompt = false
     @State private var inviteJoinedVault: String?
     @State private var showInviteJoined = false
     // Cold-launch splash. `@State` on the persistent root view means this only shows once
@@ -12,7 +14,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            // Atlas (Light) canvas — soft off-white base behind every screen.
+            // Atlas (Dark) canvas — near-black charcoal base behind every screen.
             LinearGradient.nostiaGradient
                 .ignoresSafeArea()
 
@@ -37,6 +39,10 @@ struct RootView: View {
             PaymentSetupPromptView {
                 showPaymentSetupPrompt = false
             }
+        }
+        .sheet(isPresented: $showThemePrompt, onDismiss: { themeManager.markFirstRunPromptShown() }) {
+            ThemeChooserSheet()
+                .presentationBackground(Color.nostiaBackground)
         }
         .onOpenURL { url in
             guard url.scheme == "nostia",
@@ -63,6 +69,7 @@ struct RootView: View {
                 UserDefaults.standard.removeObject(forKey: "nostia_pending_invite_token")
                 Task { await redeemToken(token) }
             }
+            maybeShowThemePrompt()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
@@ -81,10 +88,21 @@ struct RootView: View {
             // splash briefly so the mark spins ~twice, then reveal the app.
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
+            maybeShowThemePrompt()
         }
-        // Atlas is a light design system; lock the whole UI to light so a device in Dark
-        // Mode can't bleed black through system surfaces (List/Form/Navigation/materials).
-        .preferredColorScheme(.light)
+        // Drive the whole UI's appearance from the user's choice (default Dark). `.system`
+        // resolves to nil so the device's Light/Dark setting takes over. This also flips
+        // every dynamic `Color(light:dark:)` token by changing the subtree's trait collection.
+        .preferredColorScheme(themeManager.theme.colorScheme)
+    }
+
+    /// Show the one-time appearance prompt once the user is in the app — but never on top of
+    /// the first-run profile/payment setup covers.
+    private func maybeShowThemePrompt() {
+        guard authManager.isAuthenticated,
+              themeManager.shouldShowFirstRunPrompt,
+              !showProfileBuilder, !showPaymentSetupPrompt else { return }
+        showThemePrompt = true
     }
 
     @MainActor

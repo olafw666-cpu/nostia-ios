@@ -153,19 +153,19 @@ struct TripCard: View {
                             Image(systemName: "key.fill").font(.system(size: 10))
                             Text("Leader")
                         }
-                        .font(.caption.bold()).foregroundColor(Color(hex: "D97A26"))
+                        .font(.caption.bold()).foregroundColor(Color.nostiaWarning)
                         .padding(.horizontal, 11).padding(.vertical, 5)
-                        .background(Capsule().fill(Color(hex: "FEF3E2")))
+                        .background(Capsule().fill(Color.nostiaWarningSoft))
                     }
                 }
                 Divider().background(Color.nostiaDivider)
                 HStack {
                     Label("\(trip.activeParticipants.count) members", systemImage: "person.2.fill")
-                        .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color(hex: "4B5563"))
-                        .labelStyle(AtlasLeadingIconLabel(tint: Color.nostiaBlue))
+                        .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        .labelStyle(AtlasLeadingIconLabel(tint: Color.nostiaAccent))
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 18)).foregroundColor(Color(hex: "C2CAD3"))
+                        .font(.system(size: 18)).foregroundColor(Color.nostiaTextMuted)
                 }
             }
             .padding(responsive.spacing(18))

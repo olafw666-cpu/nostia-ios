@@ -3,6 +3,7 @@ import SwiftUI
 struct PrivacyView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var user: User?
     @State private var consentStatus: ConsentStatus?
     @State private var isLoading = true
@@ -35,6 +36,28 @@ struct PrivacyView: View {
                 if isLoading {
                     ProgressView().tint(Color.nostiaAccent).padding(40)
                 } else {
+                    // Appearance section — Light/Dark/System theme switch.
+                    GlassSection(title: "Appearance") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "circle.lefthalf.filled")
+                                    .foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                Text("Theme").foregroundColor(Color.nostiaTextPrimary)
+                                Spacer()
+                            }
+                            .font(.subheadline)
+                            Picker("Theme", selection: $themeManager.theme) {
+                                ForEach(AppTheme.allCases) { option in
+                                    Text(option.label).tag(option)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            Text("“System” follows your device's Light/Dark setting.")
+                                .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                        }
+                        .padding(responsive.spacing(16))
+                    }
+
                     // Account section
                     GlassSection(title: "Account") {
                         if let u = user {

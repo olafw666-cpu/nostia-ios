@@ -176,7 +176,7 @@ struct ZoneEditorView: View {
                 Label("Add zone", systemImage: "plus.circle.fill")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(draftCenter == nil ? AnyShapeStyle(Color(hex: "C2CAD3"))
+                    .background(draftCenter == nil ? AnyShapeStyle(Color.nostiaDisabled)
                                                    : AnyShapeStyle(Color.nostiaAccent))
                     .foregroundColor(.white)
                     .cornerRadius(12)
@@ -211,7 +211,7 @@ struct ZoneEditorView: View {
                     Label("Add zone", systemImage: "plus.circle.fill")
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(freehandPoints.count >= 3 ? AnyShapeStyle(Color.nostiaAccent)
-                                                              : AnyShapeStyle(Color(hex: "C2CAD3")))
+                                                              : AnyShapeStyle(Color.nostiaDisabled))
                         .foregroundColor(.white).cornerRadius(12)
                 }
                 .disabled(freehandPoints.count < 3)

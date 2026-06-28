@@ -695,7 +695,7 @@ struct FilterChip: View {
                 .foregroundColor(isActive ? .white : Color(hex: "4B5563"))
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 .frame(minHeight: 32)
-                .background(Capsule().fill(isActive ? Color.nostiaAccent : Color.nostiaCard))
+                .background(Capsule().fill(isActive ? Color.nostiaAccent : Color.white))
                 .overlay(isActive ? nil : Capsule().stroke(Color.nostriaBorder, lineWidth: 1))
                 .shadow(color: Color.nostiaShadow.opacity(0.06), radius: 6, x: 0, y: 1)
         }

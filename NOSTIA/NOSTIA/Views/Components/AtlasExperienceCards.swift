@@ -22,13 +22,13 @@ struct AtlasExperienceImage: View {
                 Color.clear.overlay(Image(uiImage: img).resizable().scaledToFill()).clipped()
             } else {
                 LinearGradient(
-                    colors: [Color(hex: "E9EDF2"), Color(hex: "E1E6EC")],
+                    colors: [Color(light: "E9EDF2", dark: "2C3037"), Color(light: "E1E6EC", dark: "23272D")],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 )
                 .overlay(
                     Image(systemName: "photo")
                         .font(.system(size: 22))
-                        .foregroundColor(Color(hex: "AAB4BF"))
+                        .foregroundColor(Color.nostiaTextMuted)
                 )
             }
         }
@@ -140,7 +140,7 @@ struct AtlasExperienceCard: View {
                 if let desc = event.description, !desc.isEmpty {
                     Text(desc)
                         .font(.system(size: 13.5))
-                        .foregroundColor(Color(hex: "4B5563"))
+                        .foregroundColor(Color.nostiaTextSecond)
                         .lineLimit(2)
                         .padding(.top, 8)
                 }

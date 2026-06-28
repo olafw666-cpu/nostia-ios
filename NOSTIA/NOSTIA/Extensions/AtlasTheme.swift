@@ -157,7 +157,9 @@ struct NostiaChip: View {
                 .padding(.horizontal, 15)
                 .padding(.vertical, 9)
                 .background(
-                    Capsule().fill(isActive ? Color.nostiaAccent : Color.nostiaCard)
+                    // Inactive chips stay white pills (per the dark mockups) so they pop
+                    // against the charcoal canvas; active chips fill with the orange accent.
+                    Capsule().fill(isActive ? Color.nostiaAccent : Color.white)
                 )
                 .shadow(color: Color.nostiaShadow.opacity(0.08), radius: 8, x: 0, y: 2)
         }
@@ -220,7 +222,7 @@ struct AtlasSegmented: View {
             }
         }
         .padding(5)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: "E7ECF1")))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(light: "E7ECF1", dark: "121417")))
     }
 }
 

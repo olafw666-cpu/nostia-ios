@@ -213,7 +213,7 @@ struct CreateOrganizationView: View {
             .background(canCreate
                         ? AnyShapeStyle(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                        startPoint: .leading, endPoint: .trailing))
-                        : AnyShapeStyle(Color(hex: "C2CAD3")))
+                        : AnyShapeStyle(Color.nostiaDisabled))
             .foregroundColor(.white).cornerRadius(14)
         }
         .disabled(!canCreate || isSaving)

@@ -353,7 +353,7 @@ struct ExpenseCard: View {
         VStack(alignment: .leading, spacing: responsive.spacing(12)) {
             HStack {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(Color(hex: "FEF3E2")).frame(width: 40, height: 40)
+                    RoundedRectangle(cornerRadius: 12).fill(Color.nostiaWarningSoft).frame(width: 40, height: 40)
                     Image(systemName: "doc.text").foregroundColor(Color.nostiaStar).font(.system(size: 21))
                 }
                 VStack(alignment: .leading, spacing: 2) {
@@ -392,7 +392,7 @@ struct ExpenseCard: View {
                     let isOwnSplit = split.userId == currentUserId
                     HStack {
                         Text(splitDisplay)
-                            .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color(hex: "4B5563"))
+                            .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         Spacer()
                         Text(String(format: "$%.2f", split.amount))
                             .font(.system(size: 14, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)

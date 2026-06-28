@@ -299,7 +299,7 @@ struct TabButton: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 11)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(isActive ? Color.nostiaAccent : Color.nostiaCard)
+                        .fill(isActive ? Color.nostiaAccent : Color.white)
                 )
                 .overlay(isActive ? nil : RoundedRectangle(cornerRadius: 12).stroke(Color.nostriaBorder, lineWidth: 1))
                 .shadow(color: Color.nostiaShadow.opacity(isActive ? 0.0 : 0.05), radius: 8, y: 2)

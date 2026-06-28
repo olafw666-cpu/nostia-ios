@@ -128,7 +128,7 @@ struct MainTabView: View {
                             .overlay(
                                 Image(systemName: "bell")
                                     .font(.system(size: 18))
-                                    .foregroundColor(Color(hex: "4B5563"))
+                                    .foregroundColor(Color.nostiaTextSecond)
                             )
                         if unreadCount > 0 {
                             Text(unreadCount > 9 ? "9+" : "\(unreadCount)")

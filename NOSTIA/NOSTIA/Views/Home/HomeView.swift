@@ -220,7 +220,7 @@ struct HomeView: View {
                      count: vm.trips.count, label: "Vaults") {
                 selectedTab = 2
             }
-            StatCard(icon: "person.2.fill", color: Color.nostiaBlue,
+            StatCard(icon: "person.2.fill", color: Color.nostiaAccent,
                      count: vm.followers.count, label: "Following") {
                 selectedTab = 4
             }
@@ -254,7 +254,7 @@ struct HomeView: View {
                             .font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right").foregroundColor(Color(hex: "C2CAD3"))
+                    Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
                 }
                 .padding(16)
                 .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
