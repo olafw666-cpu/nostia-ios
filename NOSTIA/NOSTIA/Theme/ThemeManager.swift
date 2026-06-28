@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import UIKit
 
 // MARK: - App theme
 
@@ -42,6 +43,18 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .dark:   return .dark
         }
     }
+
+    /// UIKit interface-style override applied to the window. `.system` maps to `.unspecified`
+    /// so the window genuinely *follows* the device's Light/Dark setting and reacts to live
+    /// Control-Center / Settings toggles at runtime — unlike `.preferredColorScheme(nil)`,
+    /// which leaves a stale override after it has previously held a concrete value.
+    var overrideStyle: UIUserInterfaceStyle {
+        switch self {
+        case .system: return .unspecified
+        case .light:  return .light
+        case .dark:   return .dark
+        }
+    }
 }
 
 // MARK: - Theme manager
@@ -58,12 +71,29 @@ final class ThemeManager: ObservableObject {
 
     /// Current appearance. New installs default to Dark (the flagship look).
     @Published var theme: AppTheme {
-        didSet { UserDefaults.standard.set(theme.rawValue, forKey: Self.storageKey) }
+        didSet {
+            UserDefaults.standard.set(theme.rawValue, forKey: Self.storageKey)
+            applyToWindows()
+        }
     }
 
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.storageKey)
         self.theme = raw.flatMap(AppTheme.init(rawValue:)) ?? .dark
+    }
+
+    /// Push the current choice's interface-style override onto every live window. Driving
+    /// `overrideUserInterfaceStyle` directly (not just `.preferredColorScheme`) is what makes
+    /// `.system` actually track the device appearance switch while the app is running. Call on
+    /// launch (once a window exists) and whenever `theme` changes (handled by `didSet`).
+    func applyToWindows() {
+        let style = theme.overrideStyle
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                window.overrideUserInterfaceStyle = style
+            }
+        }
     }
 
     /// One-time post-login appearance prompt — true until the user has seen it once.
