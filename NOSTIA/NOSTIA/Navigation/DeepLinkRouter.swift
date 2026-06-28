@@ -24,6 +24,13 @@ final class DeepLinkRouter: ObservableObject {
     /// visit to Explore isn't re-filtered.
     @Published var pendingExploreTags: [String] = []
 
+    /// How many pushed full-bottom screens (e.g. chat views, whose pinned input bar would
+    /// otherwise sit *under* the floating `AtlasTabBar`) currently want the bar hidden.
+    /// A depth counter rather than a `Bool` so overlapping push/pop transitions can never
+    /// leave the bar stuck hidden. `MainTabView` hides the bar while this is > 0.
+    @Published var tabBarHiddenDepth: Int = 0
+    var isTabBarHidden: Bool { tabBarHiddenDepth > 0 }
+
     private init() {}
 
     /// Map a push payload's `data` dictionary to a navigation target and route to it.
@@ -64,4 +71,23 @@ final class DeepLinkRouter: ObservableObject {
 /// Lightweight Identifiable wrapper so a bare Int can drive `.sheet(item:)`.
 struct IdentifiableInt: Identifiable {
     let id: Int
+}
+
+// MARK: - Floating tab bar visibility
+
+private struct HidesAppTabBar: ViewModifier {
+    @EnvironmentObject private var router: DeepLinkRouter
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { router.tabBarHiddenDepth += 1 }
+            .onDisappear { router.tabBarHiddenDepth = max(0, router.tabBarHiddenDepth - 1) }
+    }
+}
+
+extension View {
+    /// Hides the floating bottom `AtlasTabBar` while this screen is on-screen. Use on pushed
+    /// detail screens whose own bottom-pinned controls (e.g. a chat message bar) would
+    /// otherwise be covered by the floating bar.
+    func hidesAppTabBar() -> some View { modifier(HidesAppTabBar()) }
 }

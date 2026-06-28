@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var showBlockConfirm = false
     @State private var blockedMessage: String?
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var responsive: ResponsiveLayoutManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -108,6 +109,11 @@ struct ChatView: View {
                 .background(.ultraThinMaterial)
             }
         }
+        // Centered reading column on iPad's wide landscape canvas; full width on phone.
+        .frame(maxWidth: responsive.contentMaxWidth)
+        // The floating tab bar is hidden while the chat is open so it can't cover the
+        // message input bar (the bar lives outside the tab's NavigationStack).
+        .hidesAppTabBar()
         .background(.clear)
         .navigationTitle(friendName)
         .navigationBarTitleDisplayMode(.inline)

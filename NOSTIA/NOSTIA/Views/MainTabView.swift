@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject private var deepLinkRouter: DeepLinkRouter
+    @EnvironmentObject private var responsive: ResponsiveLayoutManager
     @State private var unreadCount = 0
     @State private var showNotifications = false
     @State private var showProfile = false
@@ -39,9 +40,17 @@ struct MainTabView: View {
             }
             .tint(Color.nostiaAccent)
 
-            AtlasTabBar(selected: $deepLinkRouter.selectedTab, items: tabs)
-                .ignoresSafeArea(.keyboard)
+            // Hidden while a pushed screen (e.g. a chat) needs the full bottom area, so its
+            // input bar isn't covered by the floating bar. On iPad the bar is centered and
+            // capped rather than stretched edge-to-edge across the wide landscape canvas.
+            if !deepLinkRouter.isTabBarHidden {
+                AtlasTabBar(selected: $deepLinkRouter.selectedTab, items: tabs)
+                    .frame(maxWidth: responsive.isTablet ? 540 : .infinity)
+                    .ignoresSafeArea(.keyboard)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.22), value: deepLinkRouter.isTabBarHidden)
         .onChange(of: deepLinkRouter.selectedTab) { Haptics.select() }
         .onAppear {
             LocationManager.shared.requestPermission()
