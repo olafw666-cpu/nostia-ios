@@ -180,7 +180,7 @@ struct VaultChatBubble: View {
                 Text(message.content)
                     .font(.subheadline).foregroundColor(isMe ? .white : Color.nostiaTextPrimary)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(isMe ? Color.nostiaAccent : Color(hex: "E7ECF1"))
+                    .background(isMe ? Color.nostiaAccent : Color.nostriaBorder)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                 Text(timeString).font(.system(size: 10)).foregroundColor(Color.nostiaTextMuted)
             }

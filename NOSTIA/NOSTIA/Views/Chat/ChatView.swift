@@ -90,7 +90,7 @@ struct ChatView: View {
                                 .frame(width: 44, height: 44)
                                 .background(
                                     (vm.newMessage.trimmingCharacters(in: .whitespaces).isEmpty || vm.isLocked)
-                                        ? AnyShapeStyle(Color(hex: "C2CAD3"))
+                                        ? AnyShapeStyle(Color.nostiaDisabled)
                                         : AnyShapeStyle(LinearGradient(
                                             colors: [Color.nostiaAccent, Color.nostriaPurple],
                                             startPoint: .topLeading, endPoint: .bottomTrailing

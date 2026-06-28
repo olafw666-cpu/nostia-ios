@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension Color {
     init(hex: String) {
@@ -22,49 +23,85 @@ extension Color {
                   blue: Double(b) / 255,
                   opacity: Double(a) / 255)
     }
+
+    /// Dynamic token: resolves to `light` or `dark` (hex strings) based on the active
+    /// interface style. Lets a single token name serve both themes — `.preferredColorScheme`
+    /// (driven by `ThemeManager`) flips the trait collection these resolve against.
+    init(light: String, dark: String) {
+        self = Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(hexString: dark)
+                : UIColor(hexString: light)
+        })
+    }
 }
 
-// MARK: - Atlas (Light) design tokens
+extension UIColor {
+    /// UIKit hex parser used inside dynamic-colour providers (kept off the SwiftUI bridge
+    /// so trait resolution stays in UIKit).
+    convenience init(hexString: String) {
+        let hex = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:  (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:  (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:  (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default: (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(red: CGFloat(r) / 255, green: CGFloat(g) / 255,
+                  blue: CGFloat(b) / 255, alpha: CGFloat(a) / 255)
+    }
+}
+
+// MARK: - Atlas design tokens (Light + Dark)
 //
-// The app uses a light, card-based system: a soft off-white canvas, solid white
-// surfaces with gentle drop shadows, a green primary, an orange star/accent and a
-// blue secondary. Token *names* are kept stable so the hundreds of existing call
-// sites flip to the light palette automatically; only the values changed.
+// Dual-theme, card-based system. Each token carries a Light and a Dark value and resolves
+// against the active interface style (driven by `ThemeManager` via `.preferredColorScheme`):
+//   • Light — soft off-white canvas, solid white cards, a GREEN primary (original Atlas).
+//   • Dark  — near-black charcoal canvas, raised dark-grey cards, an ORANGE primary (mockups).
+// Orange stays the star/warning accent in both. Token *names* are stable, so the hundreds
+// of existing call sites adapt to either theme automatically.
 extension Color {
     // Canvas & surfaces
-    static let nostiaBackground  = Color(hex: "F4F6F9")   // app canvas
-    static let nostiaCard        = Color(hex: "FFFFFF")   // cards / sheets surfaces
+    static let nostiaBackground  = Color(light: "F4F6F9", dark: "17191D")   // app canvas
+    static let nostiaCard        = Color(light: "FFFFFF", dark: "24272C")   // cards / sheets
 
     // Borders, dividers & inputs
-    static let nostriaBorder     = Color(hex: "E7ECF1")   // control / card hairline
-    static let nostiaDivider     = Color(hex: "EEF1F5")   // in-card separators
-    static let nostiaInput       = Color(hex: "FFFFFF")   // input fields are white cards
+    static let nostriaBorder     = Color(light: "E7ECF1", dark: "34383F")   // control / card hairline
+    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2B2F35")   // in-card separators
+    static let nostiaInput       = Color(light: "FFFFFF", dark: "24272C")   // input fields
 
-    // Accents & semantic
-    static let nostiaAccent      = Color(hex: "0E9F6E")   // primary green
-    static let nostiaAccentSoft  = Color(hex: "E7F6EF")   // green tint background
-    static let nostiaSuccess     = Color(hex: "0E9F6E")
-    static let nostiaWarning     = Color(hex: "E8843C")   // orange — stars / warnings
-    static let nostiaStar        = Color(hex: "E8843C")
-    static let nostriaDanger     = Color(hex: "E5484D")
-    static let nostiaBlue        = Color(hex: "3B82C4")   // secondary blue
-    static let nostriaPurple     = Color(hex: "3B82C4")   // legacy alias → secondary blue
+    // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark.
+    static let nostiaAccent      = Color(light: "0E9F6E", dark: "E8843C")   // primary
+    static let nostiaAccentSoft  = Color(light: "E7F6EF", dark: "3A2A1A")   // primary tint bg
+    static let nostiaSuccess     = Color(light: "0E9F6E", dark: "2FBE7E")   // settled / positive
+    static let nostiaWarning     = Color(hex: "E8843C")                     // orange in both
+    static let nostiaWarningSoft = Color(light: "FEF3E2", dark: "3A2A1A")   // warm star/warning tint
+    static let nostiaStar        = Color(hex: "E8843C")                     // orange in both
+    static let nostriaDanger     = Color(light: "E5484D", dark: "F0565B")
+    static let nostiaBlue        = Color(light: "3B82C4", dark: "4A9BE0")   // secondary blue
+    static let nostriaPurple     = Color(light: "3B82C4", dark: "4A9BE0")   // legacy alias → blue
+    static let nostiaDisabled    = Color(light: "C2CAD3", dark: "3A3F46")   // disabled control bg
 
     // Text
-    static let nostiaTextPrimary = Color(hex: "14181F")   // near-black ink
-    static let nostiaTextSecond  = Color(hex: "8A93A0")
-    static let nostiaTextMuted   = Color(hex: "A6AEB9")
+    static let nostiaTextPrimary = Color(light: "14181F", dark: "F4F6F9")   // ink
+    static let nostiaTextSecond  = Color(light: "8A93A0", dark: "9AA3AF")
+    static let nostiaTextMuted   = Color(light: "A6AEB9", dark: "6B7280")
 
-    // Soft shadow colour used by cards (rgba(30,50,70,…))
-    static let nostiaShadow      = Color(hex: "1E3246")
+    // Soft shadow — tinted blue-grey on light, pure black for depth on dark.
+    static let nostiaShadow      = Color(light: "1E3246", dark: "000000")
 }
 
-// Shared gradient used as the base canvas for all screens. Kept as a (now nearly
-// flat) light gradient so any view still referencing `.nostiaGradient` stays light.
+// Shared gradient used as the base canvas for all screens. Resolves light or dark to match
+// the active theme so any view referencing `.nostiaGradient` adapts automatically.
 extension ShapeStyle where Self == LinearGradient {
     static var nostiaGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(hex: "F6F8FB"), Color(hex: "F4F6F9"), Color(hex: "EEF1F5")],
+            colors: [Color(light: "F6F8FB", dark: "1A1D21"),
+                     Color(light: "F4F6F9", dark: "17191D"),
+                     Color(light: "EEF1F5", dark: "0F1113")],
             startPoint: .top,
             endPoint: .bottom
         )

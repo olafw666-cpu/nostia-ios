@@ -348,7 +348,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                             }
                             .frame(maxWidth: .infinity).padding(responsive.spacing(16))
                             .background(title.isEmpty
-                                ? AnyShapeStyle(Color(hex: "C2CAD3"))
+                                ? AnyShapeStyle(Color.nostiaDisabled)
                                 : AnyShapeStyle(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                                startPoint: .leading, endPoint: .trailing)))
                             .foregroundColor(.white).cornerRadius(14)

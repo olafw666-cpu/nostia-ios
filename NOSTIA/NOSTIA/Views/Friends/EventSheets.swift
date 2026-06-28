@@ -62,7 +62,7 @@ struct StatusButtons: View {
             .frame(maxWidth: .infinity).padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? selectedColor : Color.nostiaCard)
+                    .fill(isSelected ? selectedColor : Color.white)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)

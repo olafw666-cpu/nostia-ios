@@ -84,7 +84,7 @@ struct ProfileBuilderView: View {
                         .padding()
                         .background(
                             bio.count > 100
-                                ? AnyShapeStyle(Color(hex: "C2CAD3"))
+                                ? AnyShapeStyle(Color.nostiaDisabled)
                                 : AnyShapeStyle(LinearGradient(
                                     colors: [Color.nostiaAccent, Color.nostriaPurple],
                                     startPoint: .leading, endPoint: .trailing
