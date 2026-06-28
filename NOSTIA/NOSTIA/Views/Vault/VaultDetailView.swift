@@ -53,6 +53,8 @@ struct VaultDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(.clear)
         .ignoresSafeArea(.keyboard)
+        // Hide the floating tab bar so the vault chat input bar isn't covered by it.
+        .hidesAppTabBar()
         .navigationTitle(currentTrip.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
