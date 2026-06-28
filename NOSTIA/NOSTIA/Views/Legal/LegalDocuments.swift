@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-06-24"
+    static let tosVersion = "2026-06-28"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: June 24, 2026
+Effective Date: June 28, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -17,7 +17,7 @@ By accessing or using Nostia, you confirm that you are at least 13 years of age,
 
 2. DESCRIPTION OF SERVICE
 
-Nostia is a social travel application that allows users to plan trips, split expenses, discover local events, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking), event creation and discovery, direct messaging between mutual followers, a social feed, and map-based event exploration.
+Nostia is a social travel application that allows users to plan trips, split expenses, discover and share local experiences, join location-based organizations, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking); experience creation, discovery, tagging, and rating; the ability to mark experiences as visited or to visit; direct messaging between mutual followers; a social feed; location-based organizations (groups whose content is available to members within a defined geographic area); and map-based experience exploration.
 
 3. ACCOUNT REGISTRATION
 
@@ -35,6 +35,7 @@ You agree not to use Nostia to:
 - Post, upload, or share content that is unlawful, harmful, threatening, abusive, harassing, defamatory, obscene, or otherwise objectionable
 - Impersonate any person or entity or misrepresent your affiliation with any person or entity
 - Engage in spam, phishing, or any form of unsolicited commercial communications
+- Post fake, fraudulent, retaliatory, or manipulated ratings, reviews, or experience information
 - Upload or transmit viruses, malware, or other harmful code
 - Interfere with or disrupt the integrity or performance of the App or its servers
 - Attempt to gain unauthorized access to any systems or networks connected to Nostia
@@ -45,7 +46,7 @@ ZERO TOLERANCE POLICY: Nostia has no tolerance for objectionable content or abus
 
 5. USER CONTENT
 
-By posting content to Nostia (including text, photos, event information, and other materials), you grant Nostia a non-exclusive, royalty-free, worldwide, sublicensable license to use, display, reproduce, modify, and distribute that content in connection with operating and improving the App.
+By posting content to Nostia (including text, photos, experience information, ratings and reviews, content you share within an organization, and other materials), you grant Nostia a non-exclusive, royalty-free, worldwide, sublicensable license to use, display, reproduce, modify, and distribute that content in connection with operating and improving the App.
 
 You represent and warrant that you own or have the necessary rights to the content you post, and that your content does not infringe any third-party intellectual property, privacy, or other rights.
 
@@ -57,7 +58,7 @@ The Vault feature enables shared expense tracking and payment splitting via Stri
 
 7. LOCATION DATA
 
-The App may request access to your device's location to enable map-based features, event discovery, and location sharing. Location access is optional but may limit functionality if denied. See our Privacy Policy for details on how location data is used.
+The App may request access to your device's location to enable map-based features, experience discovery, eligibility for location-based organizations, and location sharing. Location access is optional but may limit functionality if denied. See our Privacy Policy for details on how location data is used.
 
 8. INTELLECTUAL PROPERTY
 
@@ -89,7 +90,7 @@ These Terms shall be governed by and construed in accordance with applicable law
 
 15. PUSH NOTIFICATIONS
 
-With your permission, Nostia sends push notifications for time-sensitive activity such as expense and payment reminders, new followers, event invitations, being added to a vault, and payments you receive. To deliver them we store a push token for each device on which you enable notifications. Push notifications are optional: you can turn them off at any time from the App's notification settings or your device settings, and doing so does not disable in-app notifications. See our Privacy Policy for details on the data involved.
+With your permission, Nostia sends push notifications for time-sensitive activity such as expense and payment reminders, new followers, experience invitations, being added to a vault, and payments you receive. To deliver them we store a push token for each device on which you enable notifications. Push notifications are optional: you can turn them off at any time from the App's notification settings or your device settings, and doing so does not disable in-app notifications. See our Privacy Policy for details on the data involved.
 
 16. ACCESSIBILITY
 
@@ -103,7 +104,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: June 24, 2026
+Effective Date: June 28, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -112,9 +113,9 @@ This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, 
 a) Information You Provide
 - Account information: username, full name, email address, password (stored hashed), and profile picture
 - Profile content: bio, profile photo
-- User-generated content: posts, comments, event descriptions, trip details
+- User-generated content: posts, comments, experience descriptions, ratings and reviews, trip details, and content you share within organizations
 - Payment information: processed by Stripe; we store only a Stripe customer ID and the last four digits of saved cards
-- Location data: if you grant location permission, your approximate coordinates are used for event discovery and map features
+- Location data: if you grant location permission, your approximate coordinates are used for experience discovery, map features, and determining eligibility for location-based organizations
 - Contacts: if you grant Contacts permission and use the optional "find friends from contacts" feature, email addresses from your address book are transmitted to our server solely to check which of them belong to existing Nostia users; they are matched in memory and not stored. If you explicitly invite a specific contact, that contact's email and/or phone number is stored only to generate the invitation link, and the record expires after 7 days. Contact data is never used for advertising and never shared with third parties.
 
 b) Information Collected Automatically
@@ -129,7 +130,7 @@ c) Information From Third Parties
 
 We use the information we collect to:
 - Provide, operate, and maintain the Nostia service
-- Enable social features including following, messaging, and event discovery
+- Enable social features including following, messaging, experience discovery, and location-based organizations
 - Process vault payments and expense splits via Stripe
 - Send in-app notifications and push notifications (where consented)
 - Monitor for security threats, fraud, and abuse
@@ -143,7 +144,7 @@ We do not use your information for targeted advertising.
 We do not sell your personal information. We may share information in the following limited circumstances:
 
 a) With Other Users
-Content you post publicly (feed posts, public events) is visible to other Nostia users. Your username and profile picture are visible when you interact socially on the platform. Direct messages are visible only to you and the recipient.
+Content you post publicly (feed posts, public experiences, ratings and reviews) is visible to other Nostia users. Content you share within an organization is visible to that organization's members. Your username and profile picture are visible when you interact socially on the platform. Direct messages are visible only to you and the recipient.
 
 b) With Service Providers
 We share data with Stripe (payment processing) and Apple (push notifications) solely to operate those features.
@@ -165,15 +166,16 @@ We implement reasonable technical and organizational measures to protect your in
 6. LOCATION DATA
 
 We only collect precise location data if you explicitly grant location permission on your device. Location data is used to:
-- Show nearby events on the map
-- Enable location-based event creation
+- Show nearby experiences on the map
+- Enable location-based experience creation
+- Determine eligibility for location-based organizations
 - Periodically sync your approximate location for friend-map features
 
 You can revoke location permission at any time in your device Settings.
 
 7. PUSH NOTIFICATIONS
 
-If you grant permission, Nostia sends push notifications for high-priority activity, including expense and payment reminders, new followers, event invitations, being added to a vault, and payments you receive. To deliver them, we store a push token for each device on which you enable notifications, associated with your account. Tokens are used only to route notifications through Apple Push Notification service and are removed when they become invalid or when you disable notifications. You can turn push notifications off at any time from the App's notification settings or your device Settings; doing so does not affect in-app notifications.
+If you grant permission, Nostia sends push notifications for high-priority activity, including expense and payment reminders, new followers, experience invitations, being added to a vault, and payments you receive. To deliver them, we store a push token for each device on which you enable notifications, associated with your account. Tokens are used only to route notifications through Apple Push Notification service and are removed when they become invalid or when you disable notifications. You can turn push notifications off at any time from the App's notification settings or your device Settings; doing so does not affect in-app notifications.
 
 8. CHILDREN'S PRIVACY
 
@@ -205,7 +207,7 @@ For privacy-related questions or requests, use the Data Export or Delete My Data
     static let communityGuidelines = """
 COMMUNITY GUIDELINES
 
-Effective Date: June 11, 2026
+Effective Date: June 28, 2026
 
 Nostia is a platform built around shared travel experiences, adventure, and genuine human connection. These Community Guidelines describe the standards we expect all users to uphold to keep Nostia a safe, welcoming, and enjoyable place.
 
@@ -224,8 +226,9 @@ Treat everyone on the platform with basic courtesy and respect. Harassment, bull
 Nostia works because users can trust that the people and content they encounter are genuine.
 
 - Use your real identity or a consistent personal identity. Impersonating another person or creating fake accounts is prohibited.
-- Do not post misleading, deceptive, or fabricated event information
-- Do not manipulate likes, follows, or engagement through bots or coordinated inauthentic behavior
+- Do not post misleading, deceptive, or fabricated experience information
+- Do not post fake, fraudulent, or retaliatory ratings or reviews, or rate experiences you have not genuinely visited
+- Do not manipulate likes, follows, ratings, or engagement through bots or coordinated inauthentic behavior
 - Do not claim credit for content or experiences that are not yours
 
 3. SHARE RESPONSIBLY
@@ -255,14 +258,16 @@ The Vault expense-splitting feature is designed to help groups share costs fairl
 
 Content that sexualizes, exploits, or endangers minors is strictly prohibited and will be reported to appropriate authorities. Nostia is not intended for users under 13.
 
-7. EVENT STANDARDS
+7. EXPERIENCE AND ORGANIZATION STANDARDS
 
-Events created on Nostia must:
-- Accurately describe the event's time, location, and nature
+Experiences created on Nostia must:
+- Accurately describe the experience's location, tags, and nature
 - Not be used to organize illegal gatherings or activities
 - Not promote violence, hate, or dangerous behavior
 
-Event organizers are responsible for ensuring their events comply with local laws and regulations, including applicable permits, capacity limits, and safety requirements.
+Experience organizers are responsible for ensuring their experiences comply with local laws and regulations, including applicable permits, capacity limits, and safety requirements.
+
+Organizations are location-based groups whose content is shared with their members. Organization creators and members are responsible for ensuring that content shared within an organization complies with these guidelines and with all applicable laws. Organizations may not be used to evade enforcement of these guidelines or to coordinate prohibited activity.
 
 8. PRIVACY
 
