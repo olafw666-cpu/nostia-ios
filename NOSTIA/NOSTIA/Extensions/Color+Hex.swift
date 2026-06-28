@@ -60,48 +60,60 @@ extension UIColor {
 // Dual-theme, card-based system. Each token carries a Light and a Dark value and resolves
 // against the active interface style (driven by `ThemeManager` via `.preferredColorScheme`):
 //   • Light — soft off-white canvas, solid white cards, a GREEN primary (original Atlas).
-//   • Dark  — near-black charcoal canvas, raised dark-grey cards, an ORANGE primary (mockups).
+//   • Dark  — WARM charcoal canvas, raised warm-grey cards, an ORANGE primary (mockups).
 // Orange stays the star/warning accent in both. Token *names* are stable, so the hundreds
 // of existing call sites adapt to either theme automatically.
+//
+// Dark-palette philosophy: every grey is a *warm* grey (red channel highest, never blue) so
+// the UI reads warm next to the orange accent — the previous palette was blue-tinted ("cool"
+// grey) and 2-3 shades too dark. Surfaces step up in luminance (bg → card → raised) so cards
+// genuinely lift off the canvas instead of melting into it.
 extension Color {
-    // Canvas & surfaces
-    static let nostiaBackground  = Color(light: "F4F6F9", dark: "17191D")   // app canvas
-    static let nostiaCard        = Color(light: "FFFFFF", dark: "24272C")   // cards / sheets
+    // Canvas & surfaces — warm charcoal canvas, distinctly lighter warm-grey cards.
+    static let nostiaBackground  = Color(light: "F4F6F9", dark: "24201C")   // app canvas (warm, lifted)
+    static let nostiaCard        = Color(light: "FFFFFF", dark: "352F28")   // cards / sheets (pops off bg)
 
-    // Borders, dividers & inputs
-    static let nostriaBorder     = Color(light: "E7ECF1", dark: "34383F")   // control / card hairline
-    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2B2F35")   // in-card separators
-    static let nostiaInput       = Color(light: "FFFFFF", dark: "24272C")   // input fields
+    // Borders, dividers & inputs — warm hairlines.
+    static let nostriaBorder     = Color(light: "E7ECF1", dark: "47413A")   // control / card hairline
+    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2E2A24")   // in-card separators
+    static let nostiaInput       = Color(light: "FFFFFF", dark: "352F28")   // input fields
 
     // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark.
     static let nostiaAccent      = Color(light: "0E9F6E", dark: "E8843C")   // primary
-    static let nostiaAccentSoft  = Color(light: "E7F6EF", dark: "3A2A1A")   // primary tint bg
+    static let nostiaAccentSoft  = Color(light: "E7F6EF", dark: "45321E")   // primary tint bg (warm)
     static let nostiaSuccess     = Color(light: "0E9F6E", dark: "2FBE7E")   // settled / positive
     static let nostiaWarning     = Color(hex: "E8843C")                     // orange in both
-    static let nostiaWarningSoft = Color(light: "FEF3E2", dark: "3A2A1A")   // warm star/warning tint
+    static let nostiaWarningSoft = Color(light: "FEF3E2", dark: "45321E")   // warm star/warning tint
     static let nostiaStar        = Color(hex: "E8843C")                     // orange in both
     static let nostriaDanger     = Color(light: "E5484D", dark: "F0565B")
     static let nostiaBlue        = Color(light: "3B82C4", dark: "4A9BE0")   // secondary blue
     static let nostriaPurple     = Color(light: "3B82C4", dark: "4A9BE0")   // legacy alias → blue
-    static let nostiaDisabled    = Color(light: "C2CAD3", dark: "3A3F46")   // disabled control bg
+    static let nostiaDisabled    = Color(light: "C2CAD3", dark: "423B33")   // disabled control bg (warm)
 
-    // Text
-    static let nostiaTextPrimary = Color(light: "14181F", dark: "F4F6F9")   // ink
-    static let nostiaTextSecond  = Color(light: "8A93A0", dark: "9AA3AF")
-    static let nostiaTextMuted   = Color(light: "A6AEB9", dark: "6B7280")
+    // Text — warm off-white ink on dark so it harmonises with the warm surfaces.
+    static let nostiaTextPrimary = Color(light: "14181F", dark: "F6F1E9")   // ink
+    static let nostiaTextSecond  = Color(light: "8A93A0", dark: "ADA59A")
+    static let nostiaTextMuted   = Color(light: "A6AEB9", dark: "7E756A")
 
     // Soft shadow — tinted blue-grey on light, pure black for depth on dark.
     static let nostiaShadow      = Color(light: "1E3246", dark: "000000")
+
+    // Card rim — a hairline that *defines* the card edge. On light it's a faint dark hairline;
+    // on dark it's a soft top-light "highlight" rim so cards read as raised, not flat. Alpha is
+    // baked into the hex (ARGB) so call sites don't need an extra `.opacity()`.
+    static let nostiaCardStroke  = Color(light: "0F1E3246", dark: "22FFFFFF")
 }
 
 // Shared gradient used as the base canvas for all screens. Resolves light or dark to match
-// the active theme so any view referencing `.nostiaGradient` adapts automatically.
+// the active theme so any view referencing `.nostiaGradient` adapts automatically. The dark
+// stops stay warm and never bottom out to near-black (the old `0F1113` floor read as a cold,
+// heavy vignette).
 extension ShapeStyle where Self == LinearGradient {
     static var nostiaGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(light: "F6F8FB", dark: "1A1D21"),
-                     Color(light: "F4F6F9", dark: "17191D"),
-                     Color(light: "EEF1F5", dark: "0F1113")],
+            colors: [Color(light: "F6F8FB", dark: "2B2620"),
+                     Color(light: "F4F6F9", dark: "24201C"),
+                     Color(light: "EEF1F5", dark: "1C1814")],
             startPoint: .top,
             endPoint: .bottom
         )

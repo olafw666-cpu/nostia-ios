@@ -254,9 +254,15 @@ struct AtlasTabBar: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 60)
-        // iOS 26 Liquid Glass: the floating bar refracts the content scrolling behind it.
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: Color.nostiaShadow.opacity(0.18), radius: 28, x: 0, y: 12)
+        // iOS 26 Liquid Glass: the floating bar refracts the content scrolling behind it. A
+        // warm-grey tint keeps the bar from reading as a cold, too-dark slab in dark mode.
+        .glassEffect(.regular.tint(Color.nostiaCard.opacity(0.5)),
+                     in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.nostiaCardStroke, lineWidth: 0.75)
+        )
+        .shadow(color: Color.nostiaShadow.opacity(0.22), radius: 28, x: 0, y: 12)
         .padding(.horizontal, 14)
         .padding(.bottom, 6)
     }

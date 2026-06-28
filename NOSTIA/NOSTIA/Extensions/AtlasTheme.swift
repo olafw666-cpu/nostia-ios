@@ -17,7 +17,8 @@ extension View {
         self
             .background(Color.nostiaCard)
             .clipShape(shape)
-            .overlay(shape.stroke(Color.nostiaShadow.opacity(0.06), lineWidth: 0.5))
+            // Rim "highlight" that gives the card a defined, raised edge (top-light on dark).
+            .overlay(shape.stroke(Color.nostiaCardStroke, lineWidth: 0.75))
             .shadow(color: Color.nostiaShadow.opacity(elevation.opacity),
                     radius: elevation.radius, x: 0, y: elevation.y)
     }
@@ -37,9 +38,9 @@ enum NostiaElevation {
 
     var opacity: Double {
         switch self {
-        case .flat:   return 0.05
-        case .card:   return 0.06
-        case .raised: return 0.10
+        case .flat:   return 0.06
+        case .card:   return 0.09
+        case .raised: return 0.14
         }
     }
     var radius: CGFloat {
@@ -222,7 +223,7 @@ struct AtlasSegmented: View {
             }
         }
         .padding(5)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(light: "E7ECF1", dark: "121417")))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(light: "E7ECF1", dark: "2B2620")))
     }
 }
 

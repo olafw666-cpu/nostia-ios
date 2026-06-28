@@ -22,7 +22,7 @@ struct AtlasExperienceImage: View {
                 Color.clear.overlay(Image(uiImage: img).resizable().scaledToFill()).clipped()
             } else {
                 LinearGradient(
-                    colors: [Color(light: "E9EDF2", dark: "2C3037"), Color(light: "E1E6EC", dark: "23272D")],
+                    colors: [Color(light: "E9EDF2", dark: "3C362E"), Color(light: "E1E6EC", dark: "302A23")],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 )
                 .overlay(

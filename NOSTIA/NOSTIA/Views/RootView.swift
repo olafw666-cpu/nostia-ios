@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showProfileBuilder = false
     @State private var showPaymentSetupPrompt = false
     @State private var showThemePrompt = false
@@ -90,10 +91,15 @@ struct RootView: View {
             withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
             maybeShowThemePrompt()
         }
-        // Drive the whole UI's appearance from the user's choice (default Dark). `.system`
-        // resolves to nil so the device's Light/Dark setting takes over. This also flips
-        // every dynamic `Color(light:dark:)` token by changing the subtree's trait collection.
-        .preferredColorScheme(themeManager.theme.colorScheme)
+        // Drive the whole UI's appearance from the user's choice (default Dark) by pushing the
+        // interface-style override onto the window directly. `.system` → `.unspecified`, which
+        // makes the window track the device's Light/Dark setting and react to live toggles —
+        // the previous `.preferredColorScheme(nil)` left a stale override and stopped updating.
+        // Re-applied when the scene becomes active so it survives backgrounding / scene reconnect.
+        .onAppear { themeManager.applyToWindows() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { themeManager.applyToWindows() }
+        }
     }
 
     /// Show the one-time appearance prompt once the user is in the app — but never on top of
