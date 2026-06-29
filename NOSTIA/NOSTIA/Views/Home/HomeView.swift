@@ -224,7 +224,7 @@ struct HomeView: View {
                      count: vm.followers.count, label: "Following") {
                 selectedTab = 4
             }
-            StatCard(icon: "location.north.fill", color: Color.nostiaWarning,
+            StatCard(icon: "location.north.fill", color: Color.nostiaAccent,
                      count: vm.upcomingEvents.count, label: "Experiences") {
                 selectedTab = 1
             }

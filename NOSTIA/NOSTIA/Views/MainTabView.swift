@@ -264,6 +264,11 @@ struct AtlasTabBar: View {
         )
         .shadow(color: Color.nostiaShadow.opacity(0.22), radius: 28, x: 0, y: 12)
         .padding(.horizontal, 14)
-        .padding(.bottom, 6)
+        // Dock to the physical bottom and float a fixed gap above the home
+        // indicator. Previously the bar stacked on top of the TabView's
+        // (hidden-but-still-reserved) tab-bar inset *plus* the home-indicator
+        // inset, which pushed it far too high up the screen.
+        .padding(.bottom, 24)
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 }
