@@ -31,6 +31,11 @@ struct FriendsMapView: View {
     @State private var currentUser: User?
     @State private var didCreateExperienceThisSession = false   // local mirror of has_created_experience
 
+    // Place search: type a place/address to recenter the map there.
+    @State private var placeCompleter = AddressCompleter()
+    @State private var showPlaceResults = false
+    @FocusState private var placeSearchFocused: Bool
+
     // Heatmap replaces pins once the viewport zooms out past the 20-mile public-experience radius.
     private var isHeatmapMode: Bool { viewportRadiusMiles > 20 }
     private var filterKey: String { "\(filterPublic)|\(filterPrivate)" }
@@ -183,9 +188,11 @@ struct FriendsMapView: View {
                 .padding(.bottom, 60)
             }
 
-            // Map editor — visibility pills (D2/D4) + tag search (§7). Fixed at the top.
-            // Pills now filter which pins are visible AND which types feed the heatmap.
+            // Map editor — place search + visibility pills (D2/D4) + tag search (§7). Fixed
+            // at the top. Pills filter which pins are visible AND which types feed the heatmap.
             VStack(spacing: 8) {
+                placeSearchBar
+
                 HStack(spacing: 8) {
                     FilterChip(title: "Public", isActive: filterPublic) {
                         filterPublic.toggle(); onFiltersChanged()
@@ -248,7 +255,7 @@ struct FriendsMapView: View {
                 .padding(16)
                 .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
-                .padding(.top, 104)   // sit below the visibility pills + tag search
+                .padding(.top, 164)   // sit below the search bar + visibility pills + tag search
                 .frame(maxHeight: .infinity, alignment: .top)
             }
         }
@@ -349,6 +356,79 @@ struct FriendsMapView: View {
         guard !isHeatmapMode, let region = lastRegion else { return }
         viewportTask?.cancel()
         viewportTask = Task { await loadExperiencesForRegion(region) }
+    }
+
+    // MARK: - Place search
+
+    /// A text field (with autocomplete suggestions) for jumping the map to any place or
+    /// address. Selecting a result recenters the camera; the existing
+    /// `onMapCameraChange` handler then reloads experiences/heatmap for the new region.
+    private var placeSearchBar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
+                TextField("Search a place or address", text: $placeCompleter.query)
+                    .foregroundColor(Color.nostiaTextPrimary)
+                    .autocorrectionDisabled()
+                    .focused($placeSearchFocused)
+                    .submitLabel(.search)
+                    .onChange(of: placeCompleter.query) { _, q in
+                        showPlaceResults = !q.isEmpty
+                    }
+                if !placeCompleter.query.isEmpty {
+                    Button {
+                        placeCompleter.query = ""
+                        showPlaceResults = false
+                        placeSearchFocused = false
+                    } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                    }
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(12)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+
+            if showPlaceResults && !placeCompleter.results.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(placeCompleter.results.prefix(5), id: \.self) { result in
+                        Button {
+                            Task { await goToPlace(result) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(result.title)
+                                    .font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
+                                if !result.subtitle.isEmpty {
+                                    Text(result.subtitle)
+                                        .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                                }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        Divider().background(Color.nostiaDivider)
+                    }
+                }
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                .padding(.top, 4)
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    @MainActor
+    private func goToPlace(_ result: MKLocalSearchCompletion) async {
+        guard let coord = await placeCompleter.resolve(result) else { return }
+        placeCompleter.query = result.title
+        showPlaceResults = false
+        placeSearchFocused = false
+        withAnimation(.easeInOut(duration: 0.4)) {
+            cameraPosition = .region(MKCoordinateRegion(
+                center: coord,
+                span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+            ))
+        }
     }
 }
 

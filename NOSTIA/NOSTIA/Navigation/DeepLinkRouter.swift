@@ -42,7 +42,7 @@ final class DeepLinkRouter: ObservableObject {
             return nil
         }
         switch type {
-        case "vault_reminder", "added_to_vault", "payment_received":
+        case "vault_reminder", "added_to_vault", "payment_received", "vault_expense":
             route(.vault(tripId: intVal("tripId")))
         case "new_follower":
             if let uid = intVal("userId") { route(.profile(userId: uid)) }
