@@ -69,9 +69,13 @@ extension UIColor {
 // grey) and 2-3 shades too dark. Surfaces step up in luminance (bg → card → raised) so cards
 // genuinely lift off the canvas instead of melting into it.
 extension Color {
-    // Canvas & surfaces — warm charcoal canvas, distinctly lighter warm-grey cards.
-    static let nostiaBackground  = Color(light: "F4F6F9", dark: "24201C")   // app canvas (warm, lifted)
-    static let nostiaCard        = Color(light: "FFFFFF", dark: "352F28")   // cards / sheets (pops off bg)
+    // Canvas & surfaces — neutral medium grey canvas (dark), warm-grey cards kept for contrast.
+    static let nostiaBackground  = Color(light: "F4F6F9", dark: "5A5A5C")   // app canvas (neutral medium grey on dark)
+    static let nostiaCard        = Color(light: "FFFFFF", dark: "352F28")   // cards / sheets / search bars (warm, kept)
+
+    // Buttons — neutral dark-leaning grey on dark so controls read as buttons, not cards.
+    // Light keeps the original neutral surface so light mode is unchanged.
+    static let nostiaButton      = Color(light: "F4F6F9", dark: "323234")   // button / chip / control fill
 
     // Borders, dividers & inputs — warm hairlines.
     static let nostriaBorder     = Color(light: "E7ECF1", dark: "47413A")   // control / card hairline
@@ -111,9 +115,9 @@ extension Color {
 extension ShapeStyle where Self == LinearGradient {
     static var nostiaGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(light: "F6F8FB", dark: "2B2620"),
-                     Color(light: "F4F6F9", dark: "24201C"),
-                     Color(light: "EEF1F5", dark: "1C1814")],
+            colors: [Color(light: "F6F8FB", dark: "646466"),
+                     Color(light: "F4F6F9", dark: "5A5A5C"),
+                     Color(light: "EEF1F5", dark: "4E4E50")],
             startPoint: .top,
             endPoint: .bottom
         )

@@ -380,7 +380,7 @@ struct ExpenseCard: View {
                 if let cat = entry.category {
                     Text(cat).font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(Color.nostiaBackground))
+                        .background(Capsule().fill(Color.nostiaButton))
                 }
             }
             .font(.caption)
