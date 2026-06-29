@@ -28,6 +28,24 @@ extension View {
         nostiaCard(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
                    elevation: elevation)
     }
+
+    /// Button surface: identical shape/border/shadow to `nostiaCard`, but fills the neutral
+    /// `nostiaButton` grey so tappable controls read as buttons (not cards). Drop-in swap for
+    /// `nostiaCard(in:)` on `Button` labels.
+    func nostiaButton<S: Shape>(in shape: S, elevation: NostiaElevation = .card) -> some View {
+        self
+            .background(Color.nostiaButton)
+            .clipShape(shape)
+            .overlay(shape.stroke(Color.nostiaCardStroke, lineWidth: 0.75))
+            .shadow(color: Color.nostiaShadow.opacity(elevation.opacity),
+                    radius: elevation.radius, x: 0, y: elevation.y)
+    }
+
+    /// Convenience for the common rounded-rectangle case.
+    func nostiaButton(cornerRadius: CGFloat, elevation: NostiaElevation = .card) -> some View {
+        nostiaButton(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
+                     elevation: elevation)
+    }
 }
 
 /// Shadow presets matching the Atlas mock (`box-shadow` values are rgba(30,50,70,…)).

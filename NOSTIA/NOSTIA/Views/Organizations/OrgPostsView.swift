@@ -20,7 +20,7 @@ struct OrgPostsView: View {
                         Label("New Post", systemImage: "plus.circle.fill")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
-                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
 
@@ -102,7 +102,7 @@ struct CreateOrgPostSheet: View {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Label("Add Photo", systemImage: "photo.on.rectangle")
                             .foregroundColor(Color.nostiaAccent).frame(maxWidth: .infinity).padding(14)
-                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                     }
 
                     if let errorMessage {

@@ -220,7 +220,7 @@ struct FriendsView: View {
         } label: {
             Image(systemName: "person.badge.minus")
                 .foregroundColor(Color.nostiaTextSecond).padding(8)
-                .background(Color.nostiaBackground).clipShape(Circle())
+                .background(Color.nostiaButton).clipShape(Circle())
         }
     }
 }
@@ -499,7 +499,7 @@ private struct ContactOnNostiaRow: View {
                 Text("Following")
                     .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
                     .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Color.nostiaBackground).cornerRadius(8)
+                    .background(Color.nostiaButton).cornerRadius(8)
             } else {
                 Button(action: onFollow) {
                     Text("Follow")
@@ -586,7 +586,7 @@ private struct ContactInviteRow: View {
             }
             .font(.caption.bold()).foregroundColor(Color.nostiaTextSecond)
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(Color.nostiaBackground).cornerRadius(8)
+            .background(Color.nostiaButton).cornerRadius(8)
         case .shareReady:
             EmptyView()
         }

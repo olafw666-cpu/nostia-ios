@@ -117,7 +117,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
 
@@ -152,7 +152,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextPrimary)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))
@@ -179,7 +179,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextPrimary)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))
@@ -192,7 +192,7 @@ struct ProfileView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                                     .frame(maxWidth: .infinity)
                                     .padding(responsive.spacing(16))
-                                    .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                                    .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                             .padding(.horizontal, responsive.spacing(20))

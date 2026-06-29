@@ -21,7 +21,7 @@ struct OrgEventsView: View {
                         Label("New Experience", systemImage: "plus.circle.fill")
                             .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
-                            .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+                            .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
 
