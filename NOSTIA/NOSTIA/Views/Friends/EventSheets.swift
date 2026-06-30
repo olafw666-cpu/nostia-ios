@@ -62,13 +62,13 @@ struct StatusButtons: View {
             .frame(maxWidth: .infinity).padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? selectedColor : Color.white)
+                    .fill(isSelected ? selectedColor : Color.nostiaButton)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(isSelected ? selectedColor : Color.nostriaBorder, lineWidth: 1)
             )
-            .foregroundColor(isSelected ? .white : Color(hex: "4B5563"))
+            .foregroundColor(isSelected ? .white : Color.nostiaTextPrimary)
         }
         .disabled(isBusy)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
@@ -110,6 +110,42 @@ struct ExperienceTagChips: View {
                     .foregroundColor(Color.nostiaAccent)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Color.nostiaAccent.opacity(0.15), in: Capsule())
+            }
+        }
+    }
+}
+
+// MARK: - Schedule field (optional date/time)
+
+/// Optional "happens at" date/time for an experience. When enabled, the experience is
+/// auto-removed from the map and discovery lists by the server once the time passes.
+/// Shared by both create sheets.
+struct ExperienceScheduleField: View {
+    @Binding var hasSchedule: Bool
+    @Binding var scheduledDate: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: $hasSchedule.animation()) {
+                Text("Date & Time")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color.nostiaTextSecond)
+            }
+            .tint(Color.nostiaAccent)
+
+            if hasSchedule {
+                DatePicker("Happens at",
+                           selection: $scheduledDate,
+                           in: Date()...,
+                           displayedComponents: [.date, .hourAndMinute])
+                    .datePickerStyle(.compact)
+                    .tint(Color.nostiaAccent)
+                    .foregroundColor(Color.nostiaTextPrimary)
+                Text("Removed from the map automatically once this passes.")
+                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
+            } else {
+                Text("No date — stays on the map until you delete it.")
+                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
             }
         }
     }
@@ -171,6 +207,11 @@ struct ExperienceDetailSheet: View {
                         if let loc = currentEvent.location {
                             Label(loc, systemImage: "location")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
+                        }
+
+                        if let when = currentEvent.formattedSchedule {
+                            Label(when, systemImage: "calendar")
+                                .font(.subheadline).foregroundColor(Color.nostiaAccent)
                         }
 
                         if let name = currentEvent.creatorName {
@@ -426,6 +467,10 @@ struct ExperienceFlyerView: View {
                             Label(loc, systemImage: "location")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
                         }
+                        if let when = currentEvent.formattedSchedule {
+                            Label(when, systemImage: "calendar")
+                                .font(.subheadline).foregroundColor(Color.nostiaAccent)
+                        }
                         if let name = currentEvent.creatorName {
                             Label("Hosted by \(name)", systemImage: "person")
                                 .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -583,6 +628,9 @@ struct ExperienceCard: View {
             }
             if let loc = event.location {
                 Label(loc, systemImage: "location").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+            }
+            if let when = event.formattedSchedule {
+                Label(when, systemImage: "calendar").font(.footnote).foregroundColor(Color.nostiaAccent)
             }
             HStack {
                 // D5: visited count replaces the old going count.

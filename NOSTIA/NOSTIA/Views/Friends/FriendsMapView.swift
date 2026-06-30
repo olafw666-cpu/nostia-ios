@@ -50,6 +50,9 @@ struct FriendsMapView: View {
     // double-counted by the Public/Private pills. All off → nothing.
     private var visibleExperiences: [Experience] {
         events.filter { exp in
+            // Defensive: the server already drops expired experiences, but hide any that
+            // lapse while the map is open (or arrive via a stale cache).
+            if exp.isExpired { return false }
             if exp.isOrgExperience { return filterOrgs }
             if (exp.visibility ?? "public") == "public" { return filterPublic }
             return filterPrivate
@@ -578,6 +581,8 @@ struct CreateExperienceSheet: View {
     @State private var description = ""
     @State private var visibility = "public"
     @State private var selectedTags: [String] = []
+    @State private var hasSchedule = false
+    @State private var scheduledDate = Date().addingTimeInterval(3600)
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var adjustedCoord: CLLocationCoordinate2D?
@@ -649,6 +654,8 @@ struct CreateExperienceSheet: View {
                             .font(.caption).foregroundColor(Color.nostiaTextMuted)
                     }
 
+                    ExperienceScheduleField(hasSchedule: $hasSchedule, scheduledDate: $scheduledDate)
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
                             .font(.system(size: 14, weight: .semibold))
@@ -692,7 +699,8 @@ struct CreateExperienceSheet: View {
                                     lat: activeCoord.latitude,
                                     lng: activeCoord.longitude,
                                     visibility: visibility,
-                                    tags: selectedTags
+                                    tags: selectedTags,
+                                    eventDate: hasSchedule ? Experience.wireDate(from: scheduledDate) : nil
                                 )
                                 onSave(event)
                                 dismiss()

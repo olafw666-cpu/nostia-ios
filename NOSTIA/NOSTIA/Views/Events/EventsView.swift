@@ -170,6 +170,8 @@ struct CreateExperienceFromDiscoverSheet: View {
     @State private var description = ""
     @State private var visibility = "public"
     @State private var selectedTags: [String] = []
+    @State private var hasSchedule = false
+    @State private var scheduledDate = Date().addingTimeInterval(3600)
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var coverImageData: String?
@@ -303,6 +305,8 @@ struct CreateExperienceFromDiscoverSheet: View {
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         }
 
+                        ExperienceScheduleField(hasSchedule: $hasSchedule, scheduledDate: $scheduledDate)
+
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description")
                                 .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
@@ -332,7 +336,8 @@ struct CreateExperienceFromDiscoverSheet: View {
                                         lng: coord.longitude,
                                         visibility: visibility,
                                         flyerImage: coverImageData,
-                                        tags: selectedTags
+                                        tags: selectedTags,
+                                        eventDate: hasSchedule ? Experience.wireDate(from: scheduledDate) : nil
                                     )
                                     onCreated(event)
                                     dismiss()
