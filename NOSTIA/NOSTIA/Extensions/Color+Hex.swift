@@ -69,18 +69,21 @@ extension UIColor {
 // grey) and 2-3 shades too dark. Surfaces step up in luminance (bg → card → raised) so cards
 // genuinely lift off the canvas instead of melting into it.
 extension Color {
-    // Canvas & surfaces — neutral medium grey canvas (dark), warm-grey cards kept for contrast.
-    static let nostiaBackground  = Color(light: "F4F6F9", dark: "5A5A5C")   // app canvas (neutral medium grey on dark)
-    static let nostiaCard        = Color(light: "FFFFFF", dark: "352F28")   // cards / sheets / search bars (warm, kept)
+    // Canvas & surfaces (dark = neutral greys, NOT warm).
+    // `nostiaCard` is now the DEFAULT NEUTRAL surface: generic cards AND buttons/controls all use it.
+    // Only experience/trip/vault cards and search bars stay warm — those use `nostiaWarm` instead.
+    static let nostiaBackground  = Color(light: "F4F6F9", dark: "3A3A3C")   // app canvas (neutral grey, darkened)
+    static let nostiaCard        = Color(light: "FFFFFF", dark: "242426")   // DEFAULT neutral surface (cards + controls)
+    static let nostiaWarm        = Color(light: "FFFFFF", dark: "352F28")   // WARM surface: experiences / trips / vault / search bars
 
-    // Buttons — neutral dark-leaning grey on dark so controls read as buttons, not cards.
+    // Buttons — same neutral grey as generic cards (2 shades darker than the background).
     // Light keeps the original neutral surface so light mode is unchanged.
-    static let nostiaButton      = Color(light: "F4F6F9", dark: "323234")   // button / chip / control fill
+    static let nostiaButton      = Color(light: "F4F6F9", dark: "242426")   // button / chip / control fill
 
-    // Borders, dividers & inputs — warm hairlines.
-    static let nostriaBorder     = Color(light: "E7ECF1", dark: "47413A")   // control / card hairline
-    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2E2A24")   // in-card separators
-    static let nostiaInput       = Color(light: "FFFFFF", dark: "352F28")   // input fields
+    // Borders, dividers & inputs — neutral hairlines (no warmth).
+    static let nostriaBorder     = Color(light: "E7ECF1", dark: "454547")   // control / card hairline
+    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2E2E30")   // in-card separators
+    static let nostiaInput       = Color(light: "FFFFFF", dark: "242426")   // input fields (non-search)
 
     // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark.
     static let nostiaAccent      = Color(light: "0E9F6E", dark: "E8843C")   // primary
@@ -92,7 +95,7 @@ extension Color {
     static let nostriaDanger     = Color(light: "E5484D", dark: "F0565B")
     static let nostiaBlue        = Color(light: "3B82C4", dark: "4A9BE0")   // secondary blue
     static let nostriaPurple     = Color(light: "3B82C4", dark: "4A9BE0")   // legacy alias → blue
-    static let nostiaDisabled    = Color(light: "C2CAD3", dark: "423B33")   // disabled control bg (warm)
+    static let nostiaDisabled    = Color(light: "C2CAD3", dark: "3A3A3A")   // disabled control bg (neutral)
 
     // Text — warm off-white ink on dark so it harmonises with the warm surfaces.
     static let nostiaTextPrimary = Color(light: "14181F", dark: "F6F1E9")   // ink
@@ -110,14 +113,13 @@ extension Color {
 
 // Shared gradient used as the base canvas for all screens. Resolves light or dark to match
 // the active theme so any view referencing `.nostiaGradient` adapts automatically. The dark
-// stops stay warm and never bottom out to near-black (the old `0F1113` floor read as a cold,
-// heavy vignette).
+// stops are neutral greys centered on the darkened canvas.
 extension ShapeStyle where Self == LinearGradient {
     static var nostiaGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(light: "F6F8FB", dark: "646466"),
-                     Color(light: "F4F6F9", dark: "5A5A5C"),
-                     Color(light: "EEF1F5", dark: "4E4E50")],
+            colors: [Color(light: "F6F8FB", dark: "444446"),
+                     Color(light: "F4F6F9", dark: "3A3A3C"),
+                     Color(light: "EEF1F5", dark: "2E2E30")],
             startPoint: .top,
             endPoint: .bottom
         )

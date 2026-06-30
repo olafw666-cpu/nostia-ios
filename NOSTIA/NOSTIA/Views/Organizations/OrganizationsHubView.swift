@@ -65,7 +65,7 @@ struct OrganizationsHubView: View {
             }
         }
         .padding(12)
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder

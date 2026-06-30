@@ -52,7 +52,7 @@ private struct AtlasCatBadge: View {
             .font(.system(size: 10.5, weight: .bold))
             .foregroundColor(Color.nostiaAccent)
             .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Capsule().fill(Color.nostiaCard))
+            .background(Capsule().fill(Color.nostiaWarm))
             .shadow(color: Color.black.opacity(0.08), radius: 4, y: 1)
     }
 }
@@ -98,7 +98,7 @@ struct AtlasExperienceMiniCard: View {
             .padding(.horizontal, 13).padding(.top, 11).padding(.bottom, 13)
         }
         .frame(width: width, alignment: .leading)
-        .nostiaCard(cornerRadius: 20)
+        .nostiaWarmCard(cornerRadius: 20)
     }
 }
 
@@ -168,6 +168,6 @@ struct AtlasExperienceCard: View {
             }
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 16)
         }
-        .nostiaCard(cornerRadius: 20)
+        .nostiaWarmCard(cornerRadius: 20)
     }
 }

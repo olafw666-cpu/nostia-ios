@@ -74,7 +74,7 @@ struct VisitedExperiencesView: View {
             }
         }
         .padding(responsive.spacing(12))
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, responsive.spacing(16))
     }
 

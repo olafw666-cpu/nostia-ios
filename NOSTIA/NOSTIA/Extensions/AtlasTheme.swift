@@ -46,6 +46,24 @@ extension View {
         nostiaButton(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
                      elevation: elevation)
     }
+
+    /// WARM surface: identical to `nostiaCard` but fills the warm `nostiaWarm` grey. Reserved
+    /// for the only surfaces that stay warm in dark mode — experience / trip / vault cards and
+    /// search bars. Everything else uses the now-neutral `nostiaCard`.
+    func nostiaWarmCard<S: Shape>(in shape: S, elevation: NostiaElevation = .card) -> some View {
+        self
+            .background(Color.nostiaWarm)
+            .clipShape(shape)
+            .overlay(shape.stroke(Color.nostiaCardStroke, lineWidth: 0.75))
+            .shadow(color: Color.nostiaShadow.opacity(elevation.opacity),
+                    radius: elevation.radius, x: 0, y: elevation.y)
+    }
+
+    /// Convenience for the common rounded-rectangle case.
+    func nostiaWarmCard(cornerRadius: CGFloat, elevation: NostiaElevation = .card) -> some View {
+        nostiaWarmCard(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
+                       elevation: elevation)
+    }
 }
 
 /// Shadow presets matching the Atlas mock (`box-shadow` values are rgba(30,50,70,…)).
@@ -126,7 +144,7 @@ struct NostiaSearchBar: View {
             }
             .padding(.horizontal, 16)
             .frame(height: 48)
-            .nostiaCard(cornerRadius: 15)
+            .nostiaWarmCard(cornerRadius: 15)
         }
         .buttonStyle(.plain)
         .disabled(action == nil)
@@ -241,7 +259,7 @@ struct AtlasSegmented: View {
             }
         }
         .padding(5)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(light: "E7ECF1", dark: "2B2620")))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(light: "E7ECF1", dark: "1C1C1E")))
     }
 }
 
