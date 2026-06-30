@@ -478,7 +478,7 @@ struct TripPreviewCard: View {
             }
         }
         .padding(16)
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -503,6 +503,6 @@ struct ExperiencePreviewCard: View {
             }
         }
         .padding(16)
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }

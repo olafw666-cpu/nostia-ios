@@ -652,7 +652,7 @@ struct ExperienceCard: View {
             }
         }
         .padding(responsive.spacing(16))
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

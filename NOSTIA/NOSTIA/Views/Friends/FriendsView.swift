@@ -32,7 +32,7 @@ struct FriendsView: View {
                     }
                 }
                 .padding(responsive.spacing(12))
-                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
 
                 Button("Search") { Task { await vm.search() } }
                     .font(.subheadline.bold()).foregroundColor(.white)

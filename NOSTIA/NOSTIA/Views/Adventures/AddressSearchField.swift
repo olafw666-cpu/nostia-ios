@@ -65,7 +65,7 @@ struct AddressSearchField: View {
                 }
             }
             .padding(12)
-            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
 
             if showResults && !completer.results.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {

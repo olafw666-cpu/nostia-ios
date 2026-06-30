@@ -173,7 +173,7 @@ struct TripCard: View {
                 }
             }
             .padding(responsive.spacing(18))
-            .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
+            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
     }

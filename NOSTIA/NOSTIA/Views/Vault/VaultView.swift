@@ -315,7 +315,7 @@ struct BalanceRow: View {
                 }
             }
             .padding(responsive.spacing(16))
-            .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
             .accessibilityHint(accessibilityActionHint)
@@ -431,7 +431,7 @@ struct ExpenseCard: View {
             }
         }
         .padding(responsive.spacing(16))
-        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
         .alert("Delete Expense", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { onDelete() }
