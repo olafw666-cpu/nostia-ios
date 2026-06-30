@@ -102,8 +102,10 @@ final class OrganizationsAPI {
         try await client.request("/orgs/\(id)/posts")
     }
 
-    func createPost(id: Int, content: String?, imageData: String?) async throws -> FeedPost {
-        var body: [String: Any] = [:]
+    // visibility: "public" surfaces the post in the main/nearby feed for everyone;
+    // "org" (default) keeps it members-only.
+    func createPost(id: Int, content: String?, imageData: String?, visibility: String = "org") async throws -> FeedPost {
+        var body: [String: Any] = ["visibility": visibility]
         if let imageData { body["imageData"] = imageData }
         if let content { body["content"] = content }
         return try await client.request("/orgs/\(id)/posts", method: "POST", body: body)

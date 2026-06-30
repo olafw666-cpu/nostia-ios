@@ -6,6 +6,15 @@ import SwiftUI
 final class FeedViewModel: ObservableObject {
     @Published var posts: [FeedPost] = []
     @Published var isLoading = false
+
+    // Session-only cycle-out: a post dwelled on (~5s on screen) is marked seen; once it
+    // scrolls out of view it's removed so fresh content takes its place. Resets when the
+    // app (and this VM) is recreated. Only ever applied to the home feed (loadFeed), never
+    // to profile posts (loadUserPosts).
+    static let seenDwellNanos: UInt64 = 5_000_000_000  // ~5 seconds
+    private var seenIds: Set<Int> = []
+    func markSeen(_ id: Int) { seenIds.insert(id) }
+    func hasSeen(_ id: Int) -> Bool { seenIds.contains(id) }
     @Published var isSubmitting = false
     @Published var errorMessage: String?
 
@@ -31,18 +40,49 @@ final class FeedViewModel: ObservableObject {
 
     func loadFeed() async {
         if let cached: [FeedPost] = await CacheManager.shared.get(CacheKey.homeFeed) {
-            posts = cached
+            posts = displayOrder(cached)
         } else {
             isLoading = true
         }
         do {
             let fresh = try await FeedAPI.shared.getUserFeed()
-            posts = fresh
+            posts = displayOrder(fresh)
             await CacheManager.shared.set(CacheKey.homeFeed, value: fresh)
         } catch {
             if posts.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
+    }
+
+    // Hide already-seen posts when unseen content remains (they've cycled out); if every
+    // post has been seen, show them anyway so the feed is never empty.
+    private func displayOrder(_ all: [FeedPost]) -> [FeedPost] {
+        let unseen = all.filter { !seenIds.contains($0.id) }
+        return unseen.isEmpty ? all : unseen
+    }
+
+    // Called when a seen post scrolls out of view: remove it so fresh content takes its
+    // place. Guarded so the feed is never emptied; tops up from the server when low.
+    func cycleOut(_ id: Int) async {
+        guard seenIds.contains(id),
+              posts.contains(where: { $0.id != id && !seenIds.contains($0.id) }),
+              let idx = posts.firstIndex(where: { $0.id == id }) else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            _ = posts.remove(at: idx)
+        }
+        if posts.filter({ !seenIds.contains($0.id) }).count <= 2 {
+            await topUp()
+        }
+    }
+
+    // Pull fresh content and append any posts not already shown or seen, so the cycle can
+    // continue without the user manually refreshing.
+    private func topUp() async {
+        guard let fresh = try? await FeedAPI.shared.getUserFeed() else { return }
+        await CacheManager.shared.set(CacheKey.homeFeed, value: fresh)
+        let existing = Set(posts.map { $0.id })
+        let additions = fresh.filter { !existing.contains($0.id) && !seenIds.contains($0.id) }
+        if !additions.isEmpty { posts.append(contentsOf: additions) }
     }
 
     func loadUserPosts(userId: Int) async {
