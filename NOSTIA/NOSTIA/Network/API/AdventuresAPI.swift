@@ -59,7 +59,7 @@ final class ExperiencesAPI {
         return try await client.request("/experiences/mine")
     }
 
-    func createExperience(title: String, description: String?, location: String?, lat: Double?, lng: Double?, visibility: String = "public", flyerImage: String? = nil, tags: [String] = []) async throws -> Experience {
+    func createExperience(title: String, description: String?, location: String?, lat: Double?, lng: Double?, visibility: String = "public", flyerImage: String? = nil, tags: [String] = [], eventDate: String? = nil) async throws -> Experience {
         var body: [String: Any] = ["title": title, "visibility": visibility]
         if let d = description { body["description"] = d }
         if let l = location { body["location"] = l }
@@ -67,6 +67,9 @@ final class ExperiencesAPI {
         if let lo = lng { body["longitude"] = lo }
         if let fi = flyerImage { body["flyerImage"] = fi }
         if !tags.isEmpty { body["tags"] = tags }
+        // Optional scheduled date/time (UTC "yyyy-MM-dd HH:mm:ss"). The server auto-expires
+        // the experience from the map/lists once this passes.
+        if let ed = eventDate, !ed.isEmpty { body["eventDate"] = ed }
         return try await client.request("/experiences", method: "POST", body: body)
     }
 

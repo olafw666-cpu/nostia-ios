@@ -159,11 +159,15 @@ struct TripCard: View {
                     }
                 }
                 Divider().background(Color.nostiaDivider)
-                HStack {
+                HStack(spacing: 10) {
                     Label("\(trip.activeParticipants.count) members", systemImage: "person.2.fill")
                         .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         .labelStyle(AtlasLeadingIconLabel(tint: Color.nostiaAccent))
                     Spacer()
+                    Text(trip.formattedVaultTotal)
+                        .font(.nostiaDisplay(17, weight: .heavy))
+                        .foregroundColor(Color.nostiaTextPrimary)
+                        .lineLimit(1)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 18)).foregroundColor(Color.nostiaTextMuted)
                 }

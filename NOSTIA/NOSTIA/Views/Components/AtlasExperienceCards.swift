@@ -137,6 +137,15 @@ struct AtlasExperienceCard: View {
                     .foregroundColor(Color.nostiaTextSecond)
                     .padding(.top, 4)
                 }
+                if let when = event.formattedSchedule {
+                    HStack(spacing: 5) {
+                        Image(systemName: "calendar").font(.system(size: 14))
+                        Text(when)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.nostiaAccent)
+                    .padding(.top, 4)
+                }
                 if let desc = event.description, !desc.isEmpty {
                     Text(desc)
                         .font(.system(size: 13.5))

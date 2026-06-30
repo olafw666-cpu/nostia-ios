@@ -39,6 +39,9 @@ struct Experience: Codable, Identifiable {
     var myRating: Double?
     var flyerImage: String?
     var tags: [String]?
+    // Optional scheduled date/time ("yyyy-MM-dd HH:mm:ss" in UTC). When set and in the past
+    // the server drops the experience from the map and all discovery lists. nil = evergreen.
+    var eventDate: String?
     // Non-nil when this experience belongs to an organization (members-only). Lets the map
     // bucket it under the Orgs filter and style its pin distinctly.
     var orgId: Int?
@@ -54,6 +57,47 @@ struct Experience: Codable, Identifiable {
     var formattedAvgRating: String? {
         guard let avg = avgRating, (ratingCount ?? 0) > 0 else { return nil }
         return String(format: "%.1f", avg)
+    }
+
+    // MARK: - Scheduled date/time
+
+    /// UTC parser for the stored `eventDate` string ("yyyy-MM-dd HH:mm:ss", matching
+    /// SQLite's `datetime('now')`). Lenient: also accepts an ISO8601 fallback.
+    private static let dateParser: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return f
+    }()
+
+    /// The scheduled date as a `Date`, or nil when unset/unparseable.
+    var scheduledDate: Date? {
+        guard let s = eventDate, !s.isEmpty else { return nil }
+        if let d = Experience.dateParser.date(from: s) { return d }
+        return ISO8601DateFormatter().date(from: s)
+    }
+
+    /// Localized "Jun 29, 2026 at 6:00 PM" style string for display, or nil when no date.
+    var formattedSchedule: String? {
+        guard let d = scheduledDate else { return nil }
+        let out = DateFormatter()
+        out.dateStyle = .medium
+        out.timeStyle = .short
+        return out.string(from: d)
+    }
+
+    /// True once the scheduled time has passed (the server already hides these; used for
+    /// defensive client-side filtering of any cached/stale rows).
+    var isExpired: Bool {
+        guard let d = scheduledDate else { return false }
+        return d < Date()
+    }
+
+    /// Formats a user-picked `Date` into the wire string the server stores and compares
+    /// against `datetime('now')`. Always UTC so the expiry comparison is timezone-correct.
+    static func wireDate(from date: Date) -> String {
+        return dateParser.string(from: date)
     }
 }
 
