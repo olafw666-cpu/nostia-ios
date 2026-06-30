@@ -5,6 +5,10 @@ struct FeedView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
+    // Per-card dwell timers for session-only cycle-out. A card visible for ~5s is marked
+    // seen; once it scrolls off screen it cycles out for fresh content.
+    @State private var seenTasks: [Int: Task<Void, Never>] = [:]
+
     var body: some View {
         Group {
             if vm.isLoading && vm.posts.isEmpty {
@@ -34,6 +38,18 @@ struct FeedView: View {
                                 isLikeProcessing: vm.likingPostIds.contains(post.id),
                                 isDislikeProcessing: vm.dislikingPostIds.contains(post.id)
                             )
+                            .onAppear {
+                                guard seenTasks[post.id] == nil, !vm.hasSeen(post.id) else { return }
+                                seenTasks[post.id] = Task {
+                                    try? await Task.sleep(nanoseconds: FeedViewModel.seenDwellNanos)
+                                    if !Task.isCancelled { vm.markSeen(post.id) }
+                                }
+                            }
+                            .onDisappear {
+                                seenTasks[post.id]?.cancel()
+                                seenTasks[post.id] = nil
+                                if vm.hasSeen(post.id) { Task { await vm.cycleOut(post.id) } }
+                            }
                         }
                     }
                     .padding(responsive.spacing(16))

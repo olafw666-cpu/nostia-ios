@@ -80,6 +80,8 @@ struct CreateOrgPostSheet: View {
     @State private var imageData: String?
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    // "org" = members-only (default); "public" = also shows in the main feed for everyone.
+    @State private var visibility = "org"
 
     var body: some View {
         NavigationStack {
@@ -88,6 +90,18 @@ struct CreateOrgPostSheet: View {
                     TextField("Say something (optional)", text: $content, axis: .vertical)
                         .lineLimit(3...8).padding(14)
                         .nostiaCard(in: RoundedRectangle(cornerRadius: 14)).foregroundColor(Color.nostiaTextPrimary)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Picker("Visibility", selection: $visibility) {
+                            Text("Org only").tag("org")
+                            Text("Public").tag("public")
+                        }
+                        .pickerStyle(.segmented)
+                        Text(visibility == "public"
+                             ? "Visible in the main feed for everyone."
+                             : "Visible only to members of this organization.")
+                            .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                    }
 
                     if let imageData, let data = Data(base64Encoded: imageData), let img = UIImage(data: data) {
                         ZStack(alignment: .topTrailing) {
@@ -152,7 +166,8 @@ struct CreateOrgPostSheet: View {
             _ = try await OrganizationsAPI.shared.createPost(
                 id: orgId,
                 content: trimmed.isEmpty ? nil : trimmed,
-                imageData: imageData
+                imageData: imageData,
+                visibility: visibility
             )
             Haptics.success()
             onPosted()

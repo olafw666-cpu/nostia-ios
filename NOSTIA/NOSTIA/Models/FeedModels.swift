@@ -18,6 +18,12 @@ struct FeedPost: Codable, Identifiable {
     var isDisliked: Bool?
     let createdAt: String
 
+    // Org context (nil for normal posts). orgName lets the feed badge org content;
+    // visibility is 'public' | 'org'. All optional so normal posts still decode.
+    let orgId: Int?
+    let orgName: String?
+    let visibility: String?
+
     var timeAgo: String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

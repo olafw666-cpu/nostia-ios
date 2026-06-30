@@ -32,6 +32,12 @@ struct PostCard: View {
                             Text(post.name).font(.system(size: responsive.fontSize(15), weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                             Text("@\(post.username) · \(post.timeAgo)")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                            // Badge org content so it's identifiable in the mixed feed.
+                            if let orgName = post.orgName {
+                                Label(orgName, systemImage: "building.2")
+                                    .font(.system(size: responsive.fontSize(11), weight: .semibold))
+                                    .foregroundColor(Color.nostiaAccent)
+                            }
                         }
                     }
                 }
