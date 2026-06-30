@@ -27,6 +27,7 @@ struct FriendsMapView: View {
     @State private var heatmapCache: [String: [HeatmapCell]] = [:]   // per-filter session cache
     @State private var filterPublic = true
     @State private var filterPrivate = true
+    @State private var filterOrgs = true   // org experiences (members-only) shown on the map
     @State private var selectedMapTags: [String] = []   // server-side tag filter (§7)
     @State private var currentUser: User?
     @State private var didCreateExperienceThisSession = false   // local mirror of has_created_experience
@@ -43,10 +44,13 @@ struct FriendsMapView: View {
     // spans the full blue→purple range while preserving relative density.
     private var heatmapMaxIntensity: Double { heatmapCells.map(\.intensity).max() ?? 1 }
 
-    // Visibility-pill display filter (D4): Public pill shows "public"; Private pill shows
-    // "followers" (incl. legacy "friends"/"private"). Both off → nothing.
+    // Visibility-pill display filter (D4): Orgs pill shows org experiences (members-only);
+    // Public pill shows "public"; Private pill shows "followers" (incl. legacy
+    // "friends"/"private"). The org check takes precedence so an org experience is never
+    // double-counted by the Public/Private pills. All off → nothing.
     private var visibleExperiences: [Experience] {
         events.filter { exp in
+            if exp.isOrgExperience { return filterOrgs }
             if (exp.visibility ?? "public") == "public" { return filterPublic }
             return filterPrivate
         }
@@ -93,8 +97,8 @@ struct FriendsMapView: View {
                                                 .font(.caption.bold()).foregroundColor(.white)
                                                 .lineLimit(1)
                                                 .padding(.horizontal, 10).padding(.vertical, 4)
-                                                .background(Capsule().fill(Color.nostiaAccent))
-                                                .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8, y: 3)
+                                                .background(Capsule().fill(event.isOrgExperience ? Color.nostiaWarning : Color.nostiaAccent))
+                                                .shadow(color: (event.isOrgExperience ? Color.nostiaWarning : Color.nostiaAccent).opacity(0.5), radius: 8, y: 3)
                                         }
                                     }
                                     .buttonStyle(.plain)
@@ -199,6 +203,11 @@ struct FriendsMapView: View {
                     }
                     FilterChip(title: "Private", isActive: filterPrivate) {
                         filterPrivate.toggle(); onFiltersChanged()
+                    }
+                    // Org experiences aren't part of the heatmap, so toggling this only
+                    // shows/hides their pins — no heatmap refresh needed.
+                    FilterChip(title: "Orgs", isActive: filterOrgs) {
+                        filterOrgs.toggle()
                     }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
@@ -482,9 +491,11 @@ struct HeatBlob: View {
 struct ExperienceMapPin: View {
     let event: Experience
 
-    // Two-state scheme (D6): public → accent; private (followers/legacy) → purple.
+    // Org experiences → orange (matches the Orgs filter pill); otherwise two-state scheme
+    // (D6): public → accent; private (followers/legacy) → purple.
     private var typeColor: Color {
-        (event.visibility ?? "public") == "public" ? Color.nostiaAccent : Color.nostriaPurple
+        if event.isOrgExperience { return Color.nostiaWarning }
+        return (event.visibility ?? "public") == "public" ? Color.nostiaAccent : Color.nostriaPurple
     }
 
     var body: some View {
@@ -543,10 +554,16 @@ struct ExperienceMapPin: View {
                 .fill(event.myStatus == "visited" ? Color.nostiaSuccess : typeColor)
                 .frame(width: 40, height: 40)
                 .shadow(color: .black.opacity(0.4), radius: 4)
-            Image(systemName: event.myStatus == "visited" ? "checkmark.seal.fill" : "sparkles")
+            Image(systemName: defaultPinIcon)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.white)
         }
+    }
+
+    // Visited → seal; org experience → building; otherwise the default sparkles.
+    private var defaultPinIcon: String {
+        if event.myStatus == "visited" { return "checkmark.seal.fill" }
+        return event.isOrgExperience ? "building.2.fill" : "sparkles"
     }
 }
 

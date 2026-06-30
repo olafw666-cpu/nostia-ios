@@ -39,6 +39,11 @@ struct Experience: Codable, Identifiable {
     var myRating: Double?
     var flyerImage: String?
     var tags: [String]?
+    // Non-nil when this experience belongs to an organization (members-only). Lets the map
+    // bucket it under the Orgs filter and style its pin distinctly.
+    var orgId: Int?
+
+    var isOrgExperience: Bool { orgId != nil }
 
     var formattedDistance: String? {
         guard let d = distance else { return nil }
