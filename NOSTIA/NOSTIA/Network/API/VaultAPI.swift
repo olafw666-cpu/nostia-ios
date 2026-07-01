@@ -25,8 +25,19 @@ final class VaultAPI {
         try await client.requestVoid("/vault/\(id)", method: "DELETE")
     }
 
-    func markSplitPaid(_ splitId: Int) async throws {
+    /// Cash claim: no longer marks the split paid — asks the expense payer to verify.
+    func requestCashVerification(_ splitId: Int) async throws {
         try await client.requestVoid("/vault/splits/\(splitId)/paid", method: "PUT")
+    }
+
+    /// Expense payer confirms they received the cash (this marks the split paid).
+    func verifyCashPayment(_ splitId: Int) async throws {
+        try await client.requestVoid("/vault/splits/\(splitId)/cash-verify", method: "POST")
+    }
+
+    /// Expense payer declines the cash claim (split stays unpaid).
+    func declineCashPayment(_ splitId: Int) async throws {
+        try await client.requestVoid("/vault/splits/\(splitId)/cash-decline", method: "POST")
     }
 
     func createPaymentIntent(splitId: Int) async throws -> PaymentIntentResponse {
