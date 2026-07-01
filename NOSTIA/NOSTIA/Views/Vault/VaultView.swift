@@ -9,13 +9,11 @@ struct VaultContentView: View {
 
     @StateObject private var vm = VaultViewModel()
     @State private var showAddExpense = false
-    @State private var confirmPaySplitId: Int?
-    @State private var confirmVerifySplitId: Int?
-    @State private var paymentSuccessMessage: String?
     @State private var showPayTotal = false
-    @State private var reminderTargetId: Int?
-    @State private var reminderTargetUsername: String?
-    @State private var reminderTargetBalance: Double = 0
+    // ONE alert slot for the whole screen. Stacked .alert modifiers shadow each other when
+    // two conditions fire in the same cycle (same class as the stacked-sheet rule) — every
+    // alert on this screen goes through this enum instead.
+    @State private var activeAlert: VaultAlert?
 
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
     @EnvironmentObject var responsive: ResponsiveLayoutManager
@@ -87,9 +85,7 @@ struct VaultContentView: View {
                                 onTapOther: {
                                     guard canSendReminder(to: bal.id, in: data),
                                           bal.balance < 0 else { return }
-                                    reminderTargetId = bal.id
-                                    reminderTargetUsername = bal.username ?? bal.name
-                                    reminderTargetBalance = abs(bal.balance)
+                                    activeAlert = .reminder(userId: bal.id, username: bal.username ?? bal.name)
                                 }
                             )
                         }
@@ -105,11 +101,12 @@ struct VaultContentView: View {
                                 vaultLeaderId: data.vaultLeaderId,
                                 vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                                 onDelete: { Task { await vm.deleteEntry(entry.id, tripId: tripId) } },
-                                onMarkPaid: { splitId in confirmPaySplitId = splitId },
+                                onMarkPaid: { splitId in activeAlert = .confirmCash(splitId) },
                                 onPayWithCard: { splitId in Task { await vm.handleCardTap(splitId: splitId) } },
-                                onVerifyCash: { splitId in confirmVerifySplitId = splitId },
-                                onDeclineCash: { splitId in Task { await vm.declineCash(splitId: splitId, tripId: tripId) } },
-                                payingId: vm.payingId
+                                onVerifyCash: { splitId in activeAlert = .confirmVerify(splitId) },
+                                onDeclineCash: { splitId in activeAlert = .confirmDecline(splitId) },
+                                payingId: vm.payingId,
+                                busySplitId: vm.busySplitId
                             )
                         }
                     }
@@ -126,61 +123,24 @@ struct VaultContentView: View {
         .background(.clear)
         .refreshable { await vm.loadVault(tripId: tripId) }
         .task { await vm.loadVault(tripId: tripId) }
-        .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
-            Button("OK") { vm.errorMessage = nil }
-        } message: { Text(vm.errorMessage ?? "") }
-        .alert("Paid in Cash?", isPresented: Binding(get: { confirmPaySplitId != nil }, set: { if !$0 { confirmPaySplitId = nil } })) {
-            Button("Cancel", role: .cancel) { confirmPaySplitId = nil }
-            Button("Send Request") {
-                if let id = confirmPaySplitId {
-                    Task { await vm.markPaid(splitId: id, tripId: tripId) }
-                    confirmPaySplitId = nil
-                }
-            }
-        } message: {
-            Text("This sends a request to the person who paid this expense. The split is marked paid once they verify they received the cash.")
+        .alert(
+            activeAlert?.title ?? "",
+            isPresented: Binding(get: { activeAlert != nil }, set: { if !$0 { activeAlert = nil } }),
+            presenting: activeAlert
+        ) { alert in
+            alertActions(for: alert)
+        } message: { alert in
+            Text(alert.message)
         }
-        .alert("Verify Cash Payment", isPresented: Binding(get: { confirmVerifySplitId != nil }, set: { if !$0 { confirmVerifySplitId = nil } })) {
-            Button("Cancel", role: .cancel) { confirmVerifySplitId = nil }
-            Button("Yes, I Was Paid") {
-                if let id = confirmVerifySplitId {
-                    Task { await vm.verifyCash(splitId: id, tripId: tripId) }
-                    confirmVerifySplitId = nil
-                }
-            }
-        } message: {
-            Text("Confirm you received this payment in cash. This marks the split as paid.")
+        // Bridge VM-published one-shot messages into the single alert slot
+        .onChange(of: vm.errorMessage) { msg in
+            if let msg { activeAlert = .error(msg); vm.errorMessage = nil }
         }
-        .alert("Request Sent", isPresented: Binding(get: { vm.infoMessage != nil }, set: { if !$0 { vm.infoMessage = nil } })) {
-            Button("OK") { vm.infoMessage = nil }
-        } message: { Text(vm.infoMessage ?? "") }
-        .alert("Payment Submitted", isPresented: Binding(get: { paymentSuccessMessage != nil }, set: { if !$0 { paymentSuccessMessage = nil } })) {
-            Button("OK") { paymentSuccessMessage = nil }
-        } message: { Text(paymentSuccessMessage ?? "") }
-        // No-card prompt
-        .alert("No Card on File", isPresented: $vm.showNoCardPrompt) {
-            Button("Cancel", role: .cancel) {
-                vm.pendingCardSplitId = nil
-                vm.pendingCardBulkSplitIds = nil
-            }
-            Button("Add Card") {
-                vm.showNoCardPrompt = false
-                // PaymentMethodsView will be shown via sheet
-            }
-        } message: {
-            Text("You have no card on file. Would you like to add one?")
+        .onChange(of: vm.infoMessage) { msg in
+            if let msg { activeAlert = .info(msg); vm.infoMessage = nil }
         }
-        // Reminder confirmation
-        .alert("Send Reminder", isPresented: Binding(get: { reminderTargetId != nil }, set: { if !$0 { reminderTargetId = nil } })) {
-            Button("Cancel", role: .cancel) { reminderTargetId = nil }
-            Button("Send") {
-                if let uid = reminderTargetId {
-                    Task { await vm.sendReminder(targetUserId: uid, tripId: tripId) }
-                    reminderTargetId = nil
-                }
-            }
-        } message: {
-            Text("Send a payment reminder to \(reminderTargetUsername.map { "@\($0)" } ?? "this member")?")
+        .onChange(of: vm.showNoCardPrompt) { show in
+            if show { activeAlert = .noCard; vm.showNoCardPrompt = false }
         }
         .sheet(isPresented: $showAddExpense) {
             CreateExpenseSheet(tripId: tripId, members: participants, showCategory: false) { desc, amount, cat, date, splits in
@@ -196,10 +156,10 @@ struct VaultContentView: View {
                     vm: vm,
                     vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                     onMarkAllPaid: { splitIds in
-                        Task {
-                            await vm.markAllPaid(splitIds: splitIds, tripId: tripId)
-                            showPayTotal = false
-                        }
+                        // Dismiss first: the result alert (infoMessage → activeAlert) can't
+                        // present while the sheet is still up.
+                        showPayTotal = false
+                        Task { await vm.markAllPaid(splitIds: splitIds, tripId: tripId) }
                     },
                     onCardPay: { splitIds in
                         showPayTotal = false
@@ -210,7 +170,7 @@ struct VaultContentView: View {
         }
         // Add-card sheet (shown after no-card prompt → Add Card)
         .sheet(isPresented: Binding(
-            get: { !vm.showNoCardPrompt && (vm.pendingCardSplitId != nil || vm.pendingCardBulkSplitIds != nil) },
+            get: { activeAlert == nil && !vm.showNoCardPrompt && (vm.pendingCardSplitId != nil || vm.pendingCardBulkSplitIds != nil) },
             set: { if !$0 {
                 vm.pendingCardSplitId = nil
                 vm.pendingCardBulkSplitIds = nil
@@ -233,18 +193,44 @@ struct VaultContentView: View {
         .optionalPaymentSheet(isPresented: $vm.showPaymentSheet, paymentSheet: vm.paymentSheet) { result in
             Task {
                 await vm.handlePaymentResult(result, tripId: tripId)
-                if case .completed = result {
-                    paymentSuccessMessage = vm.pendingPaymentMessage
+                if case .completed = result, let msg = vm.pendingPaymentMessage {
+                    activeAlert = .paymentSuccess(msg)
                 }
             }
         }
         .optionalPaymentSheet(isPresented: $vm.showBulkPaymentSheet, paymentSheet: vm.bulkPaymentSheet) { result in
             Task {
                 await vm.handleBulkPaymentResult(result, tripId: tripId)
-                if case .completed = result {
-                    paymentSuccessMessage = vm.pendingBulkMessage
+                if case .completed = result, let msg = vm.pendingBulkMessage {
+                    activeAlert = .paymentSuccess(msg)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func alertActions(for alert: VaultAlert) -> some View {
+        switch alert {
+        case .error, .info, .paymentSuccess:
+            Button("OK") {}
+        case .confirmCash(let id):
+            Button("Cancel", role: .cancel) {}
+            Button("Send Request") { Task { await vm.markPaid(splitId: id, tripId: tripId) } }
+        case .confirmVerify(let id):
+            Button("Cancel", role: .cancel) {}
+            Button("Yes, I Was Paid") { Task { await vm.verifyCash(splitId: id, tripId: tripId) } }
+        case .confirmDecline(let id):
+            Button("Cancel", role: .cancel) {}
+            Button("Decline", role: .destructive) { Task { await vm.declineCash(splitId: id, tripId: tripId) } }
+        case .noCard:
+            Button("Cancel", role: .cancel) {
+                vm.pendingCardSplitId = nil
+                vm.pendingCardBulkSplitIds = nil
+            }
+            Button("Add Card") {} // dismissing the alert lets the add-card sheet present
+        case .reminder(let userId, _):
+            Button("Cancel", role: .cancel) {}
+            Button("Send") { Task { await vm.sendReminder(targetUserId: userId, tripId: tripId) } }
         }
     }
 
@@ -344,6 +330,62 @@ struct BalanceRow: View {
 
 // MARK: - Expense Card
 
+// All of VaultContentView's alerts flow through this single enum — a screen gets ONE
+// alert presentation slot; stacked .alert modifiers can shadow each other.
+enum VaultAlert: Identifiable {
+    case error(String)
+    case info(String)
+    case paymentSuccess(String)
+    case confirmCash(Int)
+    case confirmVerify(Int)
+    case confirmDecline(Int)
+    case noCard
+    case reminder(userId: Int, username: String?)
+
+    var id: String {
+        switch self {
+        case .error: return "error"
+        case .info: return "info"
+        case .paymentSuccess: return "paymentSuccess"
+        case .confirmCash(let id): return "confirmCash-\(id)"
+        case .confirmVerify(let id): return "confirmVerify-\(id)"
+        case .confirmDecline(let id): return "confirmDecline-\(id)"
+        case .noCard: return "noCard"
+        case .reminder(let userId, _): return "reminder-\(userId)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .error: return "Error"
+        case .info: return "Request Sent"
+        case .paymentSuccess: return "Payment Submitted"
+        case .confirmCash: return "Paid in Cash?"
+        case .confirmVerify: return "Verify Cash Payment"
+        case .confirmDecline: return "Decline Cash Claim?"
+        case .noCard: return "No Card on File"
+        case .reminder: return "Send Reminder"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .error(let m), .info(let m), .paymentSuccess(let m):
+            return m
+        case .confirmCash:
+            return "This sends a request to the person who paid this expense. The split is marked paid once they verify they received the cash."
+        case .confirmVerify:
+            return "Confirm you received this payment in cash. This marks the split as paid."
+        case .confirmDecline:
+            return "The split stays unpaid and the member is notified that you didn't receive the cash."
+        case .noCard:
+            return "You have no card on file. Would you like to add one?"
+        case .reminder(_, let username):
+            return "Send a payment reminder to \(username.map { "@\($0)" } ?? "this member")?"
+        }
+    }
+}
+
 struct ExpenseCard: View {
     let entry: VaultEntry
     let currentUserId: Int?
@@ -355,6 +397,7 @@ struct ExpenseCard: View {
     var onVerifyCash: (Int) -> Void = { _ in }
     var onDeclineCash: (Int) -> Void = { _ in }
     let payingId: Int?
+    var busySplitId: Int? = nil
 
     @State private var showDeleteAlert = false
     @EnvironmentObject var responsive: ResponsiveLayoutManager
@@ -441,6 +484,7 @@ struct ExpenseCard: View {
                                         .background(Color.nostiaSuccess).cornerRadius(10)
                                 }
                             }
+                            .disabled(busySplitId != nil)
                         } else if isOwnSplit {
                             if split.isCashPending {
                                 Label("Awaiting verification", systemImage: "hourglass")
@@ -456,6 +500,7 @@ struct ExpenseCard: View {
                                             .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
                                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaBorder, lineWidth: 1))
                                     }
+                                    .disabled(busySplitId != nil)
                                     if payerHasStripe {
                                         Button { onPayWithCard(split.id) } label: {
                                             if payingId == split.id {

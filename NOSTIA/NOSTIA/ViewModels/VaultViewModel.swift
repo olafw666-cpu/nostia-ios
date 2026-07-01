@@ -7,7 +7,10 @@ final class VaultViewModel: ObservableObject {
     @Published var vaultData: VaultSummary?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var infoMessage: String?
     @Published var payingId: Int?
+    // In-flight guard for cash request / verify / decline taps (Card uses payingId)
+    @Published var busySplitId: Int?
 
     // Stripe — single split
     @Published var paymentSheet: PaymentSheet?
@@ -47,7 +50,7 @@ final class VaultViewModel: ObservableObject {
     func addExpense(tripId: Int, description: String, amount: Double, category: String?, date: String, splits: [ExpenseSplitInput]) async -> Bool {
         do {
             try await VaultAPI.shared.createEntry(tripId: tripId, description: description, amount: amount, category: category, date: date, splits: splits)
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -58,21 +61,28 @@ final class VaultViewModel: ObservableObject {
     func deleteEntry(_ id: Int, tripId: Int) async {
         do {
             try await VaultAPI.shared.deleteEntry(id)
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    // Cash claim — sends a verification request to the expense payer; the split is only
-    // marked paid once they confirm (verifyCash). infoMessage drives the confirmation alert.
-    @Published var infoMessage: String?
+    // Settling a split changes both the vault detail AND the trips-list vault totals.
+    private func invalidateVaultCaches(tripId: Int) async {
+        await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+        await CacheManager.shared.invalidate(CacheKey.vaultList)
+    }
 
+    // Cash claim — sends a verification request to the expense payer; the split is only
+    // marked paid once they confirm (verifyCash).
     func markPaid(splitId: Int, tripId: Int) async {
+        guard busySplitId == nil else { return }
+        busySplitId = splitId
+        defer { busySplitId = nil }
         do {
             try await VaultAPI.shared.requestCashVerification(splitId)
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
             infoMessage = "Request sent — the split will be marked paid once they verify they received the cash."
         } catch {
@@ -81,23 +91,36 @@ final class VaultViewModel: ObservableObject {
     }
 
     func markAllPaid(splitIds: [Int], tripId: Int) async {
-        do {
-            for id in splitIds {
+        guard busySplitId == nil, let firstId = splitIds.first else { return }
+        busySplitId = firstId
+        defer { busySplitId = nil }
+        // Per-split requests: a mid-loop failure must not hide the ones already sent.
+        var sent = 0
+        for id in splitIds {
+            do {
                 try await VaultAPI.shared.requestCashVerification(id)
-            }
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
-            await loadVault(tripId: tripId)
+                sent += 1
+            } catch { /* counted below */ }
+        }
+        await invalidateVaultCaches(tripId: tripId)
+        await loadVault(tripId: tripId)
+        if sent == splitIds.count {
             infoMessage = "Requests sent — each split will be marked paid once the person you paid verifies."
-        } catch {
-            errorMessage = error.localizedDescription
+        } else if sent > 0 {
+            infoMessage = "Sent \(sent) of \(splitIds.count) requests — the rest failed. Try again for the remaining splits."
+        } else {
+            errorMessage = "Could not send the cash requests. Check your connection and try again."
         }
     }
 
     // Expense payer verifies they received the cash — this marks the split paid
     func verifyCash(splitId: Int, tripId: Int) async {
+        guard busySplitId == nil else { return }
+        busySplitId = splitId
+        defer { busySplitId = nil }
         do {
             try await VaultAPI.shared.verifyCashPayment(splitId)
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
         } catch {
             errorMessage = error.localizedDescription
@@ -106,9 +129,12 @@ final class VaultViewModel: ObservableObject {
 
     // Expense payer declines the cash claim — split stays unpaid
     func declineCash(splitId: Int, tripId: Int) async {
+        guard busySplitId == nil else { return }
+        busySplitId = splitId
+        defer { busySplitId = nil }
         do {
             try await VaultAPI.shared.declineCashPayment(splitId)
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
         } catch {
             errorMessage = error.localizedDescription
@@ -176,10 +202,10 @@ final class VaultViewModel: ObservableObject {
         payingId = nil
         switch result {
         case .completed:
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
             try? await Task.sleep(for: .seconds(3))
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
         case .canceled:
             break
@@ -193,10 +219,10 @@ final class VaultViewModel: ObservableObject {
         bulkPaymentSheet = nil
         switch result {
         case .completed:
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
             try? await Task.sleep(for: .seconds(3))
-            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await invalidateVaultCaches(tripId: tripId)
             await loadVault(tripId: tripId)
         case .canceled:
             break
