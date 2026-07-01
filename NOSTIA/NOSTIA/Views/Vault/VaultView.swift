@@ -10,6 +10,7 @@ struct VaultContentView: View {
     @StateObject private var vm = VaultViewModel()
     @State private var showAddExpense = false
     @State private var confirmPaySplitId: Int?
+    @State private var confirmVerifySplitId: Int?
     @State private var paymentSuccessMessage: String?
     @State private var showPayTotal = false
     @State private var reminderTargetId: Int?
@@ -106,6 +107,8 @@ struct VaultContentView: View {
                                 onDelete: { Task { await vm.deleteEntry(entry.id, tripId: tripId) } },
                                 onMarkPaid: { splitId in confirmPaySplitId = splitId },
                                 onPayWithCard: { splitId in Task { await vm.handleCardTap(splitId: splitId) } },
+                                onVerifyCash: { splitId in confirmVerifySplitId = splitId },
+                                onDeclineCash: { splitId in Task { await vm.declineCash(splitId: splitId, tripId: tripId) } },
                                 payingId: vm.payingId
                             )
                         }
@@ -126,17 +129,31 @@ struct VaultContentView: View {
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
-        .alert("Confirm Settlement", isPresented: Binding(get: { confirmPaySplitId != nil }, set: { if !$0 { confirmPaySplitId = nil } })) {
+        .alert("Paid in Cash?", isPresented: Binding(get: { confirmPaySplitId != nil }, set: { if !$0 { confirmPaySplitId = nil } })) {
             Button("Cancel", role: .cancel) { confirmPaySplitId = nil }
-            Button("Yes, Settled") {
+            Button("Send Request") {
                 if let id = confirmPaySplitId {
                     Task { await vm.markPaid(splitId: id, tripId: tripId) }
                     confirmPaySplitId = nil
                 }
             }
         } message: {
-            Text("Confirm this has been settled outside the app (cash, bank transfer, etc.)?")
+            Text("This sends a request to the person who paid this expense. The split is marked paid once they verify they received the cash.")
         }
+        .alert("Verify Cash Payment", isPresented: Binding(get: { confirmVerifySplitId != nil }, set: { if !$0 { confirmVerifySplitId = nil } })) {
+            Button("Cancel", role: .cancel) { confirmVerifySplitId = nil }
+            Button("Yes, I Was Paid") {
+                if let id = confirmVerifySplitId {
+                    Task { await vm.verifyCash(splitId: id, tripId: tripId) }
+                    confirmVerifySplitId = nil
+                }
+            }
+        } message: {
+            Text("Confirm you received this payment in cash. This marks the split as paid.")
+        }
+        .alert("Request Sent", isPresented: Binding(get: { vm.infoMessage != nil }, set: { if !$0 { vm.infoMessage = nil } })) {
+            Button("OK") { vm.infoMessage = nil }
+        } message: { Text(vm.infoMessage ?? "") }
         .alert("Payment Submitted", isPresented: Binding(get: { paymentSuccessMessage != nil }, set: { if !$0 { paymentSuccessMessage = nil } })) {
             Button("OK") { paymentSuccessMessage = nil }
         } message: { Text(paymentSuccessMessage ?? "") }
@@ -335,6 +352,8 @@ struct ExpenseCard: View {
     let onDelete: () -> Void
     let onMarkPaid: (Int) -> Void
     let onPayWithCard: (Int) -> Void
+    var onVerifyCash: (Int) -> Void = { _ in }
+    var onDeclineCash: (Int) -> Void = { _ in }
     let payingId: Int?
 
     @State private var showDeleteAlert = false
@@ -343,6 +362,12 @@ struct ExpenseCard: View {
     private var canDelete: Bool {
         guard let me = currentUserId else { return false }
         return vaultLeaderId == me || entry.paidById == me
+    }
+
+    // Card payments transfer to the EXPENSE PAYER, so the Card button is gated on the
+    // payer's payout setup (falls back to the old vault-leader flag for older responses).
+    private var payerHasStripe: Bool {
+        entry.paidByHasStripe ?? vaultLeaderHasStripe
     }
 
     private var paidByDisplay: String {
@@ -399,30 +424,54 @@ struct ExpenseCard: View {
                         if split.paid {
                             Label("Paid", systemImage: "checkmark.circle.fill")
                                 .font(.subheadline.bold()).foregroundColor(Color.nostiaSuccess)
-                        } else if isOwnSplit {
+                        } else if entry.paidById == currentUserId && split.isCashPending {
+                            // Debtor claims they paid this expense's payer (me) in cash — verify or decline
                             HStack(spacing: 8) {
-                                Button { onMarkPaid(split.id) } label: {
-                                    Text("Cash")
-                                        .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
-                                        .padding(.horizontal, 16).padding(.vertical, 8)
+                                Button { onDeclineCash(split.id) } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.subheadline.bold()).foregroundColor(Color.nostriaDanger)
+                                        .padding(.horizontal, 12).padding(.vertical, 9)
                                         .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
-                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaBorder, lineWidth: 1))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaDanger.opacity(0.5), lineWidth: 1))
                                 }
-                                if vaultLeaderHasStripe {
-                                    Button { onPayWithCard(split.id) } label: {
-                                        if payingId == split.id {
-                                            ProgressView().tint(.white).scaleEffect(0.8)
-                                                .frame(width: 70, height: 34)
-                                                .background(Color.nostiaAccent).cornerRadius(10)
-                                        } else {
-                                            Text("Card")
-                                                .font(.subheadline.bold()).foregroundColor(.white)
-                                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                                .background(Color.nostiaAccent).cornerRadius(10)
-                                                .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
-                                        }
+                                Button { onVerifyCash(split.id) } label: {
+                                    Label("Verify Cash", systemImage: "checkmark.seal.fill")
+                                        .font(.subheadline.bold()).foregroundColor(.white)
+                                        .padding(.horizontal, 12).padding(.vertical, 8)
+                                        .background(Color.nostiaSuccess).cornerRadius(10)
+                                }
+                            }
+                        } else if isOwnSplit {
+                            if split.isCashPending {
+                                Label("Awaiting verification", systemImage: "hourglass")
+                                    .font(.caption.bold()).foregroundColor(Color.nostiaWarning)
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Capsule().fill(Color.nostiaWarningSoft))
+                            } else {
+                                HStack(spacing: 8) {
+                                    Button { onMarkPaid(split.id) } label: {
+                                        Text("Cash")
+                                            .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                            .padding(.horizontal, 16).padding(.vertical, 8)
+                                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
+                                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaBorder, lineWidth: 1))
                                     }
-                                    .disabled(payingId != nil)
+                                    if payerHasStripe {
+                                        Button { onPayWithCard(split.id) } label: {
+                                            if payingId == split.id {
+                                                ProgressView().tint(.white).scaleEffect(0.8)
+                                                    .frame(width: 70, height: 34)
+                                                    .background(Color.nostiaAccent).cornerRadius(10)
+                                            } else {
+                                                Text("Card")
+                                                    .font(.subheadline.bold()).foregroundColor(.white)
+                                                    .padding(.horizontal, 16).padding(.vertical, 8)
+                                                    .background(Color.nostiaAccent).cornerRadius(10)
+                                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
+                                            }
+                                        }
+                                        .disabled(payingId != nil)
+                                    }
                                 }
                             }
                         }
@@ -456,6 +505,10 @@ struct PayTotalSheet: View {
 
     private var total: Double { unpaidSplits.reduce(0) { $0 + $1.amount } }
     private var splitIds: [Int] { unpaidSplits.map(\.id) }
+    // Card pays each expense's payer directly — every payer in the batch must have payouts set up
+    private var allPayersHaveStripe: Bool {
+        unpaidSplits.allSatisfy { $0.paidByHasStripe ?? vaultLeaderHasStripe }
+    }
 
     var body: some View {
         NavigationStack {
@@ -470,6 +523,10 @@ struct PayTotalSheet: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(split.description).font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
                                     Text(split.formattedDate).font(.caption).foregroundColor(Color.nostiaTextSecond)
+                                    if split.cashPending == true {
+                                        Label("Cash — awaiting verification", systemImage: "hourglass")
+                                            .font(.caption2.bold()).foregroundColor(Color.nostiaWarning)
+                                    }
                                 }
                                 Spacer()
                                 Text(String(format: "$%.2f", split.amount))
@@ -504,7 +561,7 @@ struct PayTotalSheet: View {
                                         .background(RoundedRectangle(cornerRadius: 14).fill(Color.nostiaCard))
                                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.nostiaAccent, lineWidth: 1.5))
                                 }
-                                if vaultLeaderHasStripe {
+                                if allPayersHaveStripe {
                                     Button {
                                         onCardPay(splitIds)
                                     } label: {
@@ -516,11 +573,14 @@ struct PayTotalSheet: View {
                                     }
                                 }
                             }
-                            if !vaultLeaderHasStripe {
-                                Text("Card payments unavailable — the vault owner hasn't set up payouts.")
+                            if !allPayersHaveStripe {
+                                Text("Card payments unavailable — someone you owe hasn't set up payouts yet.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .multilineTextAlignment(.center)
                             }
+                            Text("Pay Cash sends a verification request — each person you paid must confirm they received the cash.")
+                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                .multilineTextAlignment(.center)
                         }
                     }
                 }

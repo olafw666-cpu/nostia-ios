@@ -20,6 +20,7 @@ struct VaultEntry: Codable, Identifiable {
     var paidById: Int?
     var paidByName: String?
     var paidByUsername: String?
+    var paidByHasStripe: Bool?
     var splits: [VaultSplit]?
 
     enum CodingKeys: String, CodingKey {
@@ -27,6 +28,7 @@ struct VaultEntry: Codable, Identifiable {
         case paidById = "paidBy"
         case paidByName
         case paidByUsername
+        case paidByHasStripe
     }
 
     var formattedDate: String {
@@ -45,6 +47,9 @@ struct VaultSplit: Codable, Identifiable {
     let amount: Double
     var paid: Bool
     var paidAt: String?
+    var cashPending: Bool?
+
+    var isCashPending: Bool { cashPending == true && !paid }
 }
 
 struct VaultBalance: Codable, Identifiable {
@@ -65,6 +70,9 @@ struct UnpaidSplit: Codable, Identifiable {
     let description: String
     let date: String
     let currency: String
+    let cashPending: Bool?
+    let paidByHasStripe: Bool?
+    let paidByUsername: String?
 
     var formattedDate: String {
         let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"

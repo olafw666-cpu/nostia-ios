@@ -65,11 +65,16 @@ final class VaultViewModel: ObservableObject {
         }
     }
 
+    // Cash claim — sends a verification request to the expense payer; the split is only
+    // marked paid once they confirm (verifyCash). infoMessage drives the confirmation alert.
+    @Published var infoMessage: String?
+
     func markPaid(splitId: Int, tripId: Int) async {
         do {
-            try await VaultAPI.shared.markSplitPaid(splitId)
+            try await VaultAPI.shared.requestCashVerification(splitId)
             await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
+            infoMessage = "Request sent — the split will be marked paid once they verify they received the cash."
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -78,8 +83,31 @@ final class VaultViewModel: ObservableObject {
     func markAllPaid(splitIds: [Int], tripId: Int) async {
         do {
             for id in splitIds {
-                try await VaultAPI.shared.markSplitPaid(id)
+                try await VaultAPI.shared.requestCashVerification(id)
             }
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await loadVault(tripId: tripId)
+            infoMessage = "Requests sent — each split will be marked paid once the person you paid verifies."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // Expense payer verifies they received the cash — this marks the split paid
+    func verifyCash(splitId: Int, tripId: Int) async {
+        do {
+            try await VaultAPI.shared.verifyCashPayment(splitId)
+            await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
+            await loadVault(tripId: tripId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // Expense payer declines the cash claim — split stays unpaid
+    func declineCash(splitId: Int, tripId: Int) async {
+        do {
+            try await VaultAPI.shared.declineCashPayment(splitId)
             await CacheManager.shared.invalidate(CacheKey.vaultDetail(tripId))
             await loadVault(tripId: tripId)
         } catch {
