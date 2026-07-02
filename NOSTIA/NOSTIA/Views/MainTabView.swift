@@ -62,7 +62,9 @@ struct MainTabView: View {
         .onChange(of: deepLinkRouter.pendingTarget) {
             handleDeepLink(deepLinkRouter.pendingTarget)
         }
-        .sheet(isPresented: $showNotifications) {
+        // Re-fetch the unread count on dismiss — reads/deletes made inside the sheet
+        // must clear the bell badge as soon as the sheet closes.
+        .sheet(isPresented: $showNotifications, onDismiss: { loadUnreadCount() }) {
             NavigationStack {
                 NotificationsView()
                     .navigationTitle("Notifications")
@@ -111,6 +113,10 @@ struct MainTabView: View {
     private func tab<Content: View>(_ tag: Int, @ViewBuilder _ content: () -> Content) -> some View {
         NavigationStack {
             content()
+                // Themed canvas for every tab (white in light, grey in dark). Without this,
+                // screens that don't paint their own background fall through to the system
+                // black in dark mode (Explore / Vaults / Following did exactly that).
+                .background(Color.nostiaBackground.ignoresSafeArea())
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { tabBarToolbar }
                 .toolbarBackground(.hidden, for: .navigationBar)
@@ -140,13 +146,14 @@ struct MainTabView: View {
                                     .foregroundColor(Color.nostiaTextSecond)
                             )
                         if unreadCount > 0 {
+                            // No offset: the badge must stay inside the 40pt circle, or the
+                            // toolbar's glass capsule clips it half-out of the bubble.
                             Text(unreadCount > 9 ? "9+" : "\(unreadCount)")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(3)
                                 .background(Color.nostriaDanger)
                                 .clipShape(Circle())
-                                .offset(x: 4, y: -4)
                         }
                     }
                 }
@@ -264,11 +271,11 @@ struct AtlasTabBar: View {
         )
         .shadow(color: Color.nostiaShadow.opacity(0.22), radius: 28, x: 0, y: 12)
         .padding(.horizontal, 14)
-        // Dock to the physical bottom and float a fixed gap above the home
+        // Dock to the physical bottom and float a small gap above the home
         // indicator. Previously the bar stacked on top of the TabView's
         // (hidden-but-still-reserved) tab-bar inset *plus* the home-indicator
         // inset, which pushed it far too high up the screen.
-        .padding(.bottom, 24)
+        .padding(.bottom, 6)
         .ignoresSafeArea(.container, edges: .bottom)
     }
 }

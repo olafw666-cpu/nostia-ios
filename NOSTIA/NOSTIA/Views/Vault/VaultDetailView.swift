@@ -51,7 +51,9 @@ struct VaultDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(.clear)
+        // Pushed destinations don't inherit the tab root's themed canvas — without this
+        // the vault detail sits on the system background (black in dark mode).
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .ignoresSafeArea(.keyboard)
         // Hide the floating tab bar so the vault chat input bar isn't covered by it.
         .hidesAppTabBar()

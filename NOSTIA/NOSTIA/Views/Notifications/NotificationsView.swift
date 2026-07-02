@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotificationsView: View {
     @StateObject private var vm = NotificationsViewModel()
+    @State private var showClearAllConfirm = false
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     var body: some View {
@@ -27,6 +28,13 @@ struct NotificationsView: View {
                     }
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: responsive.spacing(16), bottom: 4, trailing: responsive.spacing(16)))
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task { await vm.delete(notif.id) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 }
                 .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 .refreshable { await vm.load() }
@@ -39,6 +47,18 @@ struct NotificationsView: View {
         }
         .background(.clear)
         .task { await vm.load() }
+        .toolbar {
+            if !vm.notifications.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Clear All", role: .destructive) { showClearAllConfirm = true }
+                        .foregroundColor(Color.nostriaDanger)
+                }
+            }
+        }
+        .confirmationDialog("Delete all notifications?", isPresented: $showClearAllConfirm, titleVisibility: .visible) {
+            Button("Delete All", role: .destructive) { Task { await vm.deleteAll() } }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 }
 

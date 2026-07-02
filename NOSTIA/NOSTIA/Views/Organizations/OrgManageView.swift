@@ -42,7 +42,7 @@ struct OrgManageView: View {
             .padding(16)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(.clear)
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationTitle("Manage")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)

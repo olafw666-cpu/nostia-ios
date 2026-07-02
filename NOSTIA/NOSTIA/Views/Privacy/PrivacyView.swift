@@ -97,6 +97,8 @@ struct PrivacyView: View {
                                 .navigationTitle("Payment Methods")
                                 .navigationBarTitleDisplayMode(.inline)
                                 .toolbarBackground(.hidden, for: .navigationBar)
+                                // Pushed screens don't inherit the sheet's themed canvas.
+                                .background(Color.nostiaBackground.ignoresSafeArea())
                         }
                     }
 
@@ -114,6 +116,7 @@ struct PrivacyView: View {
                         .accessibilityHint("Turn push notifications on or off")
                         .navigationDestination(isPresented: $navigateToNotifications) {
                             NotificationSettingsView()
+                                .background(Color.nostiaBackground.ignoresSafeArea())
                         }
                     }
 
@@ -131,6 +134,7 @@ struct PrivacyView: View {
                         .accessibilityHint("Protect your account with Face ID and set up password recovery")
                         .navigationDestination(isPresented: $navigateToPasskeys) {
                             PasskeySettingsView()
+                                .background(Color.nostiaBackground.ignoresSafeArea())
                         }
                     }
 
@@ -147,6 +151,7 @@ struct PrivacyView: View {
                         }
                         .navigationDestination(isPresented: $navigateToBlockedUsers) {
                             BlockedUsersView()
+                                .background(Color.nostiaBackground.ignoresSafeArea())
                         }
                     }
 

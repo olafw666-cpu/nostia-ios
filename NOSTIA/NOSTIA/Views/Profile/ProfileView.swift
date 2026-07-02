@@ -312,6 +312,7 @@ struct ProfileView: View {
                 .presentationBackground(Color.nostiaBackground)
             case .organizations:
                 OrganizationsHubView()
+                    .presentationBackground(Color.nostiaBackground)
             case .analytics:
                 NavigationStack {
                     AnalyticsView()

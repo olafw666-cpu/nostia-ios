@@ -114,7 +114,9 @@ struct ChatView: View {
         // The floating tab bar is hidden while the chat is open so it can't cover the
         // message input bar (the bar lives outside the tab's NavigationStack).
         .hidesAppTabBar()
-        .background(.clear)
+        // Pushed destinations don't inherit the tab root's themed canvas — without this
+        // the chat sits on the system background (black in dark mode).
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationTitle(friendName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)

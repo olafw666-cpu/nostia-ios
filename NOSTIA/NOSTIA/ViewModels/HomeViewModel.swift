@@ -8,6 +8,7 @@ final class HomeViewModel: ObservableObject {
     @Published var trips: [Trip] = []
     @Published var upcomingEvents: [Experience] = []
     @Published var nearbyEvents: [Experience] = []
+    @Published var forYouEvents: [Experience] = []
     @Published var followers: [FollowUser] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -23,13 +24,16 @@ final class HomeViewModel: ObservableObject {
             isLoading = false
             return
         }
-        // Load the rest concurrently, ignoring individual failures
+        // Load the rest concurrently, ignoring individual failures. For-you uses the
+        // server-side stored-location fallback; updateLocation() refreshes it with live coords.
         async let t = TripsAPI.shared.getAll()
         async let e = ExperiencesAPI.shared.getMyGoingExperiences()
         async let f = FriendsAPI.shared.getFollowers()
+        async let fy = ExperiencesAPI.shared.getForYouExperiences()
         trips = (try? await t) ?? []
         upcomingEvents = (try? await e) ?? []
         followers = (try? await f) ?? []
+        forYouEvents = (try? await fy) ?? forYouEvents
         isLoading = false
     }
 
@@ -38,6 +42,7 @@ final class HomeViewModel: ObservableObject {
             try await ExperiencesAPI.shared.adminDeleteExperience(id: id)
             upcomingEvents.removeAll { $0.id == id }
             nearbyEvents.removeAll { $0.id == id }
+            forYouEvents.removeAll { $0.id == id }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -49,12 +54,17 @@ final class HomeViewModel: ObservableObject {
                 "latitude": location.coordinate.latitude,
                 "longitude": location.coordinate.longitude
             ])
-            let nearby = try await ExperiencesAPI.shared.getNearbyExperiences(
+            async let nearby = ExperiencesAPI.shared.getNearbyExperiences(
                 lat: location.coordinate.latitude,
                 lng: location.coordinate.longitude,
                 radius: 50
             )
-            nearbyEvents = nearby
+            async let forYou = ExperiencesAPI.shared.getForYouExperiences(
+                lat: location.coordinate.latitude,
+                lng: location.coordinate.longitude
+            )
+            nearbyEvents = try await nearby
+            forYouEvents = (try? await forYou) ?? forYouEvents
         } catch {
             print("Location update failed: \(error.localizedDescription)")
         }

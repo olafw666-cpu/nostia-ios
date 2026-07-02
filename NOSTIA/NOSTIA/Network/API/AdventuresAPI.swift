@@ -34,6 +34,14 @@ final class ExperiencesAPI {
         return try await client.request("/experiences/nearby?lat=\(lat)&lng=\(lng)&radius=\(radius)")
     }
 
+    /// Home carousel picks — feed-style blend (followed creators → my orgs → nearby public),
+    /// closest first. Omitting coords lets the server fall back to my last-synced location.
+    func getForYouExperiences(lat: Double? = nil, lng: Double? = nil, limit: Int = 2) async throws -> [Experience] {
+        var path = "/experiences/for-you?limit=\(limit)"
+        if let lat, let lng { path += "&lat=\(lat)&lng=\(lng)" }
+        return try await client.request(path)
+    }
+
     func getAllExperiences() async throws -> [Experience] {
         return try await client.request("/experiences")
     }

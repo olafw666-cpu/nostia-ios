@@ -109,7 +109,9 @@ struct SignupView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .background(.clear)
+        // Pushed from Login — paints its own themed canvas (pushed destinations sit on the
+        // system background, black in dark mode, not RootView's gradient).
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationBarHidden(true)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {

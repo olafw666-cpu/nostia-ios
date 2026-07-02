@@ -25,7 +25,7 @@ struct OrgMembersView: View {
             }
             .padding(16)
         }
-        .background(.clear)
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationTitle("Members")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)

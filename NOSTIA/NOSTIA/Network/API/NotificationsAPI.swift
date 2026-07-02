@@ -27,6 +27,14 @@ final class NotificationsAPI {
         try await client.requestVoid("/notifications/read-all", method: "PUT")
     }
 
+    func delete(_ id: Int) async throws {
+        try await client.requestVoid("/notifications/\(id)", method: "DELETE")
+    }
+
+    func deleteAll() async throws {
+        try await client.requestVoid("/notifications", method: "DELETE")
+    }
+
     /// Register this device's APNs token (platform "ios"). Multi-device on the backend.
     func savePushToken(_ token: String, platform: String = "ios") async throws {
         try await client.requestVoid("/push-token", method: "POST", body: ["token": token, "platform": platform])
