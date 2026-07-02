@@ -19,7 +19,10 @@ struct AtlasExperienceImage: View {
     var body: some View {
         ZStack {
             if let img = uiImage {
-                Color.clear.overlay(Image(uiImage: img).resizable().scaledToFill()).clipped()
+                // allowsHitTesting(false): .clipped() clips drawing but NOT hit testing,
+                // so a tall scaledToFill image invisibly overflows the card and steals
+                // taps from views above/below it (Explore search bar & tag chips).
+                Color.clear.overlay(Image(uiImage: img).resizable().scaledToFill().allowsHitTesting(false)).clipped()
             } else {
                 LinearGradient(
                     colors: [Color(light: "E9EDF2", dark: "3C362E"), Color(light: "E1E6EC", dark: "302A23")],
@@ -35,6 +38,9 @@ struct AtlasExperienceImage: View {
         .frame(height: height)
         .frame(maxWidth: .infinity)
         .clipped()
+        // Keep the visible image area tappable for the enclosing card button now that
+        // the image itself no longer hit-tests.
+        .contentShape(Rectangle())
     }
 }
 

@@ -449,7 +449,6 @@ struct CreateExpenseSheet: View {
                             .datePickerStyle(.compact)
                             .labelsHidden()
                             .tint(Color.nostiaAccent)
-                            .colorScheme(.light)
                             .padding(responsive.spacing(12))
                             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }
@@ -589,43 +588,53 @@ struct CreateExpenseSheet: View {
         let hasZeroError = isSelected && amountVal <= 0 && expenseAmount > 0
 
         VStack(alignment: .leading, spacing: 2) {
-            Button { toggleMember(member) } label: {
-                HStack(spacing: 10) {
-                    AvatarView(
-                        initial: String((member.name ?? "U").prefix(1)).uppercased(),
-                        color: Color.nostiaAccent,
-                        size: responsive.spacing(36)
-                    )
-                    HStack(spacing: 4) {
-                        Text(displayName).font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
-                        if isMe {
-                            Text("(you)").font(.caption).foregroundColor(Color.nostiaTextMuted)
+            // The amount TextField must live OUTSIDE the toggle button — a TextField
+            // inside a Button label never receives focus taps (the button eats them),
+            // which made custom split amounts uneditable.
+            HStack(spacing: 10) {
+                Button { toggleMember(member) } label: {
+                    HStack(spacing: 10) {
+                        AvatarView(
+                            initial: String((member.name ?? "U").prefix(1)).uppercased(),
+                            color: Color.nostiaAccent,
+                            size: responsive.spacing(36)
+                        )
+                        HStack(spacing: 4) {
+                            Text(displayName).font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
+                            if isMe {
+                                Text("(you)").font(.caption).foregroundColor(Color.nostiaTextMuted)
+                            }
                         }
+                        Spacer(minLength: 0)
                     }
-                    Spacer()
-                    TextField("0.00", text: Binding(
-                        get: { memberAmounts[member.id] ?? "0.00" },
-                        set: { val in
-                            memberAmounts[member.id] = val
-                            isCustomMode = true
-                        }
-                    ))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.subheadline.bold())
-                    .foregroundColor(isSelected ? .white : Color.nostiaTextMuted)
-                    .frame(width: 72)
-                    .disabled(!isSelected)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
 
+                TextField("0.00", text: Binding(
+                    get: { memberAmounts[member.id] ?? "0.00" },
+                    set: { val in
+                        memberAmounts[member.id] = val
+                        isCustomMode = true
+                    }
+                ))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.subheadline.bold())
+                .foregroundColor(isSelected ? Color.nostiaTextPrimary : Color.nostiaTextMuted)
+                .frame(width: 72)
+                .disabled(!isSelected)
+
+                Button { toggleMember(member) } label: {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isSelected ? Color.nostiaAccent : Color.nostiaTextMuted)
                         .font(.title3)
                 }
-                .padding(responsive.spacing(12))
-                .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
-                .opacity(isSelected ? 1.0 : 0.6)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .padding(responsive.spacing(12))
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+            .opacity(isSelected ? 1.0 : 0.6)
 
             if hasZeroError {
                 Text("Amount must be greater than $0.")

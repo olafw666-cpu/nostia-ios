@@ -115,7 +115,7 @@ struct CreateOrgEventSheet: View {
                         Text("Date & Time *").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                             .datePickerStyle(.compact).labelsHidden().padding(12)
-                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12)).colorScheme(.light)
+                            .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
