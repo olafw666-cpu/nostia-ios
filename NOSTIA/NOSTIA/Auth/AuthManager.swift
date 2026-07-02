@@ -11,6 +11,7 @@ final class AuthManager: ObservableObject {
 
     private let tokenKey = "nostia_jwt_token"
     private let refreshTokenKey = "nostia_refresh_token"
+    private let recognizedDeviceTokenKey = "nostia_2fa_device_token"
 
     private init() {
         if let token = getToken() {
@@ -39,6 +40,17 @@ final class AuthManager: ObservableObject {
 
     func getRefreshToken() -> String? {
         keychainRead(key: refreshTokenKey)
+    }
+
+    // Recognized-device token (2FA "remember this device"). Survives logout on
+    // purpose — the device stays recognized so the next login skips the Face ID
+    // challenge; it is only cleared server-side (disable 2FA / forget device).
+    func saveRecognizedDeviceToken(_ token: String) {
+        keychainWrite(key: recognizedDeviceTokenKey, value: token)
+    }
+
+    func getRecognizedDeviceToken() -> String? {
+        keychainRead(key: recognizedDeviceTokenKey)
     }
 
     func deleteToken() {

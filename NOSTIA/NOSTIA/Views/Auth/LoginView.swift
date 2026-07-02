@@ -54,6 +54,13 @@ struct LoginView: View {
 
                     NostiaSecureField(label: "Password", placeholder: "Enter your password", text: $password)
 
+                    NavigationLink(destination: ForgotPasswordView()) {
+                        Text("Forgot password?")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundColor(Color.nostiaAccent)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+
                     Button {
                         Task { await vm.login(username: username, password: password) }
                     } label: {

@@ -29,6 +29,7 @@ struct PrivacyView: View {
     @State private var trackingEnabled = true
     @State private var navigateToBlockedUsers = false
     @State private var navigateToNotifications = false
+    @State private var navigateToPasskeys = false
 
     var body: some View {
         ScrollView {
@@ -113,6 +114,23 @@ struct PrivacyView: View {
                         .accessibilityHint("Turn push notifications on or off")
                         .navigationDestination(isPresented: $navigateToNotifications) {
                             NotificationSettingsView()
+                        }
+                    }
+
+                    // Security section
+                    GlassSection(title: "Security") {
+                        Button { navigateToPasskeys = true } label: {
+                            HStack {
+                                Image(systemName: "faceid").foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                Text("Face ID & Recovery").foregroundColor(Color.nostiaTextPrimary)
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                            }
+                            .font(.subheadline).padding(responsive.spacing(16))
+                        }
+                        .accessibilityHint("Protect your account with Face ID and set up password recovery")
+                        .navigationDestination(isPresented: $navigateToPasskeys) {
+                            PasskeySettingsView()
                         }
                     }
 

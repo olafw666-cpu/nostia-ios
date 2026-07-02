@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 
 @MainActor
 final class AuthViewModel: ObservableObject {
@@ -14,10 +15,27 @@ final class AuthViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            _ = try await AuthAPI.shared.login(username: username.trimmingCharacters(in: .whitespaces), password: password)
+            let outcome = try await AuthAPI.shared.login(username: username.trimmingCharacters(in: .whitespaces), password: password)
+            switch outcome {
+            case .authenticated:
+                break
+            case .passkeyRequired(let challengeToken, let options):
+                // New device on a Face ID-secured account: the system passkey
+                // sheet appears right after the password is accepted.
+                let assertion = try await PasskeyManager.shared.assert(options: options)
+                _ = try await PasskeyAPI.shared.verifyLogin(
+                    challengeToken: challengeToken,
+                    response: assertion,
+                    deviceName: UIDevice.current.name
+                )
+            }
             NotificationCenter.default.post(name: .userDidLogin, object: nil)
             isLoading = false
             return true
+        } catch PasskeyManager.PasskeyError.canceled {
+            errorMessage = "This account is protected with Face ID. Confirm with Face ID to finish signing in."
+            isLoading = false
+            return false
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false

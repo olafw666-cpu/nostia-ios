@@ -1,5 +1,12 @@
 import Foundation
 
+/// Either a completed login or a passkey (Face ID) 2FA challenge that the client
+/// must satisfy via PasskeyAPI.verifyLogin before a session exists.
+enum LoginOutcome {
+    case authenticated(AuthResponse)
+    case passkeyRequired(challengeToken: String, options: PasskeyAssertionOptions)
+}
+
 actor AuthAPI {
     static let shared = AuthAPI()
     private let client = APIClient.shared
@@ -7,16 +14,41 @@ actor AuthAPI {
 
     private var ongoingRefresh: Task<String, Error>?
 
-    func login(username: String, password: String) async throws -> AuthResponse {
-        let res: AuthResponse = try await client.request(
+    func login(username: String, password: String) async throws -> LoginOutcome {
+        // Superset of AuthResponse: the same endpoint answers with a 2FA challenge
+        // when the account has passkey 2FA and this device is unrecognized.
+        struct LoginResponse: Codable {
+            let token: String?
+            let refreshToken: String?
+            let user: User?
+            let twoFactorRequired: Bool?
+            let challengeToken: String?
+            let assertionOptions: PasskeyAssertionOptions?
+        }
+
+        var body: [String: Any] = ["username": username, "password": password]
+        if let deviceToken = AuthManager.shared.getRecognizedDeviceToken() {
+            body["deviceToken"] = deviceToken
+        }
+        let res: LoginResponse = try await client.request(
             "/auth/login",
             method: "POST",
-            body: ["username": username, "password": password],
+            body: body,
             requiresAuth: false
         )
-        AuthManager.shared.saveToken(res.token)
+
+        if res.twoFactorRequired == true {
+            guard let challengeToken = res.challengeToken, let options = res.assertionOptions else {
+                throw APIError.decodingError("Two-factor challenge was missing its assertion options")
+            }
+            return .passkeyRequired(challengeToken: challengeToken, options: options)
+        }
+        guard let token = res.token, let user = res.user else {
+            throw APIError.decodingError("Login response was missing the session token")
+        }
+        AuthManager.shared.saveToken(token)
         if let rt = res.refreshToken { AuthManager.shared.saveRefreshToken(rt) }
-        return res
+        return .authenticated(AuthResponse(token: token, refreshToken: res.refreshToken, user: user))
     }
 
     func register(
