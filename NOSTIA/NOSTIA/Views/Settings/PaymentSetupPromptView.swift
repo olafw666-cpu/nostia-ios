@@ -84,6 +84,8 @@ struct PaymentSetupPromptView: View {
                             Button("Done") { onFinish() }.foregroundColor(Color.nostiaAccent)
                         }
                     }
+                    // Pushed screens don't inherit the sheet's themed canvas.
+                    .background(Color.nostiaBackground.ignoresSafeArea())
             }
             .sheet(isPresented: $showEmailPrompt) {
                 EmailCaptureSheet(

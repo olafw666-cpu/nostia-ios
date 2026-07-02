@@ -30,6 +30,8 @@ struct OrgDetailView: View {
                 EmptyStateView(icon: "building.2", text: "Organization not found", sub: "")
             }
         }
+        // Pushed inside the org hub's NavigationStack — themed canvas doesn't inherit.
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationTitle(org?.name ?? "Organization")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)

@@ -31,6 +31,7 @@ final class NotificationsViewModel: ObservableObject {
             if let idx = notifications.firstIndex(where: { $0.id == id }) {
                 notifications[idx].read = true
             }
+            await syncCache()
         } catch {}
     }
 
@@ -38,8 +39,35 @@ final class NotificationsViewModel: ObservableObject {
         do {
             try await NotificationsAPI.shared.markAllAsRead()
             for idx in notifications.indices { notifications[idx].read = true }
+            await syncCache()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func delete(_ id: Int) async {
+        do {
+            try await NotificationsAPI.shared.delete(id)
+            notifications.removeAll { $0.id == id }
+            await syncCache()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteAll() async {
+        do {
+            try await NotificationsAPI.shared.deleteAll()
+            notifications = []
+            await syncCache()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Keep the cache in step with local mutations — `load()` serves the cache first, so a
+    /// stale copy would resurrect read/deleted notifications the next time the sheet opens.
+    private func syncCache() async {
+        await CacheManager.shared.set(CacheKey.notifications, value: notifications)
     }
 }

@@ -96,7 +96,7 @@ struct ForgotPasswordView: View {
             .frame(maxWidth: responsive.contentMaxWidth)
             .frame(maxWidth: .infinity)
         }
-        .background(.clear)
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .scrollBounceBehavior(.basedOnSize)
         .navigationTitle("Forgot Password")
         .navigationBarTitleDisplayMode(.inline)

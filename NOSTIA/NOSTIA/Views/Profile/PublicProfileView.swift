@@ -107,7 +107,9 @@ struct PublicProfileView: View {
             .frame(maxWidth: responsive.contentMaxWidth)
             .frame(maxWidth: .infinity)
         }
-        .background(.clear)
+        // Also reached by push (Following tab) where the tab root's themed canvas doesn't
+        // apply — paint it here so dark mode never falls back to system black.
+        .background(Color.nostiaBackground.ignoresSafeArea())
         .navigationTitle(user?.username ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

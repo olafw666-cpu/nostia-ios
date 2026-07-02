@@ -20,6 +20,7 @@ struct HomeView: View {
     @State private var activeSheet: HomeSheet?
     @State private var eventActionsVM = ExperienceActionsViewModel()
     @State private var showOrganizations = false
+    @State private var forYouPage = 0
 
     private var isIPad: Bool { hSizeClass == .regular }
 
@@ -27,11 +28,13 @@ struct HomeView: View {
         case comments(FeedPost)
         case eventDetail(Experience)
         case editPost(FeedPost)
+        case createExperience
         var id: String {
             switch self {
             case .comments(let p): return "c\(p.id)"
             case .eventDetail(let e): return "e\(e.id)"
             case .editPost(let p): return "edit\(p.id)"
+            case .createExperience: return "create"
             }
         }
     }
@@ -128,6 +131,10 @@ struct HomeView: View {
                 ExperienceDetailSheet(event: event, vm: eventActionsVM)
             case .editPost(let post):
                 EditPostSheet(post: post, feedVM: feedVM)
+            case .createExperience:
+                CreateExperienceFromDiscoverSheet { _ in
+                    Task { await vm.loadAll() }
+                }
             }
         }
         .sheet(item: $feedVM.reportTarget) { target in
@@ -138,6 +145,7 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showOrganizations) {
             OrganizationsHubView()
+                .presentationBackground(Color.nostiaBackground)
         }
         .alert("Blocked", isPresented: Binding(
             get: { feedVM.moderationMessage != nil },
@@ -160,8 +168,8 @@ struct HomeView: View {
                 // Left column: stats + events
                 VStack(spacing: responsive.spacing(16)) {
                     statCards
+                    forYouSection
                     orgsButton
-                    if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
                     if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
                     themedSections
                     Spacer(minLength: 0)
@@ -182,8 +190,8 @@ struct HomeView: View {
         LazyVStack(spacing: responsive.spacing(18)) {
             welcomeHeader
             statCards
+            forYouSection
             NostiaSearchBar(placeholder: "Search places & experiences…") { selectedTab = 1 }
-            if !vm.nearbyEvents.isEmpty { nearbyEventsSection }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
             themedSections
             orgsButton
@@ -263,11 +271,76 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - For You carousel (above the search bar)
+
+    /// Paged hero carousel: the two closest feed-blend picks (followed creators → my orgs
+    /// → nearby public, from /experiences/for-you) plus a trailing "Create Experience" card.
     @ViewBuilder
-    private var nearbyEventsSection: some View {
-        experienceRow(title: "Trending near you", events: Array(vm.nearbyEvents.prefix(8)), idPrefix: "nearby") {
-            selectedTab = 1
+    private var forYouSection: some View {
+        let picks = Array(vm.forYouEvents.prefix(2))
+        let pageCount = picks.count + 1 // + trailing create card
+        VStack(alignment: .leading, spacing: 10) {
+            NostiaRowHeader(title: "For You") { selectedTab = 1 }
+            TabView(selection: $forYouPage) {
+                ForEach(Array(picks.enumerated()), id: \.element.id) { index, event in
+                    Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
+                        HomeHeroExperienceCard(event: event)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        if authManager.isDev {
+                            Button(role: .destructive) {
+                                Task { await vm.adminDeleteExperience(id: event.id) }
+                            } label: {
+                                Label("Delete Experience", systemImage: "trash")
+                            }
+                        }
+                    }
+                    .tag(index)
+                }
+                Button { Haptics.tap(); activeSheet = .createExperience } label: {
+                    createExperienceCard
+                }
+                .buttonStyle(.plain)
+                .tag(pageCount - 1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: 224)
+
+            if pageCount > 1 {
+                HStack(spacing: 6) {
+                    ForEach(0..<pageCount, id: \.self) { i in
+                        Circle()
+                            .fill(i == forYouPage ? Color.nostiaAccent : Color.nostiaTextMuted.opacity(0.4))
+                            .frame(width: 7, height: 7)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .animation(.easeInOut(duration: 0.15), value: forYouPage)
+            }
         }
+        // Picks load async — snap back to the first page so the selection never points
+        // at a tag that no longer exists.
+        .onChange(of: vm.forYouEvents.count) { _, _ in forYouPage = 0 }
+    }
+
+    /// Trailing carousel card: create your own experience.
+    @ViewBuilder
+    private var createExperienceCard: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle().fill(Color.nostiaAccentSoft).frame(width: 56, height: 56)
+                Image(systemName: "plus").font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(Color.nostiaAccent)
+            }
+            Text("Create Experience")
+                .font(.system(size: 16, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+            Text("Host something near you")
+                .font(.system(size: 12.5)).foregroundColor(Color.nostiaTextSecond)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 212)
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
     }
 
     @ViewBuilder
@@ -422,6 +495,49 @@ struct HomeView: View {
 }
 
 // MARK: - Sub-components
+
+/// Full-width photo card for the Home "For You" paged carousel. Fixed height so the
+/// paging TabView can size itself deterministically.
+struct HomeHeroExperienceCard: View {
+    let event: Experience
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                AtlasExperienceImage(flyerImage: event.flyerImage, height: 150)
+                if let tag = event.tags?.first {
+                    Text(tag.capitalized)
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundColor(Color.nostiaAccent)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(Color.nostiaWarm))
+                        .shadow(color: Color.black.opacity(0.08), radius: 4, y: 1)
+                        .padding(10)
+                }
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(event.title)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill").font(.system(size: 13)).foregroundColor(Color.nostiaStar)
+                    Text(event.formattedAvgRating ?? "New")
+                        .font(.system(size: 12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                    if let dist = event.formattedDistance {
+                        Text("· \(dist)").font(.system(size: 12.5)).foregroundColor(Color.nostiaTextMuted)
+                    } else if let loc = event.location, !loc.isEmpty {
+                        Text("· \(loc)").font(.system(size: 12.5)).foregroundColor(Color.nostiaTextMuted).lineLimit(1)
+                    }
+                }
+            }
+            .padding(.horizontal, 14).padding(.top, 11).padding(.bottom, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: 212)
+        .nostiaWarmCard(cornerRadius: 20)
+    }
+}
 
 struct StatCard: View {
     let icon: String; let color: Color; let count: Int; let label: String
