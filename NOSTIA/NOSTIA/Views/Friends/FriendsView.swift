@@ -34,7 +34,10 @@ struct FriendsView: View {
                 .padding(responsive.spacing(12))
                 .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
 
-                Button("Search") { Task { await vm.search() } }
+                Button("Search") {
+                    hideKeyboard()
+                    Task { await vm.search() }
+                }
                     .font(.subheadline.bold()).foregroundColor(.white)
                     .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
                     .background(Color.nostiaAccent).cornerRadius(12)
@@ -157,6 +160,14 @@ struct FriendsView: View {
         }
         .background(.clear)
         .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
+        .scrollDismissesKeyboard(.immediately)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { hideKeyboard() }
+                    .foregroundColor(Color.nostiaAccent)
+            }
+        }
         .task { await vm.loadAll() }
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }

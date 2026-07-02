@@ -513,70 +513,74 @@ struct AddressCaptureSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: responsive.spacing(20)) {
-                VStack(spacing: responsive.spacing(12)) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: responsive.fontSize(48)))
-                        .foregroundStyle(Color.nostiaAccent)
-                    Text("Home Address Required")
-                        .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
-                    Text("Your home address is required to set up your payout account with Stripe for receiving payments.")
-                        .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, responsive.spacing(8))
+            ScrollView {
+                VStack(spacing: responsive.spacing(20)) {
+                    VStack(spacing: responsive.spacing(12)) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: responsive.fontSize(48)))
+                            .foregroundStyle(Color.nostiaAccent)
+                        Text("Home Address Required")
+                            .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
+                        Text("Your home address is required to set up your payout account with Stripe for receiving payments.")
+                            .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, responsive.spacing(8))
 
-                VStack(spacing: responsive.spacing(12)) {
-                    NostiaTextField(label: "Street Address", placeholder: "123 Main St", text: $line1)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-
-                    HStack(spacing: responsive.spacing(12)) {
-                        NostiaTextField(label: "City", placeholder: "New York", text: $city)
+                    VStack(spacing: responsive.spacing(12)) {
+                        NostiaTextField(label: "Street Address", placeholder: "123 Main St", text: $line1)
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
 
-                        NostiaTextField(label: "State", placeholder: "NY", text: $state)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
-                            .frame(maxWidth: 80)
-                            .onChange(of: state) { newValue in
-                                if newValue.count > 2 { state = String(newValue.prefix(2)) }
-                            }
-                    }
+                        HStack(spacing: responsive.spacing(12)) {
+                            NostiaTextField(label: "City", placeholder: "New York", text: $city)
+                                .textInputAutocapitalization(.words)
+                                .autocorrectionDisabled()
 
-                    NostiaTextField(label: "ZIP Code", placeholder: "10001", text: $zip)
-                        .keyboardType(.numberPad)
-                }
-
-                if let err = errorMessage {
-                    Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Button {
-                    onSave()
-                } label: {
-                    HStack(spacing: 8) {
-                        if isSaving {
-                            ProgressView().tint(.white)
-                        } else {
-                            Image(systemName: "arrow.right.circle.fill")
-                            Text("Save & Continue")
+                            NostiaTextField(label: "State", placeholder: "NY", text: $state)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled()
+                                .frame(maxWidth: 80)
+                                .onChange(of: state) { newValue in
+                                    if newValue.count > 2 { state = String(newValue.prefix(2)) }
+                                }
                         }
-                    }
-                    .font(.headline.bold()).foregroundColor(.white)
-                    .frame(maxWidth: .infinity).padding(responsive.spacing(16))
-                    .background(Color.nostiaAccent).cornerRadius(14)
-                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
-                }
-                .disabled(isSaving || !isValid)
 
-                Spacer()
+                        NostiaTextField(label: "ZIP Code", placeholder: "10001", text: $zip)
+                            .keyboardType(.numberPad)
+                    }
+
+                    if let err = errorMessage {
+                        Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Button {
+                        onSave()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isSaving {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "arrow.right.circle.fill")
+                                Text("Save & Continue")
+                            }
+                        }
+                        .font(.headline.bold()).foregroundColor(.white)
+                        .frame(maxWidth: .infinity).padding(responsive.spacing(16))
+                        .background(Color.nostiaAccent).cornerRadius(14)
+                        .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
+                    }
+                    .disabled(isSaving || !isValid)
+
+                    Spacer()
+                }
+                .padding(responsive.spacing(24))
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
-            .padding(responsive.spacing(24))
-            .frame(maxWidth: responsive.contentMaxWidth)
-            .frame(maxWidth: .infinity)
+            .background(.clear)
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
@@ -584,6 +588,13 @@ struct AddressCaptureSheet: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { onDismiss() }
                         .foregroundColor(Color.nostiaTextSecond)
+                }
+                // Number-pad fields (ZIP) have no return key; without this Done
+                // button there is no way to leave the field.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { hideKeyboard() }
+                        .foregroundColor(Color.nostiaAccent)
                 }
             }
         }

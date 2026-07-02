@@ -118,6 +118,7 @@ struct ExperiencesView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(.clear)
+            .scrollDismissesKeyboard(.immediately)
             .refreshable { await vm.loadAll() }
 
             Button { vm.showCreate = true } label: {
