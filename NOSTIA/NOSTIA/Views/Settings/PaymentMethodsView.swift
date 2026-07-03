@@ -3,6 +3,7 @@ import SwiftUI
 struct PaymentMethodsView: View {
     @StateObject private var vm = PaymentsViewModel()
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @State private var showSetupIntro = false
 
     var body: some View {
         ScrollView {
@@ -93,7 +94,7 @@ struct PaymentMethodsView: View {
 
                             if vm.onboardingStatus?.complete != true {
                                 Button {
-                                    Task { await vm.startOnboarding() }
+                                    showSetupIntro = true
                                 } label: {
                                     Text("Set Up Payouts with Stripe")
                                         .font(.subheadline.bold()).foregroundColor(.white)
@@ -102,11 +103,26 @@ struct PaymentMethodsView: View {
                                 }
                                 .disabled(vm.isOnboarding)
                                 .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
+                                .alert("Finish Every Step", isPresented: $showSetupIntro) {
+                                    Button("Start Setup") { Task { await vm.startOnboarding() } }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text("A secure Stripe page will open. Go through the whole process — verify your identity, add your bank account, and tap “Agree and submit” at the end. Only tap Done when Stripe says “Payouts Enabled”.")
+                                }
+
+                                if let notice = vm.setupNotice {
+                                    Text(notice)
+                                        .font(.footnote).foregroundColor(Color.nostiaWarning)
+                                        .padding(12)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Color.nostiaWarning.opacity(0.12)).cornerRadius(8)
+                                        .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
+                                }
 
                                 Text("Required to receive reimbursements from trip expenses.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 4)
-                                Text("A secure Stripe page will open for identity verification. Complete every step, then tap Done to return to Nostia.")
+                                Text("Setup isn't complete until you finish every Stripe step and see “Payouts Enabled”. Closing the page early means payouts stay off — tap Set Up Payouts again to continue.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             }

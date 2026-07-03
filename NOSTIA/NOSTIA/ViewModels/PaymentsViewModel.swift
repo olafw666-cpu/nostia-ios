@@ -4,6 +4,15 @@ import SafariServices
 import StripePaymentSheet
 import UIKit
 
+/// Fires when the user closes the Stripe browser via Done — lets the app nudge them
+/// back into the flow if they left before payouts were enabled. (SFSafariViewController
+/// holds its delegate weakly, so the view model keeps a strong reference.)
+private final class SafariDismissDelegate: NSObject, SFSafariViewControllerDelegate {
+    let onFinish: () -> Void
+    init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) { onFinish() }
+}
+
 @MainActor
 final class PaymentsViewModel: ObservableObject {
     @Published var paymentMethods: [PaymentMethod] = []
@@ -11,6 +20,9 @@ final class PaymentsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isOnboarding = false
     @Published var errorMessage: String?
+    /// Warning shown when the user closes the Stripe browser before setup is complete.
+    @Published var setupNotice: String?
+    private var safariDelegate: SafariDismissDelegate?
 
     func load() async {
         isLoading = true
@@ -69,6 +81,14 @@ final class PaymentsViewModel: ObservableObject {
             if let presenter = topViewController() {
                 let safari = SFSafariViewController(url: url)
                 safari.dismissButtonStyle = .done
+                let delegate = SafariDismissDelegate { [weak self] in
+                    Task { @MainActor [weak self] in
+                        await self?.handleOnboardingBrowserClosed()
+                    }
+                }
+                safari.delegate = delegate
+                safariDelegate = delegate
+                setupNotice = nil
                 presenter.present(safari, animated: true)
                 onboardingSafariVC = safari
             } else {
@@ -94,8 +114,23 @@ final class PaymentsViewModel: ObservableObject {
                 // Close the Stripe browser sheet if it's still up — the user is done.
                 onboardingSafariVC?.dismiss(animated: true)
                 onboardingSafariVC = nil
+                setupNotice = nil
                 return
             }
+        }
+    }
+
+    /// User tapped Done in the Stripe browser. If setup isn't actually finished, say so
+    /// plainly — otherwise people assume closing the sheet means they're done.
+    private func handleOnboardingBrowserClosed() async {
+        onboardingSafariVC = nil
+        if let status = try? await PaymentsAPI.shared.getOnboardingStatus() {
+            onboardingStatus = status
+        }
+        if onboardingStatus?.complete == true {
+            setupNotice = nil
+        } else {
+            setupNotice = "Payout setup isn't finished yet. Tap Set Up Payouts to pick up where you left off — you're done when Stripe shows “Payouts Enabled”."
         }
     }
 
