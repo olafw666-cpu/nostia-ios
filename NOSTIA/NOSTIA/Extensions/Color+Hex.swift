@@ -73,17 +73,17 @@ extension Color {
     // `nostiaCard` is now the DEFAULT NEUTRAL surface: generic cards AND buttons/controls all use it.
     // Only experience/trip/vault cards and search bars stay warm — those use `nostiaWarm` instead.
     static let nostiaBackground  = Color(light: "F4F6F9", dark: "3A3A3C")   // app canvas (neutral grey, darkened)
-    static let nostiaCard        = Color(light: "FFFFFF", dark: "242426")   // DEFAULT neutral surface (cards + controls)
-    static let nostiaWarm        = Color(light: "FFFFFF", dark: "352F28")   // WARM surface: experiences / trips / vault / search bars
+    static let nostiaCard        = Color(light: "FFFFFF", dark: "2C2C2E")   // DEFAULT neutral surface (cards + controls)
+    static let nostiaWarm        = Color(light: "FFFFFF", dark: "2E2922")   // WARM surface: experiences / trips / vault / search bars
 
-    // Buttons — same neutral grey as generic cards (2 shades darker than the background).
+    // Buttons — same neutral grey as generic cards (darker than the background).
     // Light keeps the original neutral surface so light mode is unchanged.
-    static let nostiaButton      = Color(light: "F4F6F9", dark: "242426")   // button / chip / control fill
+    static let nostiaButton      = Color(light: "F4F6F9", dark: "2C2C2E")   // button / chip / control fill
 
     // Borders, dividers & inputs — neutral hairlines (no warmth).
     static let nostriaBorder     = Color(light: "E7ECF1", dark: "454547")   // control / card hairline
-    static let nostiaDivider     = Color(light: "EEF1F5", dark: "2E2E30")   // in-card separators
-    static let nostiaInput       = Color(light: "FFFFFF", dark: "242426")   // input fields (non-search)
+    static let nostiaDivider     = Color(light: "EEF1F5", dark: "38383A")   // in-card separators (sits above the lightened card)
+    static let nostiaInput       = Color(light: "FFFFFF", dark: "2C2C2E")   // input fields (non-search)
 
     // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark.
     static let nostiaAccent      = Color(light: "0E9F6E", dark: "E8843C")   // primary

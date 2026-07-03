@@ -47,22 +47,50 @@ extension View {
                      elevation: elevation)
     }
 
-    /// WARM surface: identical to `nostiaCard` but fills the warm `nostiaWarm` grey. Reserved
-    /// for the only surfaces that stay warm in dark mode — experience / trip / vault cards and
-    /// search bars. Everything else uses the now-neutral `nostiaCard`.
+    /// WARM surface: identical fill/rim to `nostiaCard` but with a "lifted" two-layer shadow
+    /// (ambient halo + downward drop) so warm surfaces pop off the canvas in both themes.
+    /// Reserved for the only surfaces that stay warm in dark mode — experience / trip / vault
+    /// cards and search bars. Everything else uses the now-neutral `nostiaCard`.
     func nostiaWarmCard<S: Shape>(in shape: S, elevation: NostiaElevation = .card) -> some View {
-        self
-            .background(Color.nostiaWarm)
-            .clipShape(shape)
-            .overlay(shape.stroke(Color.nostiaCardStroke, lineWidth: 0.75))
-            .shadow(color: Color.nostiaShadow.opacity(elevation.opacity),
-                    radius: elevation.radius, x: 0, y: elevation.y)
+        modifier(NostiaWarmCardModifier(shape: shape, elevation: elevation))
     }
 
     /// Convenience for the common rounded-rectangle case.
     func nostiaWarmCard(cornerRadius: CGFloat, elevation: NostiaElevation = .card) -> some View {
         nostiaWarmCard(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
                        elevation: elevation)
+    }
+}
+
+/// Warm-card surface with the lifted shadow. SwiftUI has no shadow *spread*, so the
+/// "behind and slightly around" read is built from two stacked `.shadow` layers: an
+/// ambient ring (small radius, zero y-offset — halos evenly on all sides) and a drop
+/// (larger radius, downward offset). `Color.nostiaShadow` is theme-resolving (blue-grey
+/// light / black dark) and a black shadow needs far higher opacity to register on the
+/// dark canvas, so opacities are picked per active scheme.
+private struct NostiaWarmCardModifier<S: Shape>: ViewModifier {
+    @Environment(\.colorScheme) private var scheme
+
+    let shape: S
+    let elevation: NostiaElevation
+
+    /// Scales both layers by elevation so `.flat` warm surfaces (chips / search bars)
+    /// lift less than `.raised` ones.
+    private var lift: Double { elevation.opacity / NostiaElevation.card.opacity }
+
+    func body(content: Content) -> some View {
+        content
+            .background(Color.nostiaWarm)
+            .clipShape(shape)
+            // Rim "highlight" completes the raised read on dark.
+            .overlay(shape.stroke(Color.nostiaCardStroke, lineWidth: 0.75))
+            // Ambient ring ("slightly around").
+            .shadow(color: Color.nostiaShadow.opacity((scheme == .dark ? 0.45 : 0.10) * lift),
+                    radius: 6, x: 0, y: 0)
+            // Drop ("behind").
+            .shadow(color: Color.nostiaShadow.opacity((scheme == .dark ? 0.55 : 0.16) * lift),
+                    radius: scheme == .dark ? 20 : 18,
+                    x: 0, y: scheme == .dark ? 10 : 8)
     }
 }
 
