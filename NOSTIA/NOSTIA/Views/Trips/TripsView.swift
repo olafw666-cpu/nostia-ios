@@ -8,6 +8,7 @@ struct TripsView: View {
     @State private var showQRScanner = false
     @State private var scanResultAlert: ScanResultAlert?
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @EnvironmentObject var deepLinkRouter: DeepLinkRouter
 
     struct ScanResultAlert: Identifiable {
         let id = UUID()
@@ -65,7 +66,18 @@ struct TripsView: View {
             .padding(.bottom, 100)
         }
         .background(.clear)
-        .task { await vm.loadTrips() }
+        .task {
+            await vm.loadTrips()
+            consumePendingVaultLink()
+        }
+        // A tapped vault push can only switch tabs; opening the actual vault happens
+        // here, once the trip list contains the target.
+        .onChange(of: deepLinkRouter.pendingVaultTripId) {
+            consumePendingVaultLink()
+        }
+        .onChange(of: vm.isLoading) {
+            if !vm.isLoading { consumePendingVaultLink() }
+        }
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
@@ -86,6 +98,15 @@ struct TripsView: View {
         .navigationDestination(item: $tripToDetail) { trip in
             VaultDetailView(trip: trip, tripsVM: vm)
         }
+    }
+
+    /// Opens the vault a tapped push pointed at. Left pending until the trip list
+    /// actually contains it (it may still be loading when the tab switches).
+    private func consumePendingVaultLink() {
+        guard let tripId = deepLinkRouter.pendingVaultTripId,
+              let trip = vm.trips.first(where: { $0.id == tripId }) else { return }
+        deepLinkRouter.pendingVaultTripId = nil
+        tripToDetail = trip
     }
 
     @MainActor

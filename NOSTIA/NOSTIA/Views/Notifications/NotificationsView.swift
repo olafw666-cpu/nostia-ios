@@ -4,6 +4,7 @@ struct NotificationsView: View {
     @StateObject private var vm = NotificationsViewModel()
     @State private var showClearAllConfirm = false
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,6 +26,21 @@ struct NotificationsView: View {
                 List(vm.notifications) { notif in
                     NotificationRow(notification: notif) {
                         Task { await vm.markAsRead(notif.id) }
+                        // Vault and event notifications navigate to their target
+                        // (same routing as a tapped push) — a "cash payment to verify"
+                        // tap must land inside the right vault, not just mark as read.
+                        switch notif.type {
+                        case "vault_reminder", "added_to_vault", "payment_received", "vault_expense":
+                            dismiss()
+                            DeepLinkRouter.shared.route(.vault(tripId: notif.data?.tripId))
+                        case "event_invite":
+                            if let eventId = notif.data?.eventId {
+                                dismiss()
+                                DeepLinkRouter.shared.route(.event(eventId: eventId))
+                            }
+                        default:
+                            break
+                        }
                     }
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: responsive.spacing(16), bottom: 4, trailing: responsive.spacing(16)))

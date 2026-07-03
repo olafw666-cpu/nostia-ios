@@ -73,6 +73,50 @@ struct VaultContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.nostiaTextMuted.opacity(0.3), lineWidth: 1))
                     }
 
+                    // Cash claims waiting on ME as the expense payer — surfaced at the top so
+                    // the "cash payment to verify" notification always lands on something
+                    // actionable (the same buttons also live on each expense card's split row).
+                    let approvals = pendingCashApprovals(in: data)
+                    if !approvals.isEmpty {
+                        Text("Needs Your Approval").font(.nostiaDisplay(18, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(approvals) { item in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(alignment: .top) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.debtorDisplay)
+                                            .font(.system(size: 15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                                        Text("says they paid you in cash for \"\(item.entryDescription)\"")
+                                            .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer()
+                                    Text(String(format: "$%.2f", item.amount))
+                                        .font(.system(size: 17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                                }
+                                HStack(spacing: 10) {
+                                    Button { Haptics.tap(); activeAlert = .confirmDecline(item.id) } label: {
+                                        Text("Decline")
+                                            .font(.subheadline.bold()).foregroundColor(Color.nostriaDanger)
+                                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
+                                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaDanger.opacity(0.5), lineWidth: 1))
+                                    }
+                                    Button { Haptics.tap(); activeAlert = .confirmVerify(item.id) } label: {
+                                        Label("Verify Cash", systemImage: "checkmark.seal.fill")
+                                            .font(.subheadline.bold()).foregroundColor(.white)
+                                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                            .background(Color.nostiaSuccess).cornerRadius(10)
+                                    }
+                                }
+                                .disabled(vm.busySplitId != nil)
+                            }
+                            .padding(responsive.spacing(16))
+                            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.nostiaWarning.opacity(0.45), lineWidth: 1))
+                        }
+                    }
+
                     let nonZeroBalances = data.balances.filter { abs($0.balance) > 0.005 }
                     if !nonZeroBalances.isEmpty {
                         Text("Balances").font(.nostiaDisplay(18, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
@@ -240,6 +284,29 @@ struct VaultContentView: View {
         return data.entries.contains { entry in
             entry.paidById == me &&
             (entry.splits?.contains { $0.userId == targetId && !$0.paid } ?? false)
+        }
+    }
+
+    // One row per split awaiting MY verification (I fronted the expense, a member claims cash).
+    private struct PendingCashApproval: Identifiable {
+        let id: Int            // split id
+        let debtorDisplay: String
+        let entryDescription: String
+        let amount: Double
+    }
+
+    private func pendingCashApprovals(in data: VaultSummary) -> [PendingCashApproval] {
+        guard let me = currentUserId else { return [] }
+        return data.entries.flatMap { entry -> [PendingCashApproval] in
+            guard entry.paidById == me, let splits = entry.splits else { return [] }
+            return splits.filter(\.isCashPending).map {
+                PendingCashApproval(
+                    id: $0.id,
+                    debtorDisplay: $0.userUsername.map { "@\($0)" } ?? $0.userName ?? "A member",
+                    entryDescription: entry.description,
+                    amount: $0.amount
+                )
+            }
         }
     }
 }

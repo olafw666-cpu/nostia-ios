@@ -51,7 +51,8 @@ final class AuthViewModel: ObservableObject {
         locationConsent: Bool,
         dataCollectionConsent: Bool,
         tosVersion: String,
-        dataNotSold: Bool = false
+        dataNotSold: Bool = false,
+        enable2FA: Bool = false
     ) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -66,6 +67,13 @@ final class AuthViewModel: ObservableObject {
                 tosVersion: tosVersion,
                 dataNotSold: dataNotSold
             )
+            if enable2FA {
+                // Enroll the Face ID passkey while still on the signup screen, before the
+                // root view swaps to the app (the token from register is already stored).
+                // Best-effort: canceling or failing must not block account creation —
+                // Settings → Security → Face ID & Recovery can enable it later.
+                await enrollPasskeyQuietly()
+            }
             UserDefaults.standard.set(true, forKey: "nostia_pending_profile_setup")
             NotificationCenter.default.post(name: .userDidLogin, object: nil)
             isLoading = false
@@ -74,6 +82,19 @@ final class AuthViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             isLoading = false
             return false
+        }
+    }
+
+    private func enrollPasskeyQuietly() async {
+        do {
+            let options = try await PasskeyAPI.shared.registrationOptions()
+            let attestation = try await PasskeyManager.shared.register(options: options)
+            _ = try await PasskeyAPI.shared.verifyRegistration(
+                response: attestation,
+                deviceName: UIDevice.current.name
+            )
+        } catch {
+            // Non-fatal: the account exists and is signed in; 2FA just stays off.
         }
     }
 }

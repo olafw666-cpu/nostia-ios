@@ -7,6 +7,7 @@ import SwiftUI
 struct ForgotPasswordView: View {
     @EnvironmentObject var responsive: ResponsiveLayoutManager
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var newPassword = ""
     @State private var confirmPassword = ""
@@ -86,10 +87,21 @@ struct ForgotPasswordView: View {
                     }
                     .disabled(isWorking)
 
-                    Text("Didn't enable Face ID security? Your account can't be recovered automatically — contact support from the app store listing.")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: responsive.spacing(8)) {
+                        Text("Didn't enable Face ID security? Your account can't be recovered automatically — reach out and we'll help.")
+                            .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            if let url = URL(string: "mailto:support@nostia.com?subject=Nostia%20account%20recovery") {
+                                openURL(url)
+                            }
+                        } label: {
+                            Label("Contact Support", systemImage: "envelope")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundColor(Color.nostiaAccent)
+                        }
+                    }
                 }
             }
             .padding(responsive.spacing(24))

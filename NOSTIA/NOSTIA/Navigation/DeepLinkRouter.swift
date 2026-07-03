@@ -23,6 +23,10 @@ final class DeepLinkRouter: ObservableObject {
     /// consumes a non-empty value into its filter, then clears it so a later manual
     /// visit to Explore isn't re-filtered.
     @Published var pendingExploreTags: [String] = []
+    /// Trip whose vault a tapped push wants opened. Switching to the Vaults tab alone
+    /// can't push the detail screen, so `TripsView` consumes this (and clears it) once
+    /// its trip list contains the target.
+    @Published var pendingVaultTripId: Int?
 
     /// How many pushed full-bottom screens (e.g. chat views, whose pinned input bar would
     /// otherwise sit *under* the floating `AtlasTabBar`) currently want the bar hidden.
@@ -57,7 +61,9 @@ final class DeepLinkRouter: ObservableObject {
 
     func route(_ target: Target) {
         switch target {
-        case .vault:  selectedTab = 2   // Vaults tab (Atlas order: Home·Explore·Vaults·Map·Following)
+        case .vault(let tripId):
+            selectedTab = 2             // Vaults tab (Atlas order: Home·Explore·Vaults·Map·Following)
+            if let tripId { pendingVaultTripId = tripId }
         case .event:  selectedTab = 1   // Explore / Experiences tab
         case .profile, .notifications:
             break                       // presented modally over the current tab

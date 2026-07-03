@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-06-28"
+    static let tosVersion = "2026-07-03"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: June 28, 2026
+Effective Date: July 3, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -28,6 +28,8 @@ You must register for an account to use most features of Nostia. You agree to:
 - Accept responsibility for all activity that occurs under your account
 
 You may not use another person's account without their permission. Accounts are non-transferable.
+
+Nostia offers optional Face ID security (two-factor authentication) using passkeys. If you enable it, signing in on a new device requires Face ID in addition to your password, and your passkey becomes the only automated way to recover your account if you forget your password. Your passkey is stored in your device keychain (and, where enabled, synced by Apple's iCloud Keychain); Nostia never receives your biometric data. If you do not enable Face ID security and lose access to your credentials, contact us through the App's support channels — we may not be able to restore access to your account.
 
 4. USER CONDUCT
 
@@ -54,7 +56,13 @@ We reserve the right to remove content that violates these Terms or that we deem
 
 6. PAYMENT FEATURES (VAULT)
 
-The Vault feature enables shared expense tracking and payment splitting via Stripe. By using Vault payment features, you agree to Stripe's Terms of Service in addition to these Terms. We are not responsible for any payment failures, disputes, or errors arising from Stripe's processing. You are responsible for ensuring your payment information is accurate.
+The Vault feature enables shared expense tracking and payment splitting via Stripe. By using Vault payment features, you agree to Stripe's Terms of Service in addition to these Terms.
+
+Card payments: When you pay a split by card, the payment is processed by Stripe and transferred directly to the member who fronted the expense. A payment processing fee is added to card charges and shown to you before you confirm payment. To receive card payments, you must set up payouts through Stripe, which includes providing identity and payout information directly to Stripe and agreeing to Stripe's Connected Account Agreement. Nostia does not receive or store the identity documents or full banking details you provide to Stripe.
+
+Cash payments: Recording a cash payment sends a verification request to the member who fronted the expense; the split is marked paid only after that member confirms they received the cash. Falsely claiming a cash payment violates these Terms and our Community Guidelines.
+
+Disputes and reversals: If a card payment is disputed or reversed, the related transfer to its recipient may be reversed and the corresponding split may be reopened. We are not responsible for any payment failures, disputes, or errors arising from Stripe's processing. You are responsible for ensuring your payment information is accurate. Nostia does not mediate financial disputes between users.
 
 7. LOCATION DATA
 
@@ -66,7 +74,7 @@ All content, design, graphics, interfaces, and software that are part of the App
 
 9. THIRD-PARTY SERVICES
 
-Nostia integrates with third-party services including Stripe for payments and Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services.
+Nostia integrates with third-party services including Stripe for payments and payouts (including Stripe Connect) and Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services.
 
 10. DISCLAIMERS
 
@@ -104,7 +112,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: June 28, 2026
+Effective Date: July 3, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -114,7 +122,8 @@ a) Information You Provide
 - Account information: username, full name, email address, password (stored hashed), and profile picture
 - Profile content: bio, profile photo
 - User-generated content: posts, comments, experience descriptions, ratings and reviews, trip details, and content you share within organizations
-- Payment information: processed by Stripe; we store only a Stripe customer ID and the last four digits of saved cards
+- Payment information: processed by Stripe; we store only Stripe identifiers (customer ID and, if you set up payouts, a connected-account ID) and the last four digits of saved cards. If you set up payouts to receive money from other members, the identity and banking details you provide during Stripe onboarding are collected and held by Stripe, not by us.
+- Face ID security (passkeys): if you enable Face ID security, we store a passkey public-key credential and a device name for each device you enroll. Your biometric data never leaves your device — Apple only tells us whether the check succeeded.
 - Location data: if you grant location permission, your approximate coordinates are used for experience discovery, map features, and determining eligibility for location-based organizations
 - Contacts: if you grant Contacts permission and use the optional "find friends from contacts" feature, email addresses from your address book are transmitted to our server solely to check which of them belong to existing Nostia users; they are matched in memory and not stored. If you explicitly invite a specific contact, that contact's email and/or phone number is stored only to generate the invitation link, and the record expires after 7 days. Contact data is never used for advertising and never shared with third parties.
 
@@ -161,7 +170,7 @@ We retain your account data for as long as your account is active. You may reque
 
 5. SECURITY
 
-We implement reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. Passwords are stored using industry-standard bcrypt hashing. Short-lived JWTs are used for session management. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
+We implement reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. Passwords are stored using industry-standard bcrypt hashing. Short-lived JWTs are used for session management. Optional passkey-based two-factor authentication (Face ID) is available for account sign-in and recovery; only the public half of the passkey is stored on our servers. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
 
 6. LOCATION DATA
 
@@ -207,7 +216,7 @@ For privacy-related questions or requests, use the Data Export or Delete My Data
     static let communityGuidelines = """
 COMMUNITY GUIDELINES
 
-Effective Date: June 28, 2026
+Effective Date: July 3, 2026
 
 Nostia is a platform built around shared travel experiences, adventure, and genuine human connection. These Community Guidelines describe the standards we expect all users to uphold to keep Nostia a safe, welcoming, and enjoyable place.
 
@@ -252,6 +261,7 @@ Reporting suspicious activity to local authorities and to us via the App is enco
 The Vault expense-splitting feature is designed to help groups share costs fairly.
 - Do not use Vault to commit fraud, charge-backs, or payment abuse
 - Do not create false expenses or manipulate payment records
+- Do not claim a cash payment you did not make — cash claims require confirmation from the person who received the cash
 - Disputes about payments should be resolved between the parties involved; Nostia does not mediate financial disputes
 
 6. PROTECT MINORS

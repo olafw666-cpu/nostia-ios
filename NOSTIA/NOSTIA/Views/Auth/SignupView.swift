@@ -16,6 +16,7 @@ struct SignupView: View {
     @State private var tosAgreed = false
     @State private var attDenied = false
     @State private var consentGranted = false
+    @State private var use2FA = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -59,6 +60,37 @@ struct SignupView: View {
                         .keyboardType(.emailAddress).textInputAutocapitalization(.never)
 
                     NostiaSecureField(label: "Password *", placeholder: "At least 8 characters", text: $password)
+
+                    // Optional Face ID 2FA opt-in — the passkey enrolls right after the
+                    // account is created (system Face ID sheet), before the app opens.
+                    Button { Haptics.tap(); use2FA.toggle() } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "faceid")
+                                .font(.system(size: 22))
+                                .foregroundColor(use2FA ? Color.nostiaSuccess : Color.nostiaAccent)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Use 2FA")
+                                    .font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
+                                Text("Protect your account with Face ID. New devices will need Face ID to sign in, and you can recover your account with Face ID if you forget your password.")
+                                    .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            Image(systemName: use2FA ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 22))
+                                .foregroundColor(use2FA ? Color.nostiaSuccess : Color.nostiaTextMuted)
+                        }
+                        .padding(responsive.spacing(14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12)
+                            .stroke(use2FA ? Color.nostiaSuccess.opacity(0.5) : Color.nostriaBorder, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Use 2FA")
+                    .accessibilityValue(use2FA ? "On" : "Off")
+                    .accessibilityHint("Adds Face ID security to your account right after it is created")
 
                     if consentGranted {
                         HStack(spacing: 8) {
@@ -154,6 +186,7 @@ struct SignupView: View {
         attDenied = (status != .authorized)
         _ = await vm.register(username: username, password: password, name: name, email: email,
                               locationConsent: locationConsent, dataCollectionConsent: dataConsent,
-                              tosVersion: LegalDocuments.tosVersion, dataNotSold: attDenied)
+                              tosVersion: LegalDocuments.tosVersion, dataNotSold: attDenied,
+                              enable2FA: use2FA)
     }
 }
