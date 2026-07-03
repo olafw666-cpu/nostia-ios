@@ -106,7 +106,7 @@ struct PaymentMethodsView: View {
                                 Text("Required to receive reimbursements from trip expenses.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 4)
-                                Text("Safari will open for identity verification. Complete all steps, then return to Nostia and pull down to refresh.")
+                                Text("A secure Stripe page will open for identity verification. Complete every step, then tap Done to return to Nostia.")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                     .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             }

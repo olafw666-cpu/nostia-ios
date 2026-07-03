@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import SafariServices
 import StripePaymentSheet
 import UIKit
 
@@ -39,6 +40,19 @@ final class PaymentsViewModel: ObservableObject {
         }
     }
 
+    /// The in-app browser hosting Stripe onboarding, kept so polling can close it on success.
+    private weak var onboardingSafariVC: SFSafariViewController?
+
+    private func topViewController() -> UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = scene.keyWindow?.rootViewController else { return nil }
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        return topVC
+    }
+
     func startOnboarding() async {
         guard !isOnboarding else { return }
         isOnboarding = true
@@ -48,7 +62,18 @@ final class PaymentsViewModel: ObservableObject {
             guard let url = URL(string: urlString),
                   url.scheme == "https",
                   url.host?.hasSuffix("stripe.com") == true else { return }
-            await UIApplication.shared.open(url)
+            // In-app browser, NOT external Safari: the hosted flow links out to Stripe's
+            // legal agreements, and in external Safari that strands users on stripe.com
+            // with no visible way back to the app. SFSafariViewController always shows
+            // Done, and back returns from the agreement to the onboarding form.
+            if let presenter = topViewController() {
+                let safari = SFSafariViewController(url: url)
+                safari.dismissButtonStyle = .done
+                presenter.present(safari, animated: true)
+                onboardingSafariVC = safari
+            } else {
+                await UIApplication.shared.open(url)
+            }
             // Poll for onboarding completion so user doesn't have to pull-to-refresh manually
             Task { @MainActor [weak self] in
                 await self?.pollOnboardingStatus()
@@ -65,7 +90,12 @@ final class PaymentsViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: interval)
             guard let status = try? await PaymentsAPI.shared.getOnboardingStatus() else { continue }
             onboardingStatus = status
-            if status.complete { return }
+            if status.complete {
+                // Close the Stripe browser sheet if it's still up — the user is done.
+                onboardingSafariVC?.dismiss(animated: true)
+                onboardingSafariVC = nil
+                return
+            }
         }
     }
 
@@ -83,14 +113,9 @@ final class PaymentsViewModel: ObservableObject {
             let sheet = PaymentSheet(setupIntentClientSecret: intent.clientSecret, configuration: config)
             isLoading = false
 
-            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let rootVC = scene.keyWindow?.rootViewController else {
+            guard let topVC = topViewController() else {
                 errorMessage = "Unable to present payment sheet."
                 return
-            }
-            var topVC = rootVC
-            while let presented = topVC.presentedViewController {
-                topVC = presented
             }
             sheet.present(from: topVC) { [weak self] result in
                 Task { @MainActor [weak self] in
