@@ -3,7 +3,9 @@ import Foundation
 struct RedeemResult: Codable {
     let trip: Trip
     let alreadyMember: Bool
-    let friendsAdded: Int
+    // Optional so decoding survives a backend that omits it (pre-fix servers sent
+    // `followsAdded` on fresh joins, which made every successful scan look like a failure).
+    let friendsAdded: Int?
     let vaultName: String
 }
 

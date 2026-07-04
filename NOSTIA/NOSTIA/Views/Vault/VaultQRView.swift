@@ -16,7 +16,9 @@ struct VaultQRView: View {
                 if isLoading {
                     ProgressView().tint(Color.nostiaAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let token, let qr = generateQRCode(from: token) {
+                // Encode the deep link (not the bare token) so the native Camera app
+                // offers "Open in Nostia"; the in-app scanner accepts both forms.
+                } else if let token, let qr = generateQRCode(from: "nostia://invite/\(token)") {
                     VStack(spacing: 16) {
                         Image(uiImage: qr)
                             .interpolation(.none)

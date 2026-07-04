@@ -123,7 +123,12 @@ struct TripsView: View {
     }
 
     @MainActor
-    private func handleScan(_ token: String) async {
+    private func handleScan(_ scanned: String) async {
+        // QRs now carry nostia://invite/<token> (scannable by the native Camera app);
+        // QRs from older builds hold the bare 32-hex token. Accept both.
+        let token = scanned
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "nostia://invite/", with: "")
         do {
             let result = try await TripsAPI.shared.redeemInviteToken(token)
             await vm.loadTrips()
@@ -133,8 +138,9 @@ struct TripsView: View {
                     message: "You're already in \"\(result.vaultName)\"."
                 )
             } else {
-                let friendText = result.friendsAdded > 0
-                    ? " Also added \(result.friendsAdded) new \(result.friendsAdded == 1 ? "friend" : "friends")."
+                let friendsAdded = result.friendsAdded ?? 0
+                let friendText = friendsAdded > 0
+                    ? " Also added \(friendsAdded) new \(friendsAdded == 1 ? "friend" : "friends")."
                     : ""
                 scanResultAlert = ScanResultAlert(
                     title: "Joined \(result.vaultName)!",
