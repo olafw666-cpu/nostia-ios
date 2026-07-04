@@ -612,9 +612,12 @@ private struct ContactInviteRow: View {
             guard record.status != "already_joined" else { inviteState = .idle; return }
             let isoFormatter = ISO8601DateFormatter()
             pendingExpiresAt = isoFormatter.date(from: record.expiresAt) ?? Date().addingTimeInterval(7 * 24 * 3600)
-            let link = "https://nostia.io/join/\(record.token)"
+            // Share the App Store page, not nostia.io/join/<token> — nothing consumes
+            // that URL. The invite record still carries the token; attribution happens
+            // server-side by email match when the contact signs up.
+            let link = "https://apps.apple.com/us/app/nostia/id6762099952"
             let firstName = contact.name.components(separatedBy: " ").first ?? contact.name
-            let msg = "Hey \(firstName)! I'm on Nostia, an app for sharing travel moments with friends. Join me here: \(link)"
+            let msg = "Hey \(firstName)! I'm on Nostia, an app for sharing travel moments with friends. Download it here: \(link)"
             if let url = URL(string: link) {
                 inviteState = .shareReady(url: url, message: msg)
             } else {
