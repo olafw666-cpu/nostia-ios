@@ -102,6 +102,11 @@ extension Color {
     static let nostiaTextSecond  = Color(light: "8A93A0", dark: "ADA59A")
     static let nostiaTextMuted   = Color(light: "A6AEB9", dark: "7E756A")
 
+    // Dev-account gold — usernames of dev accounts render in this gradient pair so
+    // they're recognizable anywhere a name appears. Darker on light, brighter on dark.
+    static let nostiaGold        = Color(light: "C9930A", dark: "F2C14E")
+    static let nostiaGoldDeep    = Color(light: "9A6E06", dark: "D99C1B")
+
     // Soft shadow — tinted blue-grey on light, pure black for depth on dark.
     static let nostiaShadow      = Color(light: "1E3246", dark: "000000")
 

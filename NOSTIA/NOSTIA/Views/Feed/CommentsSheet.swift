@@ -102,7 +102,8 @@ struct CommentRow: View {
             AvatarView(initial: String(comment.name.prefix(1)).uppercased(), color: Color.nostriaPurple, size: 34)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold))
+                        .foregroundStyle(.nostiaUsername(isDev: comment.isDev == true, fallback: Color.nostiaTextPrimary))
                     Text(comment.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 Text(comment.content).font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)

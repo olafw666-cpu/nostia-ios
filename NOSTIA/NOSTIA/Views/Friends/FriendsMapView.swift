@@ -37,6 +37,9 @@ struct FriendsMapView: View {
     @State private var showPlaceResults = false
     @FocusState private var placeSearchFocused: Bool
 
+    // One-time intro: explains the map the first time this device opens it (new users).
+    @AppStorage("hasSeenMapIntro") private var hasSeenMapIntro = false
+
     // Heatmap replaces pins once the viewport zooms out past the 20-mile public-experience radius.
     private var isHeatmapMode: Bool { viewportRadiusMiles > 20 }
     private var filterKey: String { "\(filterPublic)|\(filterPrivate)" }
@@ -77,7 +80,8 @@ struct FriendsMapView: View {
                                     .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 2))
                                     .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8)
                                 Text(friend.name.components(separatedBy: " ").first ?? friend.name)
-                                    .font(.caption.bold()).foregroundColor(Color.nostiaTextPrimary)
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.nostiaUsername(isDev: friend.isDev == true, fallback: Color.nostiaTextPrimary))
                                     .padding(.horizontal, 8).padding(.vertical, 3)
                                     .nostiaCard(in: Capsule())
                             }
@@ -309,6 +313,13 @@ struct FriendsMapView: View {
                 .accessibilityHint("Shows a list of nearby experiences for screen-reader navigation")
             }
         }
+        .overlay {
+            if !hasSeenMapIntro {
+                MapIntroOverlay {
+                    withAnimation(.easeOut(duration: 0.25)) { hasSeenMapIntro = true }
+                }
+            }
+        }
     }
 
     func loadAll() async {
@@ -441,6 +452,74 @@ struct FriendsMapView: View {
                 span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
             ))
         }
+    }
+}
+
+// MARK: - First-time map intro
+
+/// One-time explainer shown over the map the first time this device opens it.
+/// Dismissal persists via `@AppStorage("hasSeenMapIntro")` in `FriendsMapView`.
+private struct MapIntroOverlay: View {
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Dim + swallow touches so the map underneath can't be poked while the intro is up.
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {}
+
+            VStack(spacing: 16) {
+                Image(systemName: "map.fill")
+                    .font(.system(size: 38))
+                    .foregroundColor(Color.nostiaAccent)
+                Text("Welcome to the Map")
+                    .font(.nostiaDisplay(20, weight: .heavy))
+                    .foregroundColor(Color.nostiaTextPrimary)
+
+                VStack(alignment: .leading, spacing: 13) {
+                    introRow(icon: "hand.tap.fill",
+                             text: "Press and hold anywhere on the map to create an experience there.")
+                    introRow(icon: "mappin.circle.fill",
+                             text: "Tap a pin to see an experience's details and join in.")
+                    introRow(icon: "magnifyingglass",
+                             text: "Search any place or address to jump the map there.")
+                    introRow(icon: "line.3.horizontal.decrease.circle.fill",
+                             text: "Filter what you see with the Public, Private and Orgs pills — plus activity tags.")
+                    introRow(icon: "person.2.fill",
+                             text: "Friends who share their location appear on the map too.")
+                }
+
+                Button(action: onDismiss) {
+                    Text("Got It")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.nostiaAccent))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(22)
+            .frame(maxWidth: 360)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 20), elevation: .raised)
+            .padding(24)
+        }
+        .transition(.opacity)
+    }
+
+    private func introRow(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(Color.nostiaAccent)
+                .frame(width: 26)
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(Color.nostiaTextSecond)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

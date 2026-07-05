@@ -5,6 +5,7 @@ struct FeedPost: Codable, Identifiable {
     let userId: Int
     let username: String
     let name: String
+    var isDev: Bool?   // author is a dev account → golden username
     var content: String?
     let imageData: String?
     let relatedTripId: Int?
@@ -56,6 +57,7 @@ struct FeedComment: Codable, Identifiable {
     let userId: Int
     let username: String
     let name: String
+    var isDev: Bool?   // author is a dev account → golden username
     let content: String
     let createdAt: String
 

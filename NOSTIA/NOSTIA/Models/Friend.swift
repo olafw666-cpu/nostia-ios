@@ -5,6 +5,7 @@ struct FollowUser: Codable, Identifiable {
     let username: String
     let name: String
     var homeStatus: String?
+    var isDev: Bool?   // dev accounts render golden usernames
 
     var isHomeOpen: Bool { homeStatus == "open" }
     var initial: String { String(name.prefix(1)).uppercased() }
@@ -22,12 +23,14 @@ struct FollowLocation: Codable, Identifiable {
     let username: String
     let latitude: Double
     let longitude: Double
+    var isDev: Bool?
 }
 
 struct UserSearchResult: Codable, Identifiable {
     let id: Int
     let username: String
     let name: String
+    var isDev: Bool?
 }
 
 struct ContactMatch: Identifiable {

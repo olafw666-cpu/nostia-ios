@@ -29,9 +29,11 @@ struct PostCard: View {
                     HStack(spacing: 10) {
                         AvatarView(initial: String(post.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(40))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(post.name).font(.system(size: responsive.fontSize(15), weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                            Text(post.name).font(.system(size: responsive.fontSize(15), weight: .bold))
+                                .foregroundStyle(.nostiaUsername(isDev: post.isDev == true, fallback: Color.nostiaTextPrimary))
                             Text("@\(post.username) · \(post.timeAgo)")
-                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                                .font(.caption)
+                                .foregroundStyle(.nostiaUsername(isDev: post.isDev == true, fallback: Color.nostiaTextMuted))
                             // Badge org content so it's identifiable in the mixed feed.
                             if let orgName = post.orgName {
                                 Label(orgName, systemImage: "building.2")

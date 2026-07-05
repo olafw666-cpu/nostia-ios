@@ -123,6 +123,21 @@ enum NostiaElevation {
     }
 }
 
+// MARK: - Golden dev usernames
+
+extension ShapeStyle where Self == AnyShapeStyle {
+    /// Foreground for a user's name/handle: dev accounts render in a golden gradient
+    /// so they're recognizable everywhere a name appears; everyone else keeps `fallback`.
+    /// Use via `.foregroundStyle(.nostiaUsername(isDev:fallback:))` in place of the
+    /// usual `.foregroundColor(...)`.
+    static func nostiaUsername(isDev: Bool, fallback: Color) -> AnyShapeStyle {
+        guard isDev else { return AnyShapeStyle(fallback) }
+        return AnyShapeStyle(LinearGradient(
+            colors: [.nostiaGold, .nostiaGoldDeep, .nostiaGold],
+            startPoint: .topLeading, endPoint: .bottomTrailing))
+    }
+}
+
 // MARK: - Typography
 
 extension Font {

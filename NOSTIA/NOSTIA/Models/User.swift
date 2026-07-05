@@ -20,13 +20,16 @@ struct User: Codable, Identifiable {
     var addressState: String?
     var addressZip: String?
     var isBlockedByMe: Bool?  // only present on GET /users/:id (public profile)
+    // Public dev flag: account_type is stripped from public profiles, but the server
+    // sends isDev everywhere so dev usernames can render golden to everyone.
+    private var devFlag: Bool?
     private var hasCreatedExperienceRaw: Int?
     // D6/Q-C: who can see this user's Visited tab — "public" | "followers" | "private".
     // Exposed on profile reads for the owner; defaults to "followers" when absent.
     var visitedVisibility: String?
 
     var isAdmin: Bool { role == "admin" }
-    var isDev: Bool { accountType == "dev" }
+    var isDev: Bool { accountType == "dev" || devFlag == true }
     var isHomeOpen: Bool { homeStatus == "open" }
     var initial: String { String(name.prefix(1)).uppercased() }
     var dataNotSold: Bool { dataNotSoldRaw.map { $0 != 0 } ?? false }
@@ -40,6 +43,7 @@ struct User: Codable, Identifiable {
         case id, username, name, email, homeStatus, latitude, longitude, role, createdAt, bio
         case profilePictureUrl = "profile_picture_url"
         case followersCount, isBlockedByMe
+        case devFlag = "isDev"
         case accountType = "account_type"
         case dataNotSoldRaw = "data_not_sold"
         case addressLine1 = "address_line1"

@@ -10,11 +10,15 @@ struct PublicProfileView: View {
     @State private var isFollowActionInProgress = false
     @State private var isBlockedByMe = false
     @State private var showBlockConfirm = false
+    @State private var showDevDeleteConfirm = false
+    @State private var devDeleteError: String?
     @State private var profileTab: ProfileTab = .posts
     @State private var canViewVisited = false
     @State private var visitedExperiences: [Experience] = []
     @StateObject private var feedVM = FeedViewModel()
     @EnvironmentObject var responsive: ResponsiveLayoutManager
+    @EnvironmentObject var authManager: AuthManager
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ScrollView {
@@ -32,7 +36,7 @@ struct PublicProfileView: View {
 
                     Text("@\(u.username)")
                         .font(.nostiaDisplay(22, weight: .heavy))
-                        .foregroundColor(Color.nostiaTextPrimary)
+                        .foregroundStyle(.nostiaUsername(isDev: u.isDev, fallback: Color.nostiaTextPrimary))
 
                     let bioText = u.bio?.isEmpty == false ? u.bio! : nil
                     Text(bioText ?? "No bio yet")
@@ -130,6 +134,12 @@ struct PublicProfileView: View {
                                 Label("Block User", systemImage: "nosign")
                             }
                         }
+                        if authManager.isDev {
+                            Divider()
+                            Button(role: .destructive) { showDevDeleteConfirm = true } label: {
+                                Label("Delete User (Dev)", systemImage: "person.crop.circle.badge.minus")
+                            }
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                             .foregroundColor(Color.nostiaAccent)
@@ -143,6 +153,21 @@ struct PublicProfileView: View {
         ) {
             Button("Block", role: .destructive) { Task { await blockUser() } }
             Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog(
+            "Delete @\(user?.username ?? "user")? Their account and ALL their content are permanently deleted. This cannot be undone.",
+            isPresented: $showDevDeleteConfirm, titleVisibility: .visible
+        ) {
+            Button("Delete User", role: .destructive) { Task { await devDeleteUser() } }
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("Delete Failed", isPresented: Binding(
+            get: { devDeleteError != nil },
+            set: { if !$0 { devDeleteError = nil } }
+        )) {
+            Button("OK") { devDeleteError = nil }
+        } message: {
+            Text(devDeleteError ?? "")
         }
         .task { await load() }
         .sheet(item: $feedVM.selectedPost) { post in
@@ -210,6 +235,20 @@ struct PublicProfileView: View {
         await feedVM.blockUser(userId: userId, username: user?.username)
         isBlockedByMe = true
         followStatus = try? await FriendsAPI.shared.getFollowStatus(userId: userId)
+    }
+
+    // Dev moderation: hard-delete the viewed user (server re-verifies dev status and
+    // cascades all their data). Pops the profile since it no longer exists.
+    private func devDeleteUser() async {
+        do {
+            try await ExperiencesAPI.shared.adminDeleteUser(id: userId)
+            await CacheManager.shared.invalidate(CacheKey.followersList)
+            await CacheManager.shared.invalidate(CacheKey.followingList)
+            await CacheManager.shared.invalidate(CacheKey.homeFeed)
+            dismiss()
+        } catch {
+            devDeleteError = error.localizedDescription
+        }
     }
 
     private func unblockUser() async {

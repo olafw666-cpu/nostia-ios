@@ -7,6 +7,7 @@ struct FriendsView: View {
     @State private var profileDestination: ProfileDestination?
     @State private var showContactsPicker = false
     @State private var userToUnfollow: FollowUser?
+    @State private var userToDevDelete: DevDeleteTarget?
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -73,7 +74,7 @@ struct FriendsView: View {
                             .contextMenu {
                                 if authManager.isDev {
                                     Button(role: .destructive) {
-                                        Task { await vm.adminDeleteUser(id: user.id) }
+                                        userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
                                     } label: {
                                         Label("Delete User", systemImage: "person.crop.circle.badge.minus")
                                     }
@@ -114,7 +115,7 @@ struct FriendsView: View {
                         .contextMenu {
                             if authManager.isDev {
                                 Button(role: .destructive) {
-                                    Task { await vm.adminDeleteUser(id: user.id) }
+                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
                                 } label: {
                                     Label("Delete User", systemImage: "person.crop.circle.badge.minus")
                                 }
@@ -141,7 +142,7 @@ struct FriendsView: View {
                         .contextMenu {
                             if authManager.isDev {
                                 Button(role: .destructive) {
-                                    Task { await vm.adminDeleteUser(id: user.id) }
+                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
                                 } label: {
                                     Label("Delete User", systemImage: "person.crop.circle.badge.minus")
                                 }
@@ -182,6 +183,19 @@ struct FriendsView: View {
                 Task { await vm.unfollow(userId: u.id) }
             }
             Button("Cancel", role: .cancel) { userToUnfollow = nil }
+        }
+        .alert("Delete \(userToDevDelete?.name ?? "user")?", isPresented: Binding(
+            get: { userToDevDelete != nil },
+            set: { if !$0 { userToDevDelete = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                guard let target = userToDevDelete else { return }
+                userToDevDelete = nil
+                Task { await vm.adminDeleteUser(id: target.id) }
+            }
+            Button("Cancel", role: .cancel) { userToDevDelete = nil }
+        } message: {
+            Text("Their account and ALL their content are permanently deleted. This cannot be undone.")
         }
         .navigationDestination(item: $profileDestination) { dest in
             PublicProfileView(userId: dest.id)
@@ -240,6 +254,12 @@ struct ProfileDestination: Identifiable, Hashable {
     let id: Int
 }
 
+/// Target of a dev hard-delete pending confirmation (context menus in all three lists).
+struct DevDeleteTarget: Identifiable {
+    let id: Int
+    let name: String
+}
+
 struct ChatDestination: Identifiable, Hashable {
     let id: Int
     let name: String
@@ -260,8 +280,10 @@ struct FollowUserRow<Trailing: View>: View {
                 HStack(spacing: 12) {
                     AvatarView(initial: user.initial, color: Color.nostiaAccent, size: responsive.spacing(50))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(user.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
-                        Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                        Text(user.name).font(.headline)
+                            .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextPrimary))
+                        Text("@\(user.username)").font(.footnote)
+                            .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextSecond))
                     }
                 }
             }
@@ -284,8 +306,10 @@ struct UserSearchRow: View {
         HStack(spacing: 12) {
             AvatarView(initial: String(user.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(50))
             VStack(alignment: .leading, spacing: 2) {
-                Text(user.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
-                Text("@\(user.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                Text(user.name).font(.headline)
+                    .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextPrimary))
+                Text("@\(user.username)").font(.footnote)
+                    .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextSecond))
             }
             Spacer()
             Button { onFollow() } label: {
@@ -503,7 +527,8 @@ private struct ContactOnNostiaRow: View {
             AvatarView(initial: String(match.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text(match.name).font(.headline).foregroundColor(Color.nostiaTextPrimary)
-                Text("@\(match.nostiaUser.username)").font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                Text("@\(match.nostiaUser.username)").font(.footnote)
+                    .foregroundStyle(.nostiaUsername(isDev: match.nostiaUser.isDev == true, fallback: Color.nostiaTextSecond))
             }
             Spacer()
             if isFollowed {

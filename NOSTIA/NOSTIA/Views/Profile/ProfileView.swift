@@ -52,7 +52,7 @@ struct ProfileView: View {
                     // Username (read-only)
                     Text("@\(u.username)")
                         .font(.nostiaDisplay(22, weight: .heavy))
-                        .foregroundColor(Color.nostiaTextPrimary)
+                        .foregroundStyle(.nostiaUsername(isDev: u.isDev, fallback: Color.nostiaTextPrimary))
 
                     // Bio
                     if isEditing {
