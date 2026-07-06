@@ -33,9 +33,22 @@
 		92C59F1E2F8EC5B400A99550 /* NOSTIAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NOSTIAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		92C59F312F8EC5B400A99550 /* Exceptions for "NOSTIA" folder in "NOSTIA" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 92C59F042F8EC5B200A99550 /* NOSTIA */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		92C59F072F8EC5B200A99550 /* NOSTIA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				92C59F312F8EC5B400A99550 /* Exceptions for "NOSTIA" folder in "NOSTIA" target */,
+			);
 			path = NOSTIA;
 			sourceTree = "<group>";
 		};
