@@ -138,11 +138,12 @@ struct OrgDetailView: View {
                 Label("Request pending approval", systemImage: "clock")
                     .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
             } else {
-                if org.locationVerificationEnabled && org.privacy == "public" {
-                    Text("You must be within the organization's allowed area to join.")
+                if org.locationVerificationEnabled {
+                    Text("You must be within the organization's allowed area to \(org.privacy == "private" ? "request to join" : "join").")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         .multilineTextAlignment(.center)
-                } else if org.privacy == "private" {
+                }
+                if org.privacy == "private" {
                     Text("This is a private organization. Your request will be reviewed.")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         .multilineTextAlignment(.center)
@@ -186,11 +187,8 @@ struct OrgDetailView: View {
 
     private func attemptJoin() async {
         guard let org else { return }
-        // Private orgs go to the approval queue; no location gate there (Section 5).
-        if org.privacy == "private" {
-            await doJoin(lat: nil, lng: nil)
-            return
-        }
+        // Zone-gated orgs need a live location for BOTH direct joins and private join
+        // requests — the server rejects out-of-zone requests too (Section 10).
         if org.locationVerificationEnabled {
             if locationManager.permissionDenied {
                 alertMessage = "Location access is required to join this organization. Enable it in Settings and try again."

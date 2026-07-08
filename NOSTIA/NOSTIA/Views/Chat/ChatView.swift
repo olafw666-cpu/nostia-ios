@@ -10,6 +10,11 @@ struct ChatView: View {
     @State private var reportTarget: ReportTarget?
     @State private var showBlockConfirm = false
     @State private var blockedMessage: String?
+    // Keyboard avoidance is handled manually (same pattern as VaultChatView): the native
+    // avoidance is flaky for a bottom-pinned input bar pushed inside the TabView, leaving
+    // the bar buried under the keyboard on first focus.
+    @State private var keyboardHeight: CGFloat = 0
+    @FocusState private var inputFocused: Bool
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var responsive: ResponsiveLayoutManager
 
@@ -49,10 +54,12 @@ struct ChatView: View {
                     }
                     .padding(.horizontal, 16)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: vm.messages.count) {
                     withAnimation { proxy.scrollTo("bottom") }
                 }
                 .onAppear {
+                    scrollProxy = proxy
                     proxy.scrollTo("bottom")
                 }
             }
@@ -75,6 +82,7 @@ struct ChatView: View {
                 HStack(alignment: .bottom, spacing: 12) {
                     TextField("Type a message...", text: $vm.newMessage, axis: .vertical)
                         .lineLimit(1...5)
+                        .focused($inputFocused)
                         .padding(.horizontal, 16).padding(.vertical, 10)
                         .nostiaCard(in: RoundedRectangle(cornerRadius: 20))
                         .foregroundColor(Color.nostiaTextPrimary)
@@ -109,6 +117,9 @@ struct ChatView: View {
                 .background(.ultraThinMaterial)
             }
         }
+        // Manual keyboard avoidance (mirrors VaultChatView): lift the whole column by the
+        // keyboard height and opt out of the flaky native avoidance below.
+        .padding(.bottom, keyboardHeight)
         // Centered reading column on iPad's wide landscape canvas; full width on phone.
         .frame(maxWidth: responsive.contentMaxWidth)
         // The floating tab bar is hidden while the chat is open so it can't cover the
@@ -117,10 +128,32 @@ struct ChatView: View {
         // Pushed destinations don't inherit the tab root's themed canvas — without this
         // the chat sits on the system background (black in dark mode).
         .background(Color.nostiaBackground.ignoresSafeArea())
+        .ignoresSafeArea(.keyboard)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { n in
+            guard let frame = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            let safeBottom = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }.first?
+                .windows.first?.safeAreaInsets.bottom ?? 0
+            withAnimation(.easeOut(duration: 0.25)) {
+                keyboardHeight = max(0, frame.height - safeBottom)
+            }
+            // Keep the newest messages visible above the raised input bar.
+            withAnimation { scrollProxy?.scrollTo("bottom") }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) { keyboardHeight = 0 }
+        }
         .navigationTitle(friendName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            // The multiline TextField's return key inserts a newline, so without this the
+            // user has no way to put the keyboard away (matches the FriendsView pattern).
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { inputFocused = false }
+                    .foregroundColor(Color.nostiaAccent)
+            }
             if let friendId {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
