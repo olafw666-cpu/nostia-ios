@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import PassKit
 import StripePaymentSheet
 
 @MainActor
@@ -141,8 +142,20 @@ final class VaultViewModel: ObservableObject {
         }
     }
 
-    // Called when user taps Card on a single split — check for saved card first
+    // Mirrors PaymentSheet's own Apple Pay visibility check: true only when a card is
+    // provisioned in Wallet for a network we accept. When false, PaymentSheet hides
+    // Apple Pay entirely, so the no-card prompt is still the right fallback.
+    private var applePayAvailable: Bool {
+        PKPaymentAuthorizationController.canMakePayments(usingNetworks: [.visa, .masterCard, .amex, .discover])
+    }
+
+    // Called when user taps Card on a single split. Apple Pay needs no saved card, so
+    // the no-card prompt only fires when BOTH are missing.
     func handleCardTap(splitId: Int) async {
+        if applePayAvailable {
+            await preparePaymentSheet(splitId: splitId)
+            return
+        }
         let methods = (try? await PaymentsAPI.shared.getPaymentMethods()) ?? []
         if methods.isEmpty {
             pendingCardSplitId = splitId
@@ -152,8 +165,12 @@ final class VaultViewModel: ObservableObject {
         }
     }
 
-    // Called when user taps Card on the Pay Total modal — check for saved card first
+    // Called when user taps Card on the Pay Total modal — same gating as handleCardTap
     func handleBulkCardTap(splitIds: [Int], tripId: Int) async {
+        if applePayAvailable {
+            await prepareBulkPaymentSheet(splitIds: splitIds, tripId: tripId)
+            return
+        }
         let methods = (try? await PaymentsAPI.shared.getPaymentMethods()) ?? []
         if methods.isEmpty {
             pendingCardBulkSplitIds = splitIds
@@ -169,6 +186,10 @@ final class VaultViewModel: ObservableObject {
             let res = try await VaultAPI.shared.createPaymentIntent(splitId: splitId)
             var config = PaymentSheet.Configuration()
             config.merchantDisplayName = "Nostia"
+            config.applePay = PaymentSheet.ApplePayConfiguration(
+                merchantId: AppConfig.stripeMerchantIdentifier,
+                merchantCountryCode: "US"
+            )
             if let cid = res.customerId, let ek = res.ephemeralKeySecret {
                 config.customer = PaymentSheet.CustomerConfiguration(id: cid, ephemeralKeySecret: ek)
             }
@@ -186,6 +207,10 @@ final class VaultViewModel: ObservableObject {
             let res = try await VaultAPI.shared.createBulkPaymentIntent(splitIds: splitIds, tripId: tripId)
             var config = PaymentSheet.Configuration()
             config.merchantDisplayName = "Nostia"
+            config.applePay = PaymentSheet.ApplePayConfiguration(
+                merchantId: AppConfig.stripeMerchantIdentifier,
+                merchantCountryCode: "US"
+            )
             if let cid = res.customerId, let ek = res.ephemeralKeySecret {
                 config.customer = PaymentSheet.CustomerConfiguration(id: cid, ephemeralKeySecret: ek)
             }
