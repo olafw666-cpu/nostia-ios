@@ -170,7 +170,16 @@ final class PaymentsViewModel: ObservableObject {
         case .canceled:
             break
         case .failed(let error):
-            errorMessage = error.localizedDescription
+            // PaymentSheet collapses most failures (load, decode, presentation) into one
+            // generic localizedDescription — the real cause is only in the error's
+            // reflection (PaymentSheetError case name / NSError domain+code+userInfo).
+            let ns = error as NSError
+            print("[AddCard] PaymentSheet failed: \(String(reflecting: error)) | domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
+            var message = error.localizedDescription
+            #if DEBUG
+            message += "\n[debug] \(String(reflecting: error))"
+            #endif
+            errorMessage = message
         }
     }
 }
