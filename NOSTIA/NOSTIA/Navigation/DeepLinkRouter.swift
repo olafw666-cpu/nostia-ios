@@ -12,6 +12,7 @@ final class DeepLinkRouter: ObservableObject {
         case vault(tripId: Int?)     // expense reminder, added-to-vault, payment received
         case profile(userId: Int)    // new follower
         case event(eventId: Int)     // event invite
+        case adventure               // daily adventure ready (Adventure Page spec §2)
         case notifications           // fallback
     }
 
@@ -54,6 +55,8 @@ final class DeepLinkRouter: ObservableObject {
         case "event_invite":
             if let eid = intVal("eventId") { route(.event(eventId: eid)) }
             else { route(.notifications) }
+        case "adventure_ready":
+            route(.adventure)
         default:
             route(.notifications)
         }
@@ -62,9 +65,11 @@ final class DeepLinkRouter: ObservableObject {
     func route(_ target: Target) {
         switch target {
         case .vault(let tripId):
-            selectedTab = 2             // Vaults tab (Atlas order: Home·Explore·Vaults·Map·Following)
+            selectedTab = 2             // Vaults tab (Atlas order: Home·Adventure·Vaults·Map·Following)
             if let tripId { pendingVaultTripId = tripId }
-        case .event:  selectedTab = 1   // Explore / Experiences tab
+        case .event:  selectedTab = 1   // former Explore slot — deep links that routed to
+                                        // Explore now land on Adventure (spec §1)
+        case .adventure: selectedTab = 1
         case .profile, .notifications:
             break                       // presented modally over the current tab
         }

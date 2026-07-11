@@ -85,9 +85,19 @@ extension Color {
     static let nostiaDivider     = Color(light: "EEF1F5", dark: "38383A")   // in-card separators (sits above the lightened card)
     static let nostiaInput       = Color(light: "FFFFFF", dark: "2C2C2E")   // input fields (non-search)
 
-    // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark.
-    static let nostiaAccent      = Color(light: "0E9F6E", dark: "E8843C")   // primary
-    static let nostiaAccentSoft  = Color(light: "E7F6EF", dark: "45321E")   // primary tint bg (warm)
+    // Accents & semantic — GREEN primary in Light, ORANGE primary in Dark by default.
+    // Computed (not `let`) so unlockable accent themes from the Adventure store can
+    // swap the primary pair at render time: `AccentTheme.current` is UserDefaults-
+    // backed and `RootView` rebuilds the tree (`.id(accentTheme)`) when it changes.
+    // Stock values match the original constants exactly.
+    static var nostiaAccent: Color {
+        let t = AccentTheme.current
+        return Color(light: t.accentLight, dark: t.accentDark)                // primary
+    }
+    static var nostiaAccentSoft: Color {
+        let t = AccentTheme.current
+        return Color(light: t.accentSoftLight, dark: t.accentSoftDark)        // primary tint bg
+    }
     static let nostiaSuccess     = Color(light: "0E9F6E", dark: "2FBE7E")   // settled / positive
     static let nostiaWarning     = Color(hex: "E8843C")                     // orange in both
     static let nostiaWarningSoft = Color(light: "FEF3E2", dark: "45321E")   // warm star/warning tint

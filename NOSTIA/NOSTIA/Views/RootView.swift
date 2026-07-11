@@ -26,6 +26,10 @@ struct RootView: View {
                     AuthNavigationView()
                 }
             }
+            // Rebuild the tree when the unlockable accent palette changes — the
+            // `Color.nostiaAccent` tokens are computed from `AccentTheme.current`
+            // at render time, so a full rebuild is what repaints every screen.
+            .id(themeManager.accentTheme)
         }
         .fullScreenCover(isPresented: $showProfileBuilder, onDismiss: {
             // Right after first-time profile setup, offer to set up payments. Guarded by

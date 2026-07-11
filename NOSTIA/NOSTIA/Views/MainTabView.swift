@@ -10,10 +10,12 @@ struct MainTabView: View {
     @State private var headerImageData: String?
     @State private var headerInitial: String = "U"
 
-    // Atlas bottom-nav order: Home · Explore · Vaults · Map · Following.
+    // Atlas bottom-nav order: Home · Adventure · Vaults · Map · Following.
+    // Adventure replaced Explore in the same slot (Adventure Page spec §1);
+    // ExperiencesView stays in the repo one release for rollback.
     private let tabs: [AtlasTabBar.Item] = [
         .init(tab: 0, icon: "house.fill", label: "Home"),
-        .init(tab: 1, icon: "safari.fill", label: "Explore"),
+        .init(tab: 1, icon: "sparkles", label: "Adventure"),
         .init(tab: 2, icon: "wallet.bifold.fill", label: "Vaults"),
         .init(tab: 3, icon: "map.fill", label: "Map"),
         .init(tab: 4, icon: "person.2.fill", label: "Following"),
@@ -26,7 +28,7 @@ struct MainTabView: View {
                     HomeView(selectedTab: $deepLinkRouter.selectedTab)
                 }
                 tab(1) {
-                    ExperiencesView()
+                    AdventureView()
                 }
                 tab(2) {
                     TripsView()
@@ -191,7 +193,7 @@ struct MainTabView: View {
         case .notifications:
             showNotifications = true
             PushNotificationManager.shared.clearBadge()
-        case .vault, .event:
+        case .vault, .event, .adventure:
             break // tab already selected by the router
         }
         loadUnreadCount()
