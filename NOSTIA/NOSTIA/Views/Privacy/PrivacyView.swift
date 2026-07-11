@@ -92,6 +92,7 @@ struct PrivacyView: View {
                             .font(.subheadline).padding(responsive.spacing(16))
                             .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
                         }
+                        .buttonStyle(.nostiaTap)
                         .navigationDestination(isPresented: $navigateToPaymentMethods) {
                             PaymentMethodsView()
                                 .navigationTitle("Payment Methods")
@@ -113,6 +114,7 @@ struct PrivacyView: View {
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                         .accessibilityHint("Turn push notifications on or off")
                         .navigationDestination(isPresented: $navigateToNotifications) {
                             NotificationSettingsView()
@@ -131,6 +133,7 @@ struct PrivacyView: View {
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                         .accessibilityHint("Protect your account with Face ID and set up password recovery")
                         .navigationDestination(isPresented: $navigateToPasskeys) {
                             PasskeySettingsView()
@@ -149,6 +152,7 @@ struct PrivacyView: View {
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                         .navigationDestination(isPresented: $navigateToBlockedUsers) {
                             BlockedUsersView()
                                 .background(Color.nostiaBackground.ignoresSafeArea())
@@ -179,6 +183,7 @@ struct PrivacyView: View {
                             }
                             .padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                         .disabled(isDeletingAccount)
                     }
 
@@ -200,6 +205,7 @@ struct PrivacyView: View {
                             }
                             .padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
 
                         Button { showDeleteAlert = true } label: {
                             HStack {
@@ -210,6 +216,7 @@ struct PrivacyView: View {
                             }
                             .padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                     }
 
                     // Legal section
@@ -242,6 +249,7 @@ struct PrivacyView: View {
                             }
                             .font(.subheadline).padding(responsive.spacing(16))
                         }
+                        .buttonStyle(.nostiaTap)
                     }
 
                     // Logout
@@ -438,7 +446,7 @@ struct EmailCaptureSheet: View {
             VStack(spacing: responsive.spacing(24)) {
                 VStack(spacing: responsive.spacing(12)) {
                     Image(systemName: "envelope.badge.fill")
-                        .font(.system(size: responsive.fontSize(48)))
+                        .font(.nostiaBody(responsive.fontSize(48)))
                         .foregroundStyle(Color.nostiaAccent)
                     Text("Email Required")
                         .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
@@ -522,7 +530,7 @@ struct AddressCaptureSheet: View {
                 VStack(spacing: responsive.spacing(20)) {
                     VStack(spacing: responsive.spacing(12)) {
                         Image(systemName: "house.fill")
-                            .font(.system(size: responsive.fontSize(48)))
+                            .font(.nostiaBody(responsive.fontSize(48)))
                             .foregroundStyle(Color.nostiaAccent)
                         Text("Home Address Required")
                             .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)

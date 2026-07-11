@@ -15,7 +15,7 @@ struct CommentsSheet: View {
                 } else if vm.comments.isEmpty {
                     VStack(spacing: responsive.spacing(12)) {
                         Image(systemName: "bubble.right")
-                            .font(.system(size: responsive.fontSize(48)))
+                            .font(.nostiaBody(responsive.fontSize(48)))
                             .foregroundColor(Color.nostiaAccent.opacity(0.7))
                         Text("No comments yet").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Be the first to comment!").font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -65,10 +65,10 @@ struct CommentsSheet: View {
                     Task { await vm.submitComment(postId: postId) }
                 } label: {
                     if vm.isSubmittingComment {
-                        ProgressView().tint(.white).frame(width: 36, height: 36)
+                        ProgressView().tint(.white).frame(width: 44, height: 44)
                     } else {
                         Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white).frame(width: 36, height: 36)
+                            .foregroundColor(.white).frame(width: 44, height: 44)
                             .background(
                                 vm.newComment.trimmingCharacters(in: .whitespaces).isEmpty
                                     ? AnyShapeStyle(Color.nostiaTextMuted)
@@ -79,7 +79,9 @@ struct CommentsSheet: View {
                             .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
                     }
                 }
+                .buttonStyle(.nostiaTap)
                 .disabled(vm.newComment.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSubmittingComment)
+                .accessibilityLabel("Post comment")
             }
             .padding(.horizontal, responsive.spacing(12)).padding(.vertical, responsive.spacing(8))
             .background(.ultraThinMaterial.opacity(0.9))
@@ -102,11 +104,11 @@ struct CommentRow: View {
             AvatarView(initial: String(comment.name.prefix(1)).uppercased(), color: Color.nostriaPurple, size: 34)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(comment.name).font(.system(size: responsive.fontSize(13), weight: .semibold))
+                    Text(comment.name).font(.nostiaBody(responsive.fontSize(13), weight: .semibold))
                         .foregroundStyle(.nostiaUsername(isDev: comment.isDev == true, fallback: Color.nostiaTextPrimary))
                     Text(comment.timeAgo).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
-                Text(comment.content).font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)
+                Text(comment.content).font(.nostiaBody(responsive.fontSize(14))).foregroundColor(Color.nostiaTextSecond)
             }
             Spacer()
             if onReport != nil || onBlockUser != nil {
@@ -124,8 +126,10 @@ struct CommentRow: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.footnote).foregroundColor(Color.nostiaTextMuted)
-                        .padding(6)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
                 }
+                .accessibilityLabel("Comment options")
                 .confirmationDialog(
                     "Block @\(comment.username)? You won't see each other's posts, comments, or messages.",
                     isPresented: $showBlockConfirm, titleVisibility: .visible

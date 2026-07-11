@@ -108,7 +108,7 @@ struct FriendsMapView: View {
                                                 .shadow(color: (event.isOrgExperience ? Color.nostiaWarning : Color.nostiaAccent).opacity(0.5), radius: 8, y: 3)
                                         }
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.nostiaTap)
                                     .transition(.opacity)
                                 }
                             }
@@ -137,7 +137,7 @@ struct FriendsMapView: View {
                                     .frame(width: 44, height: 44)
                                     .overlay(Circle().stroke(Color.nostiaAccent, lineWidth: 2))
                                 Image(systemName: "plus")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(.nostiaBody(18, weight: .bold))
                                     .foregroundColor(Color.nostiaAccent)
                             }
                             .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 10)
@@ -187,7 +187,7 @@ struct FriendsMapView: View {
                 && !didCreateExperienceThisSession
                 && friendLocations.isEmpty && events.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "map").font(.system(size: 48)).foregroundColor(Color.nostiaAccent.opacity(0.8))
+                    Image(systemName: "map").font(.nostiaBody(48)).foregroundColor(Color.nostiaAccent.opacity(0.8))
                     Text("Nothing on the map yet").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                     Text("People you follow who share location appear here")
                         .font(.footnote).foregroundColor(Color.nostiaTextSecond)
@@ -405,7 +405,9 @@ struct FriendsMapView: View {
                         placeSearchFocused = false
                     } label: {
                         Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                            .frame(width: 36, height: 36)
                     }
+                    .buttonStyle(.nostiaTap)
                     .accessibilityLabel("Clear search")
                 }
             }
@@ -429,7 +431,7 @@ struct FriendsMapView: View {
                             .padding(.horizontal, 14).padding(.vertical, 10)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.nostiaTap)
                         Divider().background(Color.nostiaDivider)
                     }
                 }
@@ -471,7 +473,7 @@ private struct MapIntroOverlay: View {
 
             VStack(spacing: 16) {
                 Image(systemName: "map.fill")
-                    .font(.system(size: 38))
+                    .font(.nostiaBody(38))
                     .foregroundColor(Color.nostiaAccent)
                 Text("Welcome to the Map")
                     .font(.nostiaDisplay(20, weight: .heavy))
@@ -492,13 +494,13 @@ private struct MapIntroOverlay: View {
 
                 Button(action: onDismiss) {
                     Text("Got It")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.nostiaBody(16, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.nostiaAccent))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
             }
             .padding(22)
             .frame(maxWidth: 360)
@@ -511,7 +513,7 @@ private struct MapIntroOverlay: View {
     private func introRow(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(.nostiaBody(18))
                 .foregroundColor(Color.nostiaAccent)
                 .frame(width: 26)
             Text(text)
@@ -637,7 +639,7 @@ struct ExperienceMapPin: View {
                 .frame(width: 40, height: 40)
                 .shadow(color: .black.opacity(0.4), radius: 4)
             Image(systemName: defaultPinIcon)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.nostiaBody(17, weight: .semibold))
                 .foregroundColor(.white)
         }
     }
@@ -690,7 +692,7 @@ struct CreateExperienceSheet: View {
                     Map(position: $previewPosition) {
                         Annotation("", coordinate: activeCoord) {
                             Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 32))
+                                .font(.nostiaBody(32))
                                 .foregroundColor(Color.nostiaAccent)
                                 .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8)
                         }
@@ -710,7 +712,7 @@ struct CreateExperienceSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Location Name")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.nostiaBody(14, weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         AddressSearchField(locationName: $locationName) { coord, _ in
                             adjustedCoord = coord
@@ -721,7 +723,7 @@ struct CreateExperienceSheet: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Visibility")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.nostiaBody(14, weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         HStack(spacing: 8) {
                             ForEach(visibilityOptions, id: \.self) { opt in
@@ -737,7 +739,7 @@ struct CreateExperienceSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Description")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.nostiaBody(14, weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         LinkInsertBar(text: $description)
                         TextEditor(text: $description)
@@ -810,7 +812,7 @@ struct ExperienceTagPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tags")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.nostiaBody(14, weight: .semibold))
                 .foregroundColor(Color.nostiaTextSecond)
             FlowLayout(spacing: 8) {
                 ForEach(experienceTags, id: \.self) { tag in

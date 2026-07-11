@@ -44,7 +44,10 @@ struct PaymentMethodsView: View {
                                         Button("Remove", role: .destructive) { Task { await vm.removeMethod(id: method.id) } }
                                     } label: {
                                         Image(systemName: "ellipsis").foregroundColor(Color.nostiaTextSecond)
+                                            .frame(width: 40, height: 40)
+                                            .contentShape(Rectangle())
                                     }
+                                    .accessibilityLabel("Card options")
                                 }
                                 .padding(responsive.spacing(16))
                                 Divider().background(Color.nostriaBorder)
@@ -64,8 +67,11 @@ struct PaymentMethodsView: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity).padding(responsive.spacing(14))
+                                // Stroke-only outline: without a content shape only the
+                                // icon+text pixels inside the border are tappable.
                                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.5), lineWidth: 1))
                             }
+                            .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 12)
                             .disabled(vm.isLoading)
                         } else {

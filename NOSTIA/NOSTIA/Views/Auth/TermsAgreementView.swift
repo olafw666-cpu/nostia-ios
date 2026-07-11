@@ -24,7 +24,7 @@ struct TermsAgreementView: View {
             // Fixed header
             VStack(spacing: 0) {
                 Text("Terms & Agreements")
-                    .font(.system(size: responsive.fontSize(20), weight: .bold))
+                    .font(.nostiaBody(responsive.fontSize(20), weight: .bold))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, responsive.spacing(20))
@@ -50,7 +50,7 @@ struct TermsAgreementView: View {
                     ForEach(Array(documents.enumerated()), id: \.element.id) { index, doc in
                         VStack(alignment: .leading, spacing: responsive.spacing(10)) {
                             Text(doc.header)
-                                .font(.system(size: responsive.fontSize(17), weight: .bold))
+                                .font(.nostiaBody(responsive.fontSize(17), weight: .bold))
                                 .foregroundColor(Color.nostiaTextPrimary)
 
                             Text(doc.body)
@@ -83,7 +83,7 @@ struct TermsAgreementView: View {
                         showDeclineConfirmation = true
                     } label: {
                         Text("Decline")
-                            .font(.system(size: responsive.fontSize(16), weight: .semibold))
+                            .font(.nostiaBody(responsive.fontSize(16), weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                             .frame(minWidth: 44, minHeight: 44)
                             .padding(.horizontal, responsive.spacing(16))
@@ -97,7 +97,7 @@ struct TermsAgreementView: View {
                         onAgree()
                     } label: {
                         Text("Agree")
-                            .font(.system(size: responsive.fontSize(17), weight: .bold))
+                            .font(.nostiaBody(responsive.fontSize(17), weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: 44)

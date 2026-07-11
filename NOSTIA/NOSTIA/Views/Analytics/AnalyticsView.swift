@@ -11,7 +11,7 @@ struct AnalyticsView: View {
                 } else if !vm.hasAccess {
                     // No access state
                     VStack(spacing: 16) {
-                        Image(systemName: "chart.bar.xaxis").font(.system(size: 56)).foregroundColor(Color.nostiaTextMuted)
+                        Image(systemName: "chart.bar.xaxis").font(.nostiaBody(56)).foregroundColor(Color.nostiaTextMuted)
                         Text("Analytics Dashboard").font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
                         Text("Analytics access is available for admins and subscribers.")
                             .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
@@ -94,7 +94,7 @@ struct MetricCard: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(value.map { "\($0)" } ?? "—")
-                .font(.system(size: 28, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                .font(.nostiaBody(28, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
             Text(label).font(.caption).foregroundColor(Color.nostiaTextSecond)
         }
         .frame(maxWidth: .infinity)

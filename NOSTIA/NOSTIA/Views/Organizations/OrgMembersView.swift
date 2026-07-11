@@ -51,16 +51,22 @@ struct OrgMembersView: View {
                 HStack(spacing: 12) {
                     UserAvatarView(imageData: req.profilePictureUrl, initial: req.initial, color: Color.nostiaAccent, size: 40)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(req.name).font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                        Text(req.name).font(.nostiaBody(15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                         Text("@\(req.username)").font(.caption).foregroundColor(Color.nostiaTextMuted)
                     }
                     Spacer()
                     Button { Task { await act(req, approve: true) } } label: {
                         Image(systemName: "checkmark.circle.fill").font(.title3).foregroundColor(Color.nostiaSuccess)
+                            .frame(width: 44, height: 44)
                     }
+                    .buttonStyle(.nostiaTap)
+                    .accessibilityLabel("Approve request")
                     Button { Task { await act(req, approve: false) } } label: {
                         Image(systemName: "xmark.circle.fill").font(.title3).foregroundColor(Color.nostriaDanger)
+                            .frame(width: 44, height: 44)
                     }
+                    .buttonStyle(.nostiaTap)
+                    .accessibilityLabel("Decline request")
                 }
                 .padding(12).nostiaCard(in: RoundedRectangle(cornerRadius: 14))
             }
@@ -85,9 +91,9 @@ struct OrgMembersView: View {
             UserAvatarView(imageData: member.profilePictureUrl, initial: member.initial, color: Color.nostriaPurple, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(member.name).font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(member.name).font(.nostiaBody(15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     Text(member.role.capitalized)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.nostiaBody(10, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(member.role == "owner" ? Color.nostiaAccent : Color.nostiaTextSecond)
                         .foregroundColor(.white).cornerRadius(6)
@@ -130,7 +136,10 @@ struct OrgMembersView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle").font(.title3).foregroundColor(Color.nostiaTextSecond)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
+            .accessibilityLabel("Member options")
         }
     }
 

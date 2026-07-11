@@ -142,8 +142,12 @@ struct ZoneEditorView: View {
                         .font(.caption).foregroundColor(Color.nostiaTextSecond)
                     Spacer()
                     Button(role: .destructive) { zones.removeAll() } label: {
+                        // Custom styles drop the automatic destructive tint — set it here.
                         Text("Clear all").font(.caption.bold())
+                            .foregroundColor(Color.nostriaDanger)
+                            .padding(.vertical, 8).padding(.horizontal, 6)
                     }
+                    .buttonStyle(.nostiaTap)
                 }
             }
         }

@@ -108,8 +108,12 @@ struct CreateOrgPostSheet: View {
                             Image(uiImage: img).resizable().scaledToFill()
                                 .frame(maxWidth: .infinity).frame(height: 180).clipped().cornerRadius(14)
                             Button { self.imageData = nil; selectedPhoto = nil } label: {
-                                Image(systemName: "xmark.circle.fill").font(.title2).foregroundColor(.white).padding(6)
+                                Image(systemName: "xmark.circle.fill").font(.title2).foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.4), radius: 3)
+                                    .frame(width: 44, height: 44)
                             }
+                            .buttonStyle(.nostiaTap)
+                            .accessibilityLabel("Remove photo")
                         }
                     }
 

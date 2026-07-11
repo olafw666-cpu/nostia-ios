@@ -58,7 +58,7 @@ struct StatusButtons: View {
                 else { Image(systemName: icon).foregroundColor(isSelected ? .white : selectedColor) }
                 Text(title).fontWeight(.bold)
             }
-            .font(.system(size: 15))
+            .font(.nostiaBody(15))
             .frame(maxWidth: .infinity).padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -128,7 +128,7 @@ struct ExperienceScheduleField: View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle(isOn: $hasSchedule.animation()) {
                 Text("Date & Time")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.nostiaBody(14, weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
             }
             .tint(Color.nostiaAccent)
@@ -219,7 +219,7 @@ struct ExperienceDetailSheet: View {
                                 Label("by \(name)", systemImage: "person")
                                     .font(.subheadline).foregroundColor(Color.nostiaAccent.opacity(0.85))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                         }
 
                         if let desc = currentEvent.description, !desc.isEmpty {
@@ -452,7 +452,7 @@ struct ExperienceFlyerView: View {
                         .overlay {
                             VStack(spacing: 12) {
                                 Image(systemName: "sparkles")
-                                    .font(.system(size: 52)).foregroundColor(.white.opacity(0.5))
+                                    .font(.nostiaBody(52)).foregroundColor(.white.opacity(0.5))
                                 Text("No flyer yet").font(.caption).foregroundColor(.white.opacity(0.4))
                             }
                         }
@@ -518,10 +518,15 @@ struct ExperienceFlyerView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(Color.nostiaAccent)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
+                    // Pill styling lives inside the label so the whole pill is tappable,
+                    // not just the word.
+                    Button { dismiss() } label: {
+                        Text("Done")
+                            .foregroundColor(Color.nostiaAccent)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+                    .buttonStyle(.nostiaTap)
                 }
             }
         }
@@ -644,7 +649,7 @@ struct ExperienceCard: View {
                         Button { onCreatorTap(userId) } label: {
                             Text("by \(name)").font(.caption).foregroundColor(Color.nostiaAccent.opacity(0.8))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.nostiaTap)
                     } else {
                         Text("by \(name)").font(.caption).foregroundColor(Color.nostiaTextMuted)
                     }
@@ -668,7 +673,7 @@ struct LinkInsertSheet: View {
                 NostiaTextField(label: "Display Text", placeholder: "e.g. Click here", text: $displayText)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("URL *")
-                        .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        .font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                     TextField("https://...", text: $url)
                         .foregroundColor(Color.nostiaTextPrimary).autocorrectionDisabled()
                         .textInputAutocapitalization(.never).keyboardType(.URL)

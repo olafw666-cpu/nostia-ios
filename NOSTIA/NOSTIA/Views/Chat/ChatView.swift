@@ -251,7 +251,7 @@ struct MessageBubble: View {
                     }
 
                 Text(message.timeFormatted)
-                    .font(.system(size: 10)).foregroundColor(Color.nostiaTextMuted)
+                    .font(.nostiaBody(10)).foregroundColor(Color.nostiaTextMuted)
             }
             if !isFromMe { Spacer(minLength: 60) }
         }

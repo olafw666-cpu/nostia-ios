@@ -24,6 +24,10 @@ struct NOSTIAApp: App {
                 .environmentObject(responsive)
                 .environmentObject(deepLinkRouter)
                 .environmentObject(themeManager)
+                // App type scales with Dynamic Type (via the nostiaDisplay/nostiaBody
+                // helpers), capped at the first accessibility size — beyond that the
+                // fixed-frame chrome (tab bar, avatars, stat cards) stops fitting.
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         }
     }
 }

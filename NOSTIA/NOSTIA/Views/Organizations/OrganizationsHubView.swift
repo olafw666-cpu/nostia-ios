@@ -61,7 +61,10 @@ struct OrganizationsHubView: View {
             if !vm.searchQuery.isEmpty {
                 Button { vm.searchQuery = ""; vm.searchResults = [] } label: {
                     Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                        .frame(width: 36, height: 36)
                 }
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(12)
@@ -76,7 +79,7 @@ struct OrganizationsHubView: View {
             EmptyStateView(icon: "magnifyingglass", text: "No organizations found", sub: "Try a different name")
         } else {
             ForEach(vm.searchResults) { org in
-                NavigationLink(value: org.id) { OrgRow(org: org) }.buttonStyle(.plain)
+                NavigationLink(value: org.id) { OrgRow(org: org) }.buttonStyle(.nostiaTap)
             }
         }
     }
@@ -92,7 +95,7 @@ struct OrganizationsHubView: View {
                            sub: "Search to find one, or create your own")
         } else {
             ForEach(vm.myOrgs) { org in
-                NavigationLink(value: org.id) { OrgRow(org: org) }.buttonStyle(.plain)
+                NavigationLink(value: org.id) { OrgRow(org: org) }.buttonStyle(.nostiaTap)
             }
         }
     }
@@ -107,10 +110,10 @@ struct OrgRow: View {
             UserAvatarView(imageData: org.imageUrl, initial: org.initial, color: Color.nostriaPurple, size: 48)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(org.name).font(.system(size: 16, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(org.name).font(.nostiaBody(16, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     if let role = org.myRole {
                         Text(role.capitalized)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.nostiaBody(10, weight: .bold))
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(role == "owner" ? Color.nostiaAccent : Color.nostiaTextSecond)
                             .foregroundColor(.white).cornerRadius(6)

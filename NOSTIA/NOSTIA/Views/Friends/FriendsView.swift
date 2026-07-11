@@ -17,32 +17,26 @@ struct FriendsView: View {
                 .padding(.horizontal, responsive.spacing(16))
                 .padding(.top, 6)
 
-            // Search bar
+            // Search bar — same pill pattern as the rest of the app; the keyboard's
+            // Search key submits (no separate button).
             HStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
-                    TextField("Search users...", text: $vm.searchQuery)
-                        .foregroundColor(Color.nostiaTextPrimary)
-                        .submitLabel(.search)
-                        .onSubmit { Task { await vm.search() } }
-                        .autocorrectionDisabled().textInputAutocapitalization(.never)
-                    if !vm.searchQuery.isEmpty {
-                        Button { vm.clearSearch() } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
-                        }
+                Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
+                TextField("Search users…", text: $vm.searchQuery)
+                    .foregroundColor(Color.nostiaTextPrimary)
+                    .submitLabel(.search)
+                    .onSubmit { hideKeyboard(); Task { await vm.search() } }
+                    .autocorrectionDisabled().textInputAutocapitalization(.never)
+                if !vm.searchQuery.isEmpty {
+                    Button { vm.clearSearch() } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                            .frame(width: 36, height: 36)
                     }
+                    .buttonStyle(.nostiaTap)
+                    .accessibilityLabel("Clear search")
                 }
-                .padding(responsive.spacing(12))
-                .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
-
-                Button("Search") {
-                    hideKeyboard()
-                    Task { await vm.search() }
-                }
-                    .font(.subheadline.bold()).foregroundColor(.white)
-                    .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
-                    .background(Color.nostiaAccent).cornerRadius(12)
             }
+            .padding(responsive.spacing(12))
+            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
 
             // Find via Contacts
@@ -57,8 +51,9 @@ struct FriendsView: View {
                 .foregroundColor(Color.nostiaTextSecond)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 12), elevation: .flat)
             }
+            .buttonStyle(.nostiaTap)
             .padding(.horizontal, responsive.spacing(16))
             .padding(.bottom, 8)
 
@@ -220,10 +215,13 @@ struct FriendsView: View {
             }
         } label: {
             Image(systemName: "bubble.left.fill")
-                .foregroundColor(.white).padding(8)
+                .foregroundColor(.white).padding(10)
                 .background(Color.nostiaAccent).clipShape(Circle())
                 .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
         }
+        // Scoped style: default-style buttons inside List rows let a row tap trigger
+        // them; nostiaTap keeps each button's action on its own frame.
+        .buttonStyle(.nostiaTap)
     }
 
     @ViewBuilder
@@ -233,9 +231,10 @@ struct FriendsView: View {
         } label: {
             Text("Follow")
                 .font(.caption.bold()).foregroundColor(.white)
-                .padding(.horizontal, 12).padding(.vertical, 6)
+                .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(Color.nostiaAccent).cornerRadius(8)
         }
+        .buttonStyle(.nostiaTap)
     }
 
     @ViewBuilder
@@ -244,9 +243,10 @@ struct FriendsView: View {
             userToUnfollow = user
         } label: {
             Image(systemName: "person.badge.minus")
-                .foregroundColor(Color.nostiaTextSecond).padding(8)
+                .foregroundColor(Color.nostiaTextSecond).padding(10)
                 .background(Color.nostiaButton).clipShape(Circle())
         }
+        .buttonStyle(.nostiaTap)
     }
 }
 
@@ -287,7 +287,7 @@ struct FollowUserRow<Trailing: View>: View {
                     }
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.nostiaTap)
             Spacer()
             trailingContent()
         }
@@ -313,10 +313,11 @@ struct UserSearchRow: View {
             }
             Spacer()
             Button { onFollow() } label: {
-                Image(systemName: "person.badge.plus").foregroundColor(.white).padding(8)
+                Image(systemName: "person.badge.plus").foregroundColor(.white).padding(10)
                     .background(Color.nostiaAccent).clipShape(Circle())
                     .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
             }
+            .buttonStyle(.nostiaTap)
         }
         .padding(responsive.spacing(16))
         .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
@@ -364,14 +365,17 @@ struct ContactsPickerView: View {
                             text: "Contacts Access Denied",
                             sub: "Enable contacts access in Settings to find friends on Nostia"
                         )
-                        Button("Open Settings") {
+                        Button {
                             if let url = URL(string: UIApplication.openSettingsURLString) {
                                 UIApplication.shared.open(url)
                             }
+                        } label: {
+                            Text("Open Settings")
+                                .font(.subheadline.bold()).foregroundColor(.white)
+                                .padding(.horizontal, 24).padding(.vertical, 12)
+                                .background(Color.nostiaAccent).cornerRadius(12)
                         }
-                        .font(.subheadline.bold()).foregroundColor(.white)
-                        .padding(.horizontal, 24).padding(.vertical, 12)
-                        .background(Color.nostiaAccent).cornerRadius(12)
+                        .buttonStyle(.nostiaTap)
                     }
                 } else if onNostia.isEmpty && toInvite.isEmpty {
                     EmptyStateView(icon: "person.2", text: "No Contacts Found", sub: "Add contacts to your device to find friends")
@@ -609,10 +613,15 @@ private struct ContactInviteRow: View {
     private var trailingButton: some View {
         switch inviteState {
         case .idle:
-            Button("Invite") { Task { await sendInvite() } }
-                .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Color.nostiaAccent.opacity(0.15)).cornerRadius(8)
+            // Styling must live INSIDE the label — applied to the Button it draws the
+            // pill but leaves only the bare text tappable.
+            Button { Task { await sendInvite() } } label: {
+                Text("Invite")
+                    .font(.caption.bold()).foregroundColor(Color.nostiaAccent)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Color.nostiaAccent.opacity(0.15)).cornerRadius(8)
+            }
+            .buttonStyle(.nostiaTap)
         case .creating:
             ProgressView().tint(Color.nostiaAccent).frame(width: 60)
         case .pending:

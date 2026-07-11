@@ -20,10 +20,6 @@ final class DeepLinkRouter: ObservableObject {
     @Published var selectedTab: Int = 0
     /// The most recent deep-link target awaiting presentation.
     @Published var pendingTarget: Target?
-    /// Tags a themed Home "See all" wants Explore to pre-check. `ExperiencesView`
-    /// consumes a non-empty value into its filter, then clears it so a later manual
-    /// visit to Explore isn't re-filtered.
-    @Published var pendingExploreTags: [String] = []
     /// Trip whose vault a tapped push wants opened. Switching to the Vaults tab alone
     /// can't push the detail screen, so `TripsView` consumes this (and clears it) once
     /// its trip list contains the target.
@@ -67,11 +63,10 @@ final class DeepLinkRouter: ObservableObject {
         case .vault(let tripId):
             selectedTab = 2             // Vaults tab (Atlas order: Home·Adventure·Vaults·Map·Following)
             if let tripId { pendingVaultTripId = tripId }
-        case .event:  selectedTab = 1   // former Explore slot — deep links that routed to
-                                        // Explore now land on Adventure (spec §1)
         case .adventure: selectedTab = 1
-        case .profile, .notifications:
-            break                       // presented modally over the current tab
+        case .event, .profile, .notifications:
+            break                       // presented modally over the current tab (MainTabView
+                                        // fetches the experience for `.event` and sheets it)
         }
         pendingTarget = target
     }

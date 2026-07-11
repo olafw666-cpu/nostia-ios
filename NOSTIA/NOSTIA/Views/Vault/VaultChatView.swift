@@ -68,14 +68,17 @@ struct VaultChatView: View {
                         Task { await sendMessage() }
                     } label: {
                         if isSending {
-                            ProgressView().tint(.white).frame(width: 36, height: 36)
+                            ProgressView().tint(.white).frame(width: 44, height: 44)
                         } else {
                             Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 32))
+                                .font(.nostiaBody(32))
                                 .foregroundColor(inputText.isEmpty ? Color.nostiaTextMuted : Color.nostiaAccent)
+                                .frame(width: 44, height: 44)
                         }
                     }
+                    .buttonStyle(.nostiaTap)
                     .disabled(inputText.isEmpty || isSending)
+                    .accessibilityLabel("Send message")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             }
@@ -182,7 +185,7 @@ struct VaultChatBubble: View {
                     .padding(.horizontal, 14).padding(.vertical, 10)
                     .background(isMe ? Color.nostiaAccent : Color.nostriaBorder)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
-                Text(timeString).font(.system(size: 10)).foregroundColor(Color.nostiaTextMuted)
+                Text(timeString).font(.nostiaBody(10)).foregroundColor(Color.nostiaTextMuted)
             }
             if !isMe { Spacer(minLength: 40) }
         }

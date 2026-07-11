@@ -46,6 +46,12 @@ final class ExperiencesAPI {
         return try await client.request("/experiences")
     }
 
+    /// Single-experience fetch — used by deep links, which can arrive while no list
+    /// containing the target is loaded.
+    func getExperience(id: Int) async throws -> Experience {
+        return try await client.request("/experiences/\(id)")
+    }
+
     func getMapExperiences(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double, viewportRadiusMiles: Double = 20, tags: [String] = []) async throws -> [Experience] {
         var path = "/experiences/map?minLat=\(minLat)&maxLat=\(maxLat)&minLng=\(minLng)&maxLng=\(maxLng)&viewportRadiusMiles=\(viewportRadiusMiles)"
         if !tags.isEmpty {

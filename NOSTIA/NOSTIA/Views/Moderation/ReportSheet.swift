@@ -31,7 +31,7 @@ struct ReportSheet: View {
                 if submitted {
                     VStack(spacing: responsive.spacing(14)) {
                         Image(systemName: "checkmark.shield.fill")
-                            .font(.system(size: responsive.fontSize(52)))
+                            .font(.nostiaBody(responsive.fontSize(52)))
                             .foregroundColor(Color.nostiaSuccess)
                         Text("Report submitted").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Thank you for helping keep Nostia safe.\nWe review all reports within 24 hours.")
@@ -64,7 +64,7 @@ struct ReportSheet: View {
                                                 .foregroundColor(selectedReason == reason ? Color.nostiaAccent : Color.nostiaTextMuted)
                                                 .frame(width: 24)
                                             Text(reason.displayName)
-                                                .font(.system(size: responsive.fontSize(15), weight: .medium))
+                                                .font(.nostiaBody(responsive.fontSize(15), weight: .medium))
                                                 .foregroundColor(Color.nostiaTextPrimary)
                                             Spacer()
                                             Image(systemName: selectedReason == reason ? "checkmark.circle.fill" : "circle")
@@ -77,7 +77,7 @@ struct ReportSheet: View {
                                                 .stroke(selectedReason == reason ? Color.nostiaAccent.opacity(0.6) : Color.clear, lineWidth: 1)
                                         )
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.nostiaTap)
                                 }
                             }
 
@@ -96,7 +96,7 @@ struct ReportSheet: View {
                                     if isSubmitting { ProgressView().tint(.white) }
                                     else { Image(systemName: "flag.fill"); Text("Submit Report") }
                                 }
-                                .font(.system(size: responsive.fontSize(16), weight: .bold))
+                                .font(.nostiaBody(responsive.fontSize(16), weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(responsive.spacing(14))

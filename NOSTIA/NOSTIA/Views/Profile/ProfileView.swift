@@ -37,7 +37,7 @@ struct ProfileView: View {
                         if isEditing {
                             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 14))
+                                    .font(.nostiaBody(14))
                                     .foregroundColor(.white)
                                     .frame(width: 32, height: 32)
                                     .background(Color.nostiaAccent)
@@ -119,7 +119,7 @@ struct ProfileView: View {
                                     .padding(responsive.spacing(16))
                                     .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
 
                             Button {
                                 Task { await saveProfile() }
@@ -154,7 +154,7 @@ struct ProfileView: View {
                                     .padding(responsive.spacing(16))
                                     .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
@@ -168,7 +168,7 @@ struct ProfileView: View {
                                     .background(Color.nostiaAccent)
                                     .cornerRadius(14)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
@@ -181,7 +181,7 @@ struct ProfileView: View {
                                     .padding(responsive.spacing(16))
                                     .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(20))
 
                             Button {
@@ -194,7 +194,7 @@ struct ProfileView: View {
                                     .padding(responsive.spacing(16))
                                     .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(20))
                         }
                     }
@@ -503,10 +503,13 @@ struct ProfileCropView: View {
 
             VStack {
                 HStack {
-                    Button("Cancel") { onCancel() }
-                        .font(.body.weight(.medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20).padding(.vertical, 12)
+                    Button { onCancel() } label: {
+                        Text("Cancel")
+                            .font(.body.weight(.medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20).padding(.vertical, 12)
+                    }
+                    .buttonStyle(.nostiaTap)
                     Spacer()
                 }
                 .padding(.top, 8)

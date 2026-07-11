@@ -8,7 +8,6 @@ struct HomeView: View {
     @EnvironmentObject var locationManager: LocationManager
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
-    @EnvironmentObject var router: DeepLinkRouter
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -20,6 +19,7 @@ struct HomeView: View {
     @State private var activeSheet: HomeSheet?
     @State private var eventActionsVM = ExperienceActionsViewModel()
     @State private var showOrganizations = false
+    @State private var showCrashPads = false
     @State private var forYouPage = 0
 
     private var isIPad: Bool { hSizeClass == .regular }
@@ -29,12 +29,16 @@ struct HomeView: View {
         case eventDetail(Experience)
         case editPost(FeedPost)
         case createExperience
+        case search([String])   // experience search; non-empty = tags pre-checked
+        case visiting           // full "you're visiting" list
         var id: String {
             switch self {
             case .comments(let p): return "c\(p.id)"
             case .eventDetail(let e): return "e\(e.id)"
             case .editPost(let p): return "edit\(p.id)"
             case .createExperience: return "create"
+            case .search: return "search"
+            case .visiting: return "visiting"
             }
         }
     }
@@ -61,6 +65,9 @@ struct HomeView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
+                // Theme-tinted scrim: an arbitrary photo can zero out the contrast of
+                // text sitting directly on the canvas (headers, row titles).
+                Color.nostiaBackground.opacity(0.45).ignoresSafeArea()
             }
         }
         .refreshable {
@@ -135,6 +142,10 @@ struct HomeView: View {
                 CreateExperienceFromDiscoverSheet { _ in
                     Task { await vm.loadAll() }
                 }
+            case .search(let tags):
+                ExperienceSearchSheet(initialTags: tags)
+            case .visiting:
+                ExperienceListSheet(title: "You're visiting", events: vm.upcomingEvents)
             }
         }
         .sheet(item: $feedVM.reportTarget) { target in
@@ -146,6 +157,9 @@ struct HomeView: View {
         .sheet(isPresented: $showOrganizations) {
             OrganizationsHubView()
                 .presentationBackground(Color.nostiaBackground)
+        }
+        .sheet(isPresented: $showCrashPads) {
+            CrashPadsView()
         }
         .alert("Blocked", isPresented: Binding(
             get: { feedVM.moderationMessage != nil },
@@ -191,7 +205,7 @@ struct HomeView: View {
             welcomeHeader
             statCards
             forYouSection
-            NostiaSearchBar(placeholder: "Search places & experiences…") { selectedTab = 1 }
+            NostiaSearchBar(placeholder: "Search places & experiences…") { activeSheet = .search([]) }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
             themedSections
             orgsButton
@@ -207,15 +221,29 @@ struct HomeView: View {
 
     @ViewBuilder
     private var welcomeHeader: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("NOSTIA")
-                .font(.nostiaBody(15, weight: .medium))
-                .tracking(2.7)
-                .foregroundColor(Color.nostiaAccent)
-            Text("Welcome back, \(vm.user?.name ?? "Adventurer")")
-                .font(.nostiaDisplay(isIPad ? 34 : 28))
-                .foregroundColor(Color.nostiaTextPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("NOSTIA")
+                    .font(.nostiaBody(15, weight: .medium))
+                    .tracking(2.7)
+                    .foregroundColor(Color.nostiaAccent)
+                Text("Welcome back, \(vm.user?.name ?? "Adventurer")")
+                    .font(.nostiaDisplay(isIPad ? 34 : 28))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            // Visible entry to the background customizer (double-tap still works, but
+            // a hidden gesture can't be the only way in).
+            Button { Haptics.tap(); showBackgroundMenu = true } label: {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.nostiaBody(15, weight: .semibold))
+                    .foregroundColor(Color.nostiaTextMuted)
+                    .frame(width: 34, height: 34)
+                    .nostiaCard(in: Circle(), elevation: .flat)
+            }
+            .buttonStyle(.nostiaTap)
+            .accessibilityLabel("Customize Home background")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 4)
@@ -233,42 +261,52 @@ struct HomeView: View {
                 selectedTab = 4
             }
             StatCard(icon: "location.north.fill", color: Color.nostiaAccent,
-                     count: vm.upcomingEvents.count, label: "Experiences") {
-                selectedTab = 1
+                     count: vm.upcomingEvents.count, label: "Visiting") {
+                activeSheet = .visiting
             }
         }
     }
 
+    /// One "Community" section instead of a full-width promo per feature — orgs and
+    /// crash pads share a row of two compact cards, keeping Home short.
     @ViewBuilder
     private var orgsButton: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NostiaRowHeader(title: "Organizations", actionTitle: "See all") {
-                Haptics.tap(); showOrganizations = true
-            }
-            Text("Location-gated groups with their own events & experiences.")
-                .font(.system(size: 13)).foregroundColor(Color.nostiaTextSecond)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button { Haptics.tap(); showOrganizations = true } label: {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle().fill(Color.nostiaAccentSoft).frame(width: 46, height: 46)
-                        Image(systemName: "plus").font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(Color.nostiaAccent)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Create or join an org")
-                            .font(.system(size: 15, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
-                        Text("Host your own events")
-                            .font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextMuted)
+            NostiaRowHeader(title: "Community", actionTitle: nil)
+            HStack(spacing: 10) {
+                communityCard(icon: "building.2.fill",
+                              title: "Organizations",
+                              sub: "Location-gated groups") {
+                    showOrganizations = true
                 }
-                .padding(16)
-                .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
+                communityCard(icon: "sofa.fill",
+                              title: "Crash Pads",
+                              sub: "Stay with friends") {
+                    showCrashPads = true
+                }
             }
-            .buttonStyle(.plain)
         }
+    }
+
+    private func communityCard(icon: String, title: String, sub: String, action: @escaping () -> Void) -> some View {
+        Button { Haptics.tap(); action() } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack {
+                    Circle().fill(Color.nostiaAccentSoft).frame(width: 40, height: 40)
+                    Image(systemName: icon).font(.nostiaBody(17, weight: .semibold))
+                        .foregroundColor(Color.nostiaAccent)
+                }
+                Text(title)
+                    .font(.nostiaBody(15, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                Text(sub)
+                    .font(.nostiaBody(12)).foregroundColor(Color.nostiaTextSecond)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.nostiaTap)
+        .accessibilityLabel("\(title). \(sub)")
     }
 
     // MARK: - For You carousel (above the search bar)
@@ -280,13 +318,13 @@ struct HomeView: View {
         let picks = Array(vm.forYouEvents.prefix(2))
         let pageCount = picks.count + 1 // + trailing create card
         VStack(alignment: .leading, spacing: 10) {
-            NostiaRowHeader(title: "For You") { selectedTab = 1 }
+            NostiaRowHeader(title: "For You") { activeSheet = .search([]) }
             TabView(selection: $forYouPage) {
                 ForEach(Array(picks.enumerated()), id: \.element.id) { index, event in
                     Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
                         HomeHeroExperienceCard(event: event)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.nostiaTap)
                     .contextMenu {
                         if authManager.isDev {
                             Button(role: .destructive) {
@@ -301,7 +339,7 @@ struct HomeView: View {
                 Button { Haptics.tap(); activeSheet = .createExperience } label: {
                     createExperienceCard
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
                 .tag(pageCount - 1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -330,13 +368,13 @@ struct HomeView: View {
         VStack(spacing: 10) {
             ZStack {
                 Circle().fill(Color.nostiaAccentSoft).frame(width: 56, height: 56)
-                Image(systemName: "plus").font(.system(size: 26, weight: .semibold))
+                Image(systemName: "plus").font(.nostiaBody(26, weight: .semibold))
                     .foregroundColor(Color.nostiaAccent)
             }
             Text("Create Experience")
-                .font(.system(size: 16, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                .font(.nostiaBody(16, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
             Text("Host something near you")
-                .font(.system(size: 12.5)).foregroundColor(Color.nostiaTextSecond)
+                .font(.nostiaBody(12.5)).foregroundColor(Color.nostiaTextSecond)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 212)
@@ -346,7 +384,7 @@ struct HomeView: View {
     @ViewBuilder
     private var upcomingEventsSection: some View {
         experienceRow(title: "Experiences you're visiting", events: Array(vm.upcomingEvents.prefix(8)), idPrefix: "going") {
-            selectedTab = 1
+            activeSheet = .visiting
         }
     }
 
@@ -377,18 +415,25 @@ struct HomeView: View {
         return (vm.nearbyEvents + vm.upcomingEvents).filter { seen.insert($0.id).inserted }
     }
 
-    @ViewBuilder
-    private var themedSections: some View {
-        ForEach(homeCategories) { category in
+    /// The non-empty themed rows, capped at three — Home should read as a highlight
+    /// reel, not an endless scroll; the search sheet has every tag.
+    private var visibleCategories: [(HomeCategory, [Experience])] {
+        homeCategories.compactMap { category in
             let tagSet = Set(category.tags)
             let matches = themePool.filter { !Set($0.tags ?? []).isDisjoint(with: tagSet) }
-            if !matches.isEmpty {
-                experienceRow(title: category.title,
-                              events: Array(matches.prefix(8)),
-                              idPrefix: "theme-\(category.id)") {
-                    router.pendingExploreTags = category.tags
-                    selectedTab = 1
-                }
+            return matches.isEmpty ? nil : (category, Array(matches.prefix(8)))
+        }
+        .prefix(3)
+        .map { $0 }
+    }
+
+    @ViewBuilder
+    private var themedSections: some View {
+        ForEach(visibleCategories, id: \.0.id) { category, matches in
+            experienceRow(title: category.title,
+                          events: matches,
+                          idPrefix: "theme-\(category.id)") {
+                activeSheet = .search(category.tags)
             }
         }
     }
@@ -404,7 +449,7 @@ struct HomeView: View {
                         Button { Haptics.tap(); activeSheet = .eventDetail(event) } label: {
                             AtlasExperienceMiniCard(event: event)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.nostiaTap)
                         .id("\(idPrefix)-\(event.id)")
                         .contextMenu {
                             if authManager.isDev {
@@ -507,7 +552,7 @@ struct HomeHeroExperienceCard: View {
                 AtlasExperienceImage(flyerImage: event.flyerImage, height: 150)
                 if let tag = event.tags?.first {
                     Text(tag.capitalized)
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.nostiaBody(10.5, weight: .bold))
                         .foregroundColor(Color.nostiaAccent)
                         .padding(.horizontal, 10).padding(.vertical, 4)
                         .background(Capsule().fill(Color.nostiaWarm))
@@ -517,17 +562,17 @@ struct HomeHeroExperienceCard: View {
             }
             VStack(alignment: .leading, spacing: 5) {
                 Text(event.title)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.nostiaBody(17, weight: .bold))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .lineLimit(1)
                 HStack(spacing: 4) {
-                    Image(systemName: "star.fill").font(.system(size: 13)).foregroundColor(Color.nostiaStar)
+                    Image(systemName: "star.fill").font(.nostiaBody(13)).foregroundColor(Color.nostiaStar)
                     Text(event.formattedAvgRating ?? "New")
-                        .font(.system(size: 12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                        .font(.nostiaBody(12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                     if let dist = event.formattedDistance {
-                        Text("· \(dist)").font(.system(size: 12.5)).foregroundColor(Color.nostiaTextMuted)
+                        Text("· \(dist)").font(.nostiaBody(12.5)).foregroundColor(Color.nostiaTextMuted)
                     } else if let loc = event.location, !loc.isEmpty {
-                        Text("· \(loc)").font(.system(size: 12.5)).foregroundColor(Color.nostiaTextMuted).lineLimit(1)
+                        Text("· \(loc)").font(.nostiaBody(12.5)).foregroundColor(Color.nostiaTextMuted).lineLimit(1)
                     }
                 }
             }
@@ -548,18 +593,18 @@ struct StatCard: View {
             onTap?()
         } label: {
             VStack(alignment: .leading, spacing: 4) {
-                Image(systemName: icon).font(.system(size: 20)).foregroundColor(color)
+                Image(systemName: icon).font(.nostiaBody(20)).foregroundColor(color)
                 Text("\(count)")
-                    .font(.system(size: responsive.fontSize(24), weight: .heavy))
+                    .font(.nostiaBody(responsive.fontSize(24), weight: .heavy))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .padding(.top, 4)
-                Text(label).font(.system(size: 12)).foregroundColor(Color.nostiaTextSecond)
+                Text(label).font(.nostiaBody(12)).foregroundColor(Color.nostiaTextSecond)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
     }
 }
 

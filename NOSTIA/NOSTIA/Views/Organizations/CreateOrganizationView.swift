@@ -104,7 +104,7 @@ struct CreateOrganizationView: View {
                            color: Color.nostriaPurple, size: 100)
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 14)).foregroundColor(.white)
+                    .font(.nostiaBody(14)).foregroundColor(.white)
                     .frame(width: 32, height: 32)
                     .background(Color.nostiaAccent).clipShape(Circle())
                     .overlay(Circle().stroke(Color(hex: "1A0E35"), lineWidth: 2))
@@ -117,7 +117,7 @@ struct CreateOrganizationView: View {
     private var descriptionField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Description")
-                .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                .font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             TextEditor(text: $description)
                 .frame(minHeight: 80).padding(8)
                 .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
@@ -129,7 +129,7 @@ struct CreateOrganizationView: View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle(isOn: $locationEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Location Verification").font(.system(size: 15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                    Text("Location Verification").font(.nostiaBody(15, weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                     Text("Require members to be inside an allowed area to join")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
@@ -162,7 +162,7 @@ struct CreateOrganizationView: View {
 
     private var postPermissionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Who can post").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+            Text("Who can post").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             Picker("", selection: $postPermission) {
                 Text("All members").tag("members")
                 Text("Admins only").tag("locked")
@@ -177,7 +177,7 @@ struct CreateOrganizationView: View {
 
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Privacy").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+            Text("Privacy").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             Picker("", selection: $privacy) {
                 Text("Public").tag("public")
                 Text("Private").tag("private")
@@ -193,7 +193,7 @@ struct CreateOrganizationView: View {
     private var rulesField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Rules / Guidelines (optional)")
-                .font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                .font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
             TextEditor(text: $rulesText)
                 .frame(minHeight: 60).padding(8)
                 .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)

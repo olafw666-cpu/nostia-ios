@@ -20,10 +20,10 @@ struct ForgotPasswordView: View {
             VStack(spacing: responsive.spacing(20)) {
                 VStack(spacing: responsive.spacing(12)) {
                     Image(systemName: "faceid")
-                        .font(.system(size: responsive.fontSize(56)))
+                        .font(.nostiaBody(responsive.fontSize(56)))
                         .foregroundColor(Color.nostiaAccent)
                     Text("Reset with Face ID")
-                        .font(.system(size: responsive.fontSize(26), weight: .bold))
+                        .font(.nostiaBody(responsive.fontSize(26), weight: .bold))
                         .foregroundColor(Color.nostiaTextPrimary)
                     Text("If you enabled Face ID security on your account, you can set a new password by confirming with Face ID — no email or codes needed.")
                         .font(.subheadline)
@@ -41,8 +41,13 @@ struct ForgotPasswordView: View {
                         Text("Password reset. Sign in with your new password.")
                             .font(.subheadline).foregroundColor(Color.nostiaTextPrimary)
                             .multilineTextAlignment(.center)
-                        Button("Back to Login") { dismiss() }
-                            .font(.headline).foregroundColor(Color.nostiaAccent)
+                        Button { dismiss() } label: {
+                            Text("Back to Login")
+                                .font(.headline).foregroundColor(Color.nostiaAccent)
+                                .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.nostiaTap)
                     }
                     .padding(responsive.spacing(20))
                     .frame(maxWidth: .infinity)
@@ -75,7 +80,7 @@ struct ForgotPasswordView: View {
                                 Text("Confirm with Face ID")
                             }
                         }
-                        .font(.system(size: responsive.fontSize(17), weight: .bold))
+                        .font(.nostiaBody(responsive.fontSize(17), weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(responsive.spacing(16))
@@ -100,7 +105,9 @@ struct ForgotPasswordView: View {
                             Label("Contact Support", systemImage: "envelope")
                                 .font(.footnote.weight(.semibold))
                                 .foregroundColor(Color.nostiaAccent)
+                                .padding(.vertical, 10)
                         }
+                        .buttonStyle(.nostiaTap)
                     }
                 }
             }

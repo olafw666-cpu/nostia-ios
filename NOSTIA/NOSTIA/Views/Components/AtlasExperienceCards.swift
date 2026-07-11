@@ -30,7 +30,7 @@ struct AtlasExperienceImage: View {
                 )
                 .overlay(
                     Image(systemName: "photo")
-                        .font(.system(size: 22))
+                        .font(.nostiaBody(22))
                         .foregroundColor(Color.nostiaTextMuted)
                 )
             }
@@ -55,7 +55,7 @@ private struct AtlasCatBadge: View {
     let text: String
     var body: some View {
         Text(text)
-            .font(.system(size: 10.5, weight: .bold))
+            .font(.nostiaBody(10.5, weight: .bold))
             .foregroundColor(Color.nostiaAccent)
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(Capsule().fill(Color.nostiaWarm))
@@ -67,14 +67,14 @@ private struct AtlasRatingLine: View {
     let event: Experience
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: "star.fill").font(.system(size: 14)).foregroundColor(Color.nostiaStar)
+            Image(systemName: "star.fill").font(.nostiaBody(14)).foregroundColor(Color.nostiaStar)
             if let r = event.formattedAvgRating {
-                Text(r).font(.system(size: 12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                Text(r).font(.nostiaBody(12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
             } else {
-                Text("New").font(.system(size: 12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                Text("New").font(.nostiaBody(12.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
             }
             if let v = event.visitedCount, v > 0 {
-                Text("· \(v) visited").font(.system(size: 12.5)).foregroundColor(Color.nostiaTextMuted)
+                Text("· \(v) visited").font(.nostiaBody(12.5)).foregroundColor(Color.nostiaTextMuted)
             }
         }
     }
@@ -96,7 +96,7 @@ struct AtlasExperienceMiniCard: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text(event.title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.nostiaBody(16, weight: .bold))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .lineLimit(2)
                 AtlasRatingLine(event: event)
@@ -128,43 +128,43 @@ struct AtlasExperienceCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                     HStack(spacing: 4) {
-                        Image(systemName: "star.fill").font(.system(size: 16)).foregroundColor(Color.nostiaStar)
+                        Image(systemName: "star.fill").font(.nostiaBody(16)).foregroundColor(Color.nostiaStar)
                         Text(event.formattedAvgRating ?? "New")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.nostiaBody(13, weight: .bold))
                             .foregroundColor(Color.nostiaTextPrimary)
                     }
                 }
                 if let loc = event.location, !loc.isEmpty {
                     HStack(spacing: 5) {
-                        Image(systemName: "mappin.and.ellipse").font(.system(size: 14))
+                        Image(systemName: "mappin.and.ellipse").font(.nostiaBody(14))
                         Text(loc + (event.formattedDistance.map { " · \($0)" } ?? ""))
                     }
-                    .font(.system(size: 13))
+                    .font(.nostiaBody(13))
                     .foregroundColor(Color.nostiaTextSecond)
                     .padding(.top, 4)
                 }
                 if let when = event.formattedSchedule {
                     HStack(spacing: 5) {
-                        Image(systemName: "calendar").font(.system(size: 14))
+                        Image(systemName: "calendar").font(.nostiaBody(14))
                         Text(when)
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.nostiaBody(13, weight: .semibold))
                     .foregroundColor(Color.nostiaAccent)
                     .padding(.top, 4)
                 }
                 if let desc = event.description, !desc.isEmpty {
                     Text(desc)
-                        .font(.system(size: 13.5))
+                        .font(.nostiaBody(13.5))
                         .foregroundColor(Color.nostiaTextSecond)
                         .lineLimit(2)
                         .padding(.top, 8)
                 }
                 if let v = event.visitedCount, v > 0 {
                     HStack(spacing: 6) {
-                        Image(systemName: "checkmark.seal.fill").font(.system(size: 16)).foregroundColor(Color.nostiaAccent)
+                        Image(systemName: "checkmark.seal.fill").font(.nostiaBody(16)).foregroundColor(Color.nostiaAccent)
                         Text("\(v) people visited")
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.nostiaBody(13, weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
                     .padding(.top, 12)
                     .overlay(alignment: .top) {

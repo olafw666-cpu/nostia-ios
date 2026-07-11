@@ -11,7 +11,7 @@ struct ThemeChooserSheet: View {
         VStack(spacing: 22) {
             VStack(spacing: 10) {
                 Image(systemName: "circle.lefthalf.filled")
-                    .font(.system(size: 42))
+                    .font(.nostiaBody(42))
                     .foregroundColor(Color.nostiaAccent)
                 Text("Choose your look")
                     .font(.nostiaDisplay(22, weight: .heavy))
@@ -46,20 +46,20 @@ struct ThemeChooserSheet: View {
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: option.icon)
-                    .font(.system(size: 19))
+                    .font(.nostiaBody(19))
                     .frame(width: 26)
                     .foregroundColor(selected ? .white : Color.nostiaAccent)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(option.label)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.nostiaBody(16, weight: .bold))
                     Text(option.blurb)
-                        .font(.system(size: 12))
+                        .font(.nostiaBody(12))
                         .foregroundColor(selected ? .white.opacity(0.85) : Color.nostiaTextSecond)
                 }
                 Spacer()
                 if selected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.nostiaBody(20))
                         .foregroundColor(.white)
                 }
             }
@@ -74,7 +74,7 @@ struct ThemeChooserSheet: View {
                     .stroke(Color.nostriaBorder, lineWidth: selected ? 0 : 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 }

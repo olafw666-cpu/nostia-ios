@@ -116,7 +116,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: responsive.spacing(16)) {
             Image(systemName: icon)
-                .font(.system(size: responsive.fontSize(56)))
+                .font(.nostiaBody(responsive.fontSize(56)))
                 .foregroundStyle(Color.nostiaAccent.opacity(0.7))
             Text(text).font(.title3.bold()).foregroundColor(Color.nostiaTextPrimary)
             if !sub.isEmpty {
@@ -267,7 +267,7 @@ struct CreateTripSheet: View {
                 NostiaTextField(label: "Title *", placeholder: "Vault name", text: $title)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description")
-                        .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                        .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                         .foregroundColor(Color.nostiaTextSecond)
                     TextEditor(text: $description)
                         .frame(minHeight: responsive.spacing(80)).padding(responsive.spacing(12))
@@ -302,7 +302,7 @@ struct CreateTripSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text("SELECT FOLLOWERS")
-                    .font(.system(size: responsive.fontSize(11), weight: .semibold))
+                    .font(.nostiaBody(responsive.fontSize(11), weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
                     .padding(.horizontal, responsive.spacing(20)).padding(.top, responsive.spacing(20)).padding(.bottom, responsive.spacing(10))
 
@@ -317,8 +317,8 @@ struct CreateTripSheet: View {
                         HStack(spacing: responsive.spacing(12)) {
                             AvatarView(initial: follower.initial, color: Color.nostiaAccent, size: responsive.spacing(38))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(follower.name).font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
-                                Text("@\(follower.username)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
+                                Text(follower.name).font(.nostiaBody(responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                                Text("@\(follower.username)").font(.nostiaBody(responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                             }
                             Spacer()
                             Image(systemName: selectedFriendIds.contains(follower.id) ? "checkmark.circle.fill" : "circle")
@@ -428,7 +428,7 @@ struct CreateExpenseSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Amount *")
-                            .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                            .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         HStack {
                             Text("$").foregroundColor(Color.nostiaTextSecond).font(.title3)
@@ -443,7 +443,7 @@ struct CreateExpenseSheet: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Date *")
-                            .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                            .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         DatePicker("", selection: $dateValue, displayedComponents: .date)
                             .datePickerStyle(.compact)
@@ -456,7 +456,7 @@ struct CreateExpenseSheet: View {
                     if showCategory {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Category")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                                .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                                 .foregroundColor(Color.nostiaTextSecond)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
@@ -516,7 +516,7 @@ struct CreateExpenseSheet: View {
         VStack(alignment: .leading, spacing: responsive.spacing(10)) {
             HStack {
                 Text("Split Between")
-                    .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                    .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                     .foregroundColor(Color.nostiaTextSecond)
                 Spacer()
                 if isCustomMode {
@@ -542,7 +542,7 @@ struct CreateExpenseSheet: View {
                 .padding(responsive.spacing(12))
                 .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.nostiaTap)
 
             ForEach(activeMembers) { member in
                 memberSplitRow(for: member)
@@ -609,7 +609,7 @@ struct CreateExpenseSheet: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
 
                 TextField("0.00", text: Binding(
                     get: { memberAmounts[member.id] ?? "0.00" },
@@ -629,8 +629,9 @@ struct CreateExpenseSheet: View {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isSelected ? Color.nostiaAccent : Color.nostiaTextMuted)
                         .font(.title3)
+                        .frame(width: 44, height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
             }
             .padding(responsive.spacing(12))
             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))

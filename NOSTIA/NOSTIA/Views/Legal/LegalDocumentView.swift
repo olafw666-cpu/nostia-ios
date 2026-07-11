@@ -8,7 +8,7 @@ struct LegalDocumentView: View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
                 Text("Terms of Service")
-                    .font(.system(size: responsive.fontSize(20), weight: .bold))
+                    .font(.nostiaBody(responsive.fontSize(20), weight: .bold))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, responsive.spacing(20))
@@ -43,7 +43,7 @@ struct LegalDocumentView: View {
                     dismiss()
                 } label: {
                     Text("Done")
-                        .font(.system(size: responsive.fontSize(17), weight: .bold))
+                        .font(.nostiaBody(responsive.fontSize(17), weight: .bold))
                         .foregroundColor(Color.nostiaTextPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 44)

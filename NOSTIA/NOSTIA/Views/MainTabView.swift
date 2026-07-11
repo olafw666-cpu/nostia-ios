@@ -7,12 +7,14 @@ struct MainTabView: View {
     @State private var showNotifications = false
     @State private var showProfile = false
     @State private var deepLinkProfileUserId: Int?
+    @State private var deepLinkExperience: Experience?
+    @State private var deepLinkActionsVM = ExperienceActionsViewModel()
     @State private var headerImageData: String?
     @State private var headerInitial: String = "U"
 
     // Atlas bottom-nav order: Home · Adventure · Vaults · Map · Following.
-    // Adventure replaced Explore in the same slot (Adventure Page spec §1);
-    // ExperiencesView stays in the repo one release for rollback.
+    // Adventure replaced Explore in the same slot (Adventure Page spec §1); Home is
+    // the discovery surface, and its search bar / "See all"s open ExperienceSearchSheet.
     private let tabs: [AtlasTabBar.Item] = [
         .init(tab: 0, icon: "house.fill", label: "Home"),
         .init(tab: 1, icon: "sparkles", label: "Adventure"),
@@ -93,6 +95,11 @@ struct MainTabView: View {
             }
             .presentationBackground(Color.nostiaBackground)
         }
+        // Experience-invite deep links present over whatever tab is active — the target
+        // screen no longer depends on which tab (if any) shows experiences.
+        .sheet(item: $deepLinkExperience) { event in
+            ExperienceDetailSheet(event: event, vm: deepLinkActionsVM)
+        }
         .sheet(isPresented: $showProfile, onDismiss: { loadHeaderUser() }) {
             NavigationStack {
                 ProfileView()
@@ -144,14 +151,14 @@ struct MainTabView: View {
                             .shadow(color: Color.nostiaShadow.opacity(0.08), radius: 8, y: 2)
                             .overlay(
                                 Image(systemName: "bell")
-                                    .font(.system(size: 18))
+                                    .font(.nostiaBody(18))
                                     .foregroundColor(Color.nostiaTextSecond)
                             )
                         if unreadCount > 0 {
                             // No offset: the badge must stay inside the 40pt circle, or the
                             // toolbar's glass capsule clips it half-out of the bubble.
                             Text(unreadCount > 9 ? "9+" : "\(unreadCount)")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.nostiaBody(10, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(3)
                                 .background(Color.nostriaDanger)
@@ -190,10 +197,15 @@ struct MainTabView: View {
         switch target {
         case .profile(let userId):
             deepLinkProfileUserId = userId
+        case .event(let eventId):
+            Task {
+                let event = try? await ExperiencesAPI.shared.getExperience(id: eventId)
+                await MainActor.run { deepLinkExperience = event }
+            }
         case .notifications:
             showNotifications = true
             PushNotificationManager.shared.clearBadge()
-        case .vault, .event, .adventure:
+        case .vault, .adventure:
             break // tab already selected by the router
         }
         loadUnreadCount()
@@ -243,7 +255,7 @@ struct AtlasTabBar: View {
                     // Icon-only (labels removed per design). The active tab keeps its
                     // soft-green pill so the selection is still obvious without text.
                     Image(systemName: item.icon)
-                        .font(.system(size: 23, weight: .semibold))
+                        .font(.nostiaBody(23, weight: .semibold))
                         .foregroundColor(on ? Color.nostiaAccent : Color.nostiaTextSecond)
                         .frame(width: 54, height: 40)
                         .background {
@@ -256,7 +268,7 @@ struct AtlasTabBar: View {
                         .padding(.vertical, 9)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
                 .accessibilityLabel(item.label)
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }

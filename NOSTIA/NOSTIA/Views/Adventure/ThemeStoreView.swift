@@ -84,7 +84,7 @@ struct ThemeStoreView: View {
     private var balanceCard: some View {
         HStack(spacing: 10) {
             Image(systemName: "star.circle.fill")
-                .font(.system(size: 28))
+                .font(.nostiaBody(28))
                 .foregroundColor(Color.nostiaStar)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(liveBalance)")
@@ -122,7 +122,7 @@ struct ThemeStoreView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(theme.label)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.nostiaBody(15, weight: .bold))
                     .foregroundColor(Color.nostiaTextPrimary)
                 if let item, !owned {
                     Text("\(item.price) points")
@@ -138,7 +138,7 @@ struct ThemeStoreView: View {
 
             if applied {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.nostiaBody(22))
                     .foregroundColor(Color.nostiaSuccess)
             } else if owned {
                 Button {
@@ -146,27 +146,27 @@ struct ThemeStoreView: View {
                     themeManager.accentTheme = theme
                 } label: {
                     Text("Apply")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.nostiaBody(13, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(Capsule().fill(Color.nostiaAccent))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
             } else if let item {
                 Button {
                     Haptics.tap()
                     confirmItem = item
                 } label: {
                     Text("Unlock")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.nostiaBody(13, weight: .bold))
                         .foregroundColor(affordable ? Color.nostiaAccent : Color.nostiaTextMuted)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(Capsule().fill(Color.nostiaButton))
                         .overlay(Capsule().stroke(Color.nostiaCardStroke, lineWidth: 0.75))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
                 .disabled(!affordable || isPurchasing)
             }
         }

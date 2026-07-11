@@ -75,4 +75,38 @@ final class TripsAPI {
     func addVaultMembers(tripId: Int, userIds: [Int]) async throws -> Trip {
         return try await client.request("/trips/\(tripId)/vault-add-members", method: "POST", body: ["userIds": userIds])
     }
+
+    // MARK: - Trip plan (tasks + date poll)
+
+    func getPlan(tripId: Int) async throws -> TripPlanResponse {
+        return try await client.request("/trips/\(tripId)/plan")
+    }
+
+    func addTask(tripId: Int, title: String) async throws -> TripTask {
+        return try await client.request("/trips/\(tripId)/plan/tasks", method: "POST", body: ["title": title])
+    }
+
+    func toggleTaskClaim(tripId: Int, taskId: Int) async throws -> TripTask {
+        return try await client.request("/trips/\(tripId)/plan/tasks/\(taskId)/claim", method: "POST", body: [:])
+    }
+
+    func toggleTaskDone(tripId: Int, taskId: Int) async throws -> TripTask {
+        return try await client.request("/trips/\(tripId)/plan/tasks/\(taskId)/done", method: "POST", body: [:])
+    }
+
+    func deleteTask(tripId: Int, taskId: Int) async throws {
+        try await client.requestVoid("/trips/\(tripId)/plan/tasks/\(taskId)", method: "DELETE")
+    }
+
+    func addDateOption(tripId: Int, date: String) async throws -> [TripDateOption] {
+        return try await client.request("/trips/\(tripId)/plan/dates", method: "POST", body: ["date": date])
+    }
+
+    func toggleDateVote(tripId: Int, optionId: Int) async throws -> [TripDateOption] {
+        return try await client.request("/trips/\(tripId)/plan/dates/\(optionId)/vote", method: "POST", body: [:])
+    }
+
+    func deleteDateOption(tripId: Int, optionId: Int) async throws {
+        try await client.requestVoid("/trips/\(tripId)/plan/dates/\(optionId)", method: "DELETE")
+    }
 }

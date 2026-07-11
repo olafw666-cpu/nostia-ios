@@ -23,7 +23,7 @@ struct TripsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         NostiaScreenTitle(title: "Vaults")
                         Text("Shared pots. Add followers, split costs, settle up.")
-                            .font(.system(size: 14)).foregroundColor(Color.nostiaTextSecond)
+                            .font(.nostiaBody(14)).foregroundColor(Color.nostiaTextSecond)
                     }
                     .padding(.top, 4)
                     .padding(.bottom, 2)
@@ -59,9 +59,10 @@ struct TripsView: View {
             } label: {
                 Circle().fill(Color.nostiaAccent)
                     .frame(width: 60, height: 60)
-                    .overlay(Image(systemName: "plus").font(.system(size: 31, weight: .semibold)).foregroundColor(.white))
+                    .overlay(Image(systemName: "plus").font(.nostiaBody(31, weight: .semibold)).foregroundColor(.white))
                     .shadow(color: Color.nostiaAccent.opacity(0.6), radius: 18, y: 8)
             }
+            .accessibilityLabel("Create or join a vault")
             .padding(.trailing, responsive.spacing(22))
             .padding(.bottom, 100)
         }
@@ -177,7 +178,7 @@ struct TripCard: View {
                     if let leaderId = trip.vaultLeaderId,
                        leaderId == AuthManager.shared.currentUserId {
                         HStack(spacing: 4) {
-                            Image(systemName: "key.fill").font(.system(size: 10))
+                            Image(systemName: "key.fill").font(.nostiaBody(10))
                             Text("Leader")
                         }
                         .font(.caption.bold()).foregroundColor(Color.nostiaWarning)
@@ -188,7 +189,7 @@ struct TripCard: View {
                 Divider().background(Color.nostiaDivider)
                 HStack(spacing: 10) {
                     Label("\(trip.activeParticipants.count) members", systemImage: "person.2.fill")
-                        .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        .font(.nostiaBody(13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         .labelStyle(AtlasLeadingIconLabel(tint: Color.nostiaAccent))
                     Spacer()
                     Text(trip.formattedVaultTotal)
@@ -196,12 +197,12 @@ struct TripCard: View {
                         .foregroundColor(Color.nostiaTextPrimary)
                         .lineLimit(1)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 18)).foregroundColor(Color.nostiaTextMuted)
+                        .font(.nostiaBody(18)).foregroundColor(Color.nostiaTextMuted)
                 }
             }
             .padding(responsive.spacing(18))
             .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 20))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
     }
 }

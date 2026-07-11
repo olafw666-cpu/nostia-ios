@@ -69,8 +69,10 @@ struct VisitedExperiencesView: View {
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                        .frame(width: 36, height: 36)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(responsive.spacing(12))
@@ -110,7 +112,7 @@ struct VisitedExperiencesView: View {
                     Button { selectedEvent = event } label: {
                         ExperienceCard(event: event, onCreatorTap: { selectedCreatorId = $0 })
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.nostiaTap)
                     .padding(.horizontal, responsive.spacing(16))
                 }
             }

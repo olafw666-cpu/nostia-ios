@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Atlas (Light) design system
 //
@@ -123,6 +124,28 @@ enum NostiaElevation {
     }
 }
 
+// MARK: - Button hit-testing
+
+/// Drop-in replacement for `.buttonStyle(.nostiaTap)` that makes the label's ENTIRE frame
+/// tappable. SwiftUI only hit-tests a button's opaque pixels by default, so any label
+/// with transparent regions — `.padding`, a `Spacer()` between text and a chevron, a
+/// clear background on an unselected segment — was only tappable on the text/glyph
+/// itself. `.contentShape(Rectangle())` extends the tap target to the full bounds.
+/// Keeps `.plain`'s properties (no tint styling, no List full-row activation) and adds
+/// a subtle pressed dim so every control gives feedback.
+struct NostiaTapButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+extension ButtonStyle where Self == NostiaTapButtonStyle {
+    /// `.buttonStyle(.nostiaTap)` — plain look, full-frame tap target.
+    static var nostiaTap: NostiaTapButtonStyle { NostiaTapButtonStyle() }
+}
+
 // MARK: - Golden dev usernames
 
 extension ShapeStyle where Self == AnyShapeStyle {
@@ -142,12 +165,14 @@ extension ShapeStyle where Self == AnyShapeStyle {
 
 extension Font {
     /// Display / heading type — monospaced to echo the mock's JetBrains Mono titles.
+    /// The point size scales with the user's Dynamic Type setting (the whole app routes
+    /// its type through these two helpers, so this is what makes Nostia respect it).
     static func nostiaDisplay(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        .system(size: UIFontMetrics.default.scaledValue(for: size), weight: weight, design: .monospaced)
     }
-    /// Body / supporting type.
+    /// Body / supporting type — also Dynamic Type-scaled.
     static func nostiaBody(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight)
+        .system(size: UIFontMetrics.default.scaledValue(for: size), weight: weight)
     }
 }
 
@@ -178,7 +203,7 @@ struct NostiaSearchBar: View {
         Button { action?() } label: {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 18))
+                    .font(.nostiaBody(18))
                     .foregroundColor(Color.nostiaTextMuted)
                 Text(placeholder)
                     .font(.nostiaBody(15))
@@ -189,7 +214,7 @@ struct NostiaSearchBar: View {
             .frame(height: 48)
             .nostiaWarmCard(cornerRadius: 15)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .disabled(action == nil)
     }
 }
@@ -202,7 +227,7 @@ struct NostiaSearchField: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 18))
+                .font(.nostiaBody(18))
                 .foregroundColor(Color.nostiaTextMuted)
             TextField(placeholder, text: $text)
                 .font(.nostiaBody(15))
@@ -214,7 +239,7 @@ struct NostiaSearchField: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(Color.nostiaTextMuted)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
             }
         }
         .padding(.horizontal, 16)
@@ -243,7 +268,7 @@ struct NostiaChip: View {
                 )
                 .shadow(color: Color.nostiaShadow.opacity(0.08), radius: 8, x: 0, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -264,13 +289,13 @@ struct NostiaRowHeader: View {
                 Button { action?() } label: {
                     HStack(spacing: 2) {
                         Text(actionTitle)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.nostiaBody(13, weight: .bold))
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.nostiaBody(13, weight: .bold))
                     }
                     .foregroundColor(Color.nostiaAccent)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
                 .disabled(action == nil)
             }
         }
@@ -288,7 +313,7 @@ struct AtlasSegmented: View {
                 let on = selection == index
                 Button { Haptics.select(); selection = index } label: {
                     Text(title)
-                        .font(.system(size: 14, weight: on ? .bold : .semibold))
+                        .font(.nostiaBody(14, weight: on ? .bold : .semibold))
                         .foregroundColor(on ? Color.nostiaTextPrimary : Color.nostiaTextSecond)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -298,7 +323,7 @@ struct AtlasSegmented: View {
                                 .shadow(color: on ? Color.nostiaShadow.opacity(0.06) : .clear, radius: 4, y: 1)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
             }
         }
         .padding(5)
@@ -326,14 +351,14 @@ struct NostiaPrimaryButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                if let systemImage { Image(systemName: systemImage).font(.system(size: 18, weight: .semibold)) }
-                Text(title).font(.system(size: 16, weight: .bold))
+                if let systemImage { Image(systemName: systemImage).font(.nostiaBody(18, weight: .semibold)) }
+                Text(title).font(.nostiaBody(16, weight: .bold))
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.nostiaAccent))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
     }
 }

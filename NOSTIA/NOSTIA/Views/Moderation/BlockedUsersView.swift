@@ -23,7 +23,7 @@ struct BlockedUsersView: View {
                 } else if blockedUsers.isEmpty {
                     VStack(spacing: responsive.spacing(12)) {
                         Image(systemName: "nosign")
-                            .font(.system(size: responsive.fontSize(48)))
+                            .font(.nostiaBody(responsive.fontSize(48)))
                             .foregroundColor(Color.nostiaAccent.opacity(0.7))
                         Text("No blocked users").font(.headline).foregroundColor(Color.nostiaTextPrimary)
                         Text("Users you block won't see your content,\nand you won't see theirs.")
@@ -40,7 +40,7 @@ struct BlockedUsersView: View {
                                        color: Color.nostriaPurple, size: responsive.spacing(40))
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(user.name)
-                                    .font(.system(size: responsive.fontSize(15), weight: .semibold))
+                                    .font(.nostiaBody(responsive.fontSize(15), weight: .semibold))
                                     .foregroundColor(Color.nostiaTextPrimary)
                                 Text("@\(user.username)")
                                     .font(.caption).foregroundColor(Color.nostiaTextMuted)

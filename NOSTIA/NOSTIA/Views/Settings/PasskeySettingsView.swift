@@ -57,7 +57,7 @@ struct PasskeySettingsView: View {
                                     Text("Enable Face ID Security")
                                 }
                             }
-                            .font(.system(size: responsive.fontSize(17), weight: .bold))
+                            .font(.nostiaBody(responsive.fontSize(17), weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(responsive.spacing(16))

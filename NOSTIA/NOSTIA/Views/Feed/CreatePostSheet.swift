@@ -37,8 +37,10 @@ struct CreatePostSheet: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.title2).foregroundColor(.white)
                                     .shadow(radius: 3)
-                                    .padding(6)
+                                    .frame(width: 44, height: 44)
                             }
+                            .buttonStyle(.nostiaTap)
+                            .accessibilityLabel("Remove photo")
                         }
                     }
 

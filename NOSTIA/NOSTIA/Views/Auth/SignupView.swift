@@ -29,11 +29,11 @@ struct SignupView: View {
                     .overlay {
                         VStack(spacing: responsive.spacing(12)) {
                             Image(systemName: "safari.fill")
-                                .font(.system(size: responsive.fontSize(64)))
+                                .font(.nostiaBody(responsive.fontSize(64)))
                                 .foregroundColor(.white)
                                 .shadow(color: .white.opacity(0.3), radius: 20)
                             Text("Join Nostia")
-                                .font(.system(size: responsive.fontSize(34), weight: .bold))
+                                .font(.nostiaBody(responsive.fontSize(34), weight: .bold))
                                 .foregroundColor(.white)
                             Text("Start your adventure today")
                                 .font(.subheadline)
@@ -66,7 +66,7 @@ struct SignupView: View {
                     Button { Haptics.tap(); use2FA.toggle() } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "faceid")
-                                .font(.system(size: 22))
+                                .font(.nostiaBody(22))
                                 .foregroundColor(use2FA ? Color.nostiaSuccess : Color.nostiaAccent)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Use 2FA")
@@ -78,7 +78,7 @@ struct SignupView: View {
                             }
                             Spacer()
                             Image(systemName: use2FA ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 22))
+                                .font(.nostiaBody(22))
                                 .foregroundColor(use2FA ? Color.nostiaSuccess : Color.nostiaTextMuted)
                         }
                         .padding(responsive.spacing(14))
@@ -87,7 +87,7 @@ struct SignupView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12)
                             .stroke(use2FA ? Color.nostiaSuccess.opacity(0.5) : Color.nostriaBorder, lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.nostiaTap)
                     .accessibilityLabel("Use 2FA")
                     .accessibilityValue(use2FA ? "On" : "Off")
                     .accessibilityHint("Adds Face ID security to your account right after it is created")
@@ -117,7 +117,7 @@ struct SignupView: View {
                                 Text(consentGranted ? "Create Account" : "Continue")
                             }
                         }
-                        .font(.system(size: responsive.fontSize(18), weight: .bold)).foregroundColor(.white)
+                        .font(.nostiaBody(responsive.fontSize(18), weight: .bold)).foregroundColor(.white)
                         .frame(maxWidth: .infinity).padding(responsive.spacing(18))
                         .background(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                                    startPoint: .leading, endPoint: .trailing))
@@ -134,7 +134,10 @@ struct SignupView: View {
                             Text("Login").fontWeight(.bold).foregroundColor(Color.nostiaAccent)
                         }
                         .font(.subheadline)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.nostiaTap)
                 }
                 .padding(responsive.spacing(24))
                 .frame(maxWidth: responsive.contentMaxWidth)

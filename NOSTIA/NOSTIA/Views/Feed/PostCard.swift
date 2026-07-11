@@ -29,7 +29,7 @@ struct PostCard: View {
                     HStack(spacing: 10) {
                         AvatarView(initial: String(post.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(40))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(post.name).font(.system(size: responsive.fontSize(15), weight: .bold))
+                            Text(post.name).font(.nostiaBody(responsive.fontSize(15), weight: .bold))
                                 .foregroundStyle(.nostiaUsername(isDev: post.isDev == true, fallback: Color.nostiaTextPrimary))
                             Text("@\(post.username) · \(post.timeAgo)")
                                 .font(.caption)
@@ -37,28 +37,32 @@ struct PostCard: View {
                             // Badge org content so it's identifiable in the mixed feed.
                             if let orgName = post.orgName {
                                 Label(orgName, systemImage: "building.2")
-                                    .font(.system(size: responsive.fontSize(11), weight: .semibold))
+                                    .font(.nostiaBody(responsive.fontSize(11), weight: .semibold))
                                     .foregroundColor(Color.nostiaAccent)
                             }
                         }
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.nostiaTap)
                 Spacer()
                 HStack(spacing: 4) {
                     if post.userId == currentUserId, let onEdit {
                         Button { onEdit() } label: {
                             Image(systemName: "pencil")
                                 .font(.footnote).foregroundColor(Color.nostiaTextMuted)
-                                .padding(8)
+                                .frame(width: 40, height: 40)
                         }
+                        .buttonStyle(.nostiaTap)
+                        .accessibilityLabel("Edit post")
                     }
                     if (post.userId == currentUserId || isCurrentUserDev), onDelete != nil {
                         Button { showDeleteConfirm = true } label: {
                             Image(systemName: "trash")
                                 .font(.footnote).foregroundColor(Color.nostriaDanger)
-                                .padding(8)
+                                .frame(width: 40, height: 40)
                         }
+                        .buttonStyle(.nostiaTap)
+                        .accessibilityLabel("Delete post")
                         .confirmationDialog("Delete this post?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
                             Button("Delete", role: .destructive) { onDelete?() }
                             Button("Cancel", role: .cancel) {}
@@ -77,10 +81,14 @@ struct PostCard: View {
                                 }
                             }
                         } label: {
+                            // Menus don't take a ButtonStyle, so the tap shape is declared
+                            // on the label itself.
                             Image(systemName: "ellipsis")
                                 .font(.footnote).foregroundColor(Color.nostiaTextMuted)
-                                .padding(8)
+                                .frame(width: 40, height: 40)
+                                .contentShape(Rectangle())
                         }
+                        .accessibilityLabel("More options")
                         .confirmationDialog(
                             "Block @\(post.username)? You won't see each other's posts, comments, or messages.",
                             isPresented: $showBlockConfirm, titleVisibility: .visible
@@ -109,7 +117,7 @@ struct PostCard: View {
             // Content
             if let content = post.content, !content.isEmpty {
                 Text(content)
-                    .font(.system(size: responsive.fontSize(15))).foregroundColor(Color.nostiaTextSecond)
+                    .font(.nostiaBody(responsive.fontSize(15))).foregroundColor(Color.nostiaTextSecond)
                     .lineLimit(5)
                     .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(10))
             }
@@ -127,20 +135,29 @@ struct PostCard: View {
             HStack(spacing: 20) {
                 Button(action: onLike) {
                     Label("\(post.likeCount)", systemImage: post.isLiked == true ? "heart.fill" : "heart")
-                        .font(.system(size: responsive.fontSize(14)))
+                        .font(.nostiaBody(responsive.fontSize(14)))
                         .foregroundColor(post.isLiked == true ? Color.nostriaDanger : Color.nostiaTextMuted)
+                        .padding(.vertical, 8).padding(.horizontal, 4)
                 }
+                .buttonStyle(.nostiaTap)
                 .disabled(isLikeProcessing || isDislikeProcessing)
+                .accessibilityLabel(post.isLiked == true ? "Unlike, \(post.likeCount) likes" : "Like, \(post.likeCount) likes")
                 Button(action: onDislike) {
                     Label("\(post.dislikeCount)", systemImage: post.isDisliked == true ? "hand.thumbsdown.fill" : "hand.thumbsdown")
-                        .font(.system(size: responsive.fontSize(14)))
+                        .font(.nostiaBody(responsive.fontSize(14)))
                         .foregroundColor(post.isDisliked == true ? Color.nostiaWarning : Color.nostiaTextMuted)
+                        .padding(.vertical, 8).padding(.horizontal, 4)
                 }
+                .buttonStyle(.nostiaTap)
                 .disabled(isLikeProcessing || isDislikeProcessing)
+                .accessibilityLabel(post.isDisliked == true ? "Remove dislike, \(post.dislikeCount) dislikes" : "Dislike, \(post.dislikeCount) dislikes")
                 Button(action: onComment) {
                     Label("\(post.commentCount)", systemImage: "bubble.right")
-                        .font(.system(size: responsive.fontSize(14))).foregroundColor(Color.nostiaTextMuted)
+                        .font(.nostiaBody(responsive.fontSize(14))).foregroundColor(Color.nostiaTextMuted)
+                        .padding(.vertical, 8).padding(.horizontal, 4)
                 }
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel("Comments, \(post.commentCount)")
                 Spacer()
             }
             .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(10))

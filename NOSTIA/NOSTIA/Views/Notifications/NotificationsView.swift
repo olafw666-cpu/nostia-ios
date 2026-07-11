@@ -111,6 +111,6 @@ struct NotificationRow: View {
                 RoundedRectangle(cornerRadius: 16).stroke(Color.nostiaAccent.opacity(0.3), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
     }
 }

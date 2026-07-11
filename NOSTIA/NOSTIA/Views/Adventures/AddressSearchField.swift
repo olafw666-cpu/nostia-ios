@@ -61,7 +61,10 @@ struct AddressSearchField: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(Color.nostiaTextMuted)
+                            .frame(width: 36, height: 36)
                     }
+                    .buttonStyle(.nostiaTap)
+                    .accessibilityLabel("Clear search")
                 }
             }
             .padding(12)
@@ -96,6 +99,7 @@ struct AddressSearchField: View {
                             .padding(.vertical, 10)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .buttonStyle(.nostiaTap)
                         Divider().background(Color.nostiaDivider)
                     }
                 }

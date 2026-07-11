@@ -40,12 +40,15 @@ struct VaultDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Tab selector
-            AtlasSegmented(segments: ["Vault", "Chat"], selection: $selectedTab)
+            // Tab selector — Plan sits between the money and the talk (mission: plan
+            // the trip, fund it together).
+            AtlasSegmented(segments: ["Vault", "Plan", "Chat"], selection: $selectedTab)
                 .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(10))
 
             if selectedTab == 0 {
                 VaultContentView(tripId: currentTrip.id, isKicked: isKicked, participants: currentTrip.activeParticipants)
+            } else if selectedTab == 1 {
+                VaultPlanView(tripId: currentTrip.id, isKicked: isKicked)
             } else {
                 VaultChatView(tripId: currentTrip.id, isKicked: isKicked)
             }
@@ -200,16 +203,16 @@ struct AddMemberSheet: View {
                                     )
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(follower.name)
-                                            .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                                            .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                                             .foregroundColor(Color.nostiaTextPrimary)
                                         Text("@\(follower.username)")
-                                            .font(.system(size: responsive.fontSize(12)))
+                                            .font(.nostiaBody(responsive.fontSize(12)))
                                             .foregroundColor(Color.nostiaTextSecond)
                                     }
                                     Spacer()
                                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                         .foregroundColor(isSelected ? Color.nostiaAccent : Color.nostiaTextSecond)
-                                        .font(.system(size: 22))
+                                        .font(.nostiaBody(22))
                                 }
                                 .padding(responsive.spacing(14))
                                 .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
@@ -250,7 +253,7 @@ struct AddMemberSheet: View {
                     HStack {
                         if isAdding { ProgressView().tint(.white).padding(.trailing, 4) }
                         Text(selectedIds.count > 1 ? "Add \(selectedIds.count) Members" : "Add Member")
-                            .font(.system(size: responsive.fontSize(15), weight: .semibold))
+                            .font(.nostiaBody(responsive.fontSize(15), weight: .semibold))
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity)
@@ -314,9 +317,9 @@ struct KickMemberSheet: View {
                                     color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                                    Text(participant.name ?? "Unknown").font(.nostiaBody(responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                                     if let uname = participant.username {
-                                        Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
+                                        Text("@\(uname)").font(.nostiaBody(responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
                                 }
                                 Spacer()
@@ -333,7 +336,7 @@ struct KickMemberSheet: View {
                                         }
                                     } label: {
                                         Text("Kick")
-                                            .font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
+                                            .font(.nostiaBody(responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
                                             .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(8))
                                             .background(Color.nostriaDanger).cornerRadius(8)
                                     }
@@ -397,9 +400,9 @@ struct TransferLeadershipSheet: View {
                                     color: Color.nostiaAccent, size: responsive.spacing(38)
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(participant.name ?? "Unknown").font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
+                                    Text(participant.name ?? "Unknown").font(.nostiaBody(responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextPrimary)
                                     if let uname = participant.username {
-                                        Text("@\(uname)").font(.system(size: responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
+                                        Text("@\(uname)").font(.nostiaBody(responsive.fontSize(12))).foregroundColor(Color.nostiaTextSecond)
                                     }
                                 }
                                 Spacer()
@@ -416,7 +419,7 @@ struct TransferLeadershipSheet: View {
                                         }
                                     } label: {
                                         Text("Make Leader")
-                                            .font(.system(size: responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
+                                            .font(.nostiaBody(responsive.fontSize(13), weight: .semibold)).foregroundColor(.white)
                                             .padding(.horizontal, responsive.spacing(14)).padding(.vertical, responsive.spacing(8))
                                             .background(Color.nostiaAccent).cornerRadius(8)
                                     }

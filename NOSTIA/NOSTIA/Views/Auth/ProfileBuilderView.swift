@@ -24,7 +24,7 @@ struct ProfileBuilderView: View {
                         )
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 14))
+                                .font(.nostiaBody(14))
                                 .foregroundColor(.white)
                                 .frame(width: 32, height: 32)
                                 .background(Color.nostiaAccent)
@@ -45,7 +45,7 @@ struct ProfileBuilderView: View {
                     // Bio field
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bio")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.nostiaBody(14, weight: .semibold))
                             .foregroundColor(Color.nostiaTextSecond)
                         ZStack(alignment: .topLeading) {
                             if bio.isEmpty {

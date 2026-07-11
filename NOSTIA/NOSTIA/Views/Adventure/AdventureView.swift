@@ -68,7 +68,7 @@ struct AdventureView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "star.circle.fill")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.nostiaBody(16, weight: .bold))
                         .foregroundColor(Color.nostiaStar)
                     Text("\(viewModel.pointsBalance)")
                         .font(.nostiaDisplay(15, weight: .heavy))
@@ -78,7 +78,7 @@ struct AdventureView: View {
                 .padding(.vertical, 8)
                 .nostiaCard(cornerRadius: 14, elevation: .flat)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.nostiaTap)
             .accessibilityLabel("\(viewModel.pointsBalance) points. Opens the theme store")
         }
     }
@@ -179,16 +179,16 @@ struct AdventureView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(difficulty.label)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.nostiaBody(15, weight: .bold))
                         .foregroundColor(selected ? .white : Color.nostiaTextPrimary)
                     Text(difficulty.blurb)
-                        .font(.system(size: 12))
+                        .font(.nostiaBody(12))
                         .foregroundColor(selected ? .white.opacity(0.85) : Color.nostiaTextSecond)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(difficulty.stepCount) steps")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.nostiaBody(12, weight: .semibold))
                     Text("+\(difficulty.points) pts")
                         .font(.nostiaDisplay(13, weight: .heavy))
                 }
@@ -205,7 +205,7 @@ struct AdventureView: View {
                     .stroke(Color.nostiaCardStroke, lineWidth: selected ? 0 : 0.75)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
@@ -285,7 +285,7 @@ struct AdventureView: View {
                             .foregroundColor(Color.nostiaTextMuted)
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.nostiaTap)
                 }
             }
         }
@@ -300,7 +300,7 @@ struct AdventureView: View {
         } label: {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: step.checked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
+                    .font(.nostiaBody(22))
                     .foregroundColor(step.checked ? Color.nostiaSuccess : Color.nostiaTextMuted)
                 Text(step.text)
                     .font(.nostiaBody(14))
@@ -314,7 +314,7 @@ struct AdventureView: View {
             .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .disabled(!interactive || !adventure.isActive || step.checked)
         .accessibilityLabel("Step \(step.order): \(step.text)")
         .accessibilityAddTraits(step.checked ? [.isButton, .isSelected] : .isButton)
@@ -329,10 +329,10 @@ struct AdventureView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "flag.checkered")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.nostiaBody(17, weight: .semibold))
                 Text(ready ? "Complete Adventure  ·  +\(adventure.points) pts"
                            : "Check all steps to complete (\(adventure.checkedCount)/\(adventure.stepCount))")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.nostiaBody(15, weight: .bold))
             }
             .foregroundColor(ready ? .white : Color.nostiaTextMuted)
             .frame(maxWidth: .infinity)
@@ -342,7 +342,7 @@ struct AdventureView: View {
                     .fill(ready ? Color.nostiaAccent : Color.nostiaDisabled)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .disabled(!ready)
     }
 
@@ -351,7 +351,7 @@ struct AdventureView: View {
     private var countdownCard: some View {
         VStack(spacing: 8) {
             Image(systemName: "hourglass")
-                .font(.system(size: 26))
+                .font(.nostiaBody(26))
                 .foregroundColor(Color.nostiaAccent)
             Text("Next adventure in")
                 .font(.nostiaBody(13))
@@ -403,7 +403,7 @@ struct AdventureView: View {
             Color.black.opacity(0.45).ignoresSafeArea()
             VStack(spacing: 16) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 40))
+                    .font(.nostiaBody(40))
                     .foregroundColor(Color.nostiaAccent)
                 Text("Daily Adventures")
                     .font(.nostiaDisplay(22, weight: .heavy))
@@ -428,7 +428,7 @@ struct AdventureView: View {
     private func introRow(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 17))
+                .font(.nostiaBody(17))
                 .foregroundColor(Color.nostiaAccent)
                 .frame(width: 24)
             Text(text)

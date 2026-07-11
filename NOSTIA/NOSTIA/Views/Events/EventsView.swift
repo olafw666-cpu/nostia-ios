@@ -31,13 +31,19 @@ final class ExperiencesViewModel: ObservableObject {
     }
 }
 
-struct ExperiencesView: View {
+/// Experience search, presented as a sheet. Home is the discovery surface (the former
+/// Explore tab's role); this sheet is where its search bar and every "See all" lands.
+/// `initialTags` pre-checks the tag filter (themed Home rows pass their tags here).
+struct ExperienceSearchSheet: View {
+    var initialTags: [String] = []
+
     @StateObject private var vm = ExperiencesViewModel()
     @State private var actionsVM = ExperienceActionsViewModel()
     @State private var selectedTags: Set<String> = []
     @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
-    @EnvironmentObject var router: DeepLinkRouter
 
     // Going experiences first, then everything else (de-duplicated).
     private var allEvents: [Experience] {
@@ -59,26 +65,12 @@ struct ExperiencesView: View {
         }
     }
 
-    /// Copy a pending themed selection from Home into the filter, then clear the channel
-    /// so a later manual visit to Explore isn't re-filtered.
-    private func consumePendingTags() {
-        guard !router.pendingExploreTags.isEmpty else { return }
-        selectedTags = Set(router.pendingExploreTags)
-        router.pendingExploreTags = []
-    }
-
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        NostiaScreenTitle(title: "Explore")
-                        Text("\(filtered.count) experiences near you · from people you follow")
-                            .font(.system(size: 14)).foregroundColor(Color.nostiaTextSecond)
-                    }
-                    .padding(.top, 4)
-
                     NostiaSearchField(placeholder: "Search experiences & places…", text: $searchText)
+                        .focused($searchFocused)
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -97,48 +89,48 @@ struct ExperiencesView: View {
                         .padding(.vertical, 2)
                     }
 
+                    Text("\(filtered.count) experiences · near you & from people you follow")
+                        .font(.nostiaBody(13)).foregroundColor(Color.nostiaTextSecond)
+
                     if vm.isLoading && vm.events.isEmpty {
                         ExperienceListSkeletonView()
                     } else if filtered.isEmpty {
                         EmptyStateView(icon: "sparkles",
                                        text: searchText.isEmpty && selectedTags.isEmpty ? "No experiences yet" : "No matches",
-                                       sub: searchText.isEmpty && selectedTags.isEmpty ? "Tap + to create one!" : "Try a different filter")
+                                       sub: searchText.isEmpty && selectedTags.isEmpty ? "Create one from Home!" : "Try a different search or filter")
                     } else {
                         ForEach(filtered) { event in
                             Button { vm.selectedEvent = event } label: {
                                 AtlasExperienceCard(event: event)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                         }
                     }
                 }
                 .padding(.horizontal, responsive.spacing(16))
-                .padding(.bottom, 120)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
                 .frame(maxWidth: responsive.contentMaxWidth)
                 .frame(maxWidth: .infinity)
             }
-            .background(.clear)
+            .background(Color.nostiaBackground.ignoresSafeArea())
             .scrollDismissesKeyboard(.immediately)
             .refreshable { await vm.loadAll() }
-
-            Button { vm.showCreate = true } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: responsive.fontSize(31), weight: .semibold)).foregroundColor(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color.nostiaAccent).clipShape(Circle())
-                    .shadow(color: Color.nostiaAccent.opacity(0.6), radius: 18, y: 8)
+            .navigationTitle("Search")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }.foregroundColor(Color.nostiaAccent)
+                }
             }
-            .padding(.trailing, responsive.spacing(22))
-            .padding(.bottom, 100)
         }
-        .task { await vm.loadAll() }
-        .onAppear { consumePendingTags() }
-        .onChange(of: router.pendingExploreTags) { _, _ in consumePendingTags() }
-        .sheet(isPresented: $vm.showCreate, onDismiss: { Task { await vm.loadAll() } }) {
-            CreateExperienceFromDiscoverSheet { newEvent in
-                vm.events.insert(newEvent, at: 0)
-                Task { await CacheManager.shared.invalidate(CacheKey.experienceList) }
-            }
+        .presentationBackground(Color.nostiaBackground)
+        .task {
+            selectedTags = Set(initialTags)
+            // Focus the field only for a blank search — a themed "See all" is a browse.
+            if initialTags.isEmpty { searchFocused = true }
+            await vm.loadAll()
         }
         .sheet(item: $vm.selectedEvent, onDismiss: { Task { await vm.loadAll() } }) { event in
             ExperienceDetailSheet(event: event, vm: actionsVM)
@@ -149,6 +141,56 @@ struct ExperiencesView: View {
         )) { target in
             NavigationStack { PublicProfileView(userId: target.id) }
                 .presentationBackground(Color.nostiaBackground)
+        }
+    }
+}
+
+/// Plain titled list of experiences in a sheet (e.g. Home's "Experiences you're
+/// visiting" → See all). Taps open the standard detail sheet.
+struct ExperienceListSheet: View {
+    let title: String
+    let events: [Experience]
+
+    @State private var actionsVM = ExperienceActionsViewModel()
+    @State private var selectedEvent: Experience?
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    if events.isEmpty {
+                        EmptyStateView(icon: "sparkles", text: "Nothing here yet",
+                                       sub: "Experiences you join will show up here")
+                    } else {
+                        ForEach(events) { event in
+                            Button { selectedEvent = event } label: {
+                                AtlasExperienceCard(event: event)
+                            }
+                            .buttonStyle(.nostiaTap)
+                        }
+                    }
+                }
+                .padding(.horizontal, responsive.spacing(16))
+                .padding(.top, 8)
+                .padding(.bottom, 40)
+                .frame(maxWidth: responsive.contentMaxWidth)
+                .frame(maxWidth: .infinity)
+            }
+            .background(Color.nostiaBackground.ignoresSafeArea())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }.foregroundColor(Color.nostiaAccent)
+                }
+            }
+        }
+        .presentationBackground(Color.nostiaBackground)
+        .sheet(item: $selectedEvent) { event in
+            ExperienceDetailSheet(event: event, vm: actionsVM)
         }
     }
 }
@@ -191,7 +233,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                             if let c = selectedCoord {
                                 Annotation("", coordinate: c) {
                                     Image(systemName: "mappin.circle.fill")
-                                        .font(.system(size: 32))
+                                        .font(.nostiaBody(32))
                                         .foregroundColor(Color.nostiaAccent)
                                         .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 8)
                                 }
@@ -256,7 +298,7 @@ struct CreateExperienceFromDiscoverSheet: View {
                         ))) {
                             Annotation("", coordinate: coord) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 28)).foregroundColor(Color.nostiaAccent)
+                                    .font(.nostiaBody(28)).foregroundColor(Color.nostiaAccent)
                                     .shadow(color: Color.nostiaAccent.opacity(0.5), radius: 6)
                             }
                         }
@@ -295,7 +337,7 @@ struct CreateExperienceFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Visibility")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                                .font(.nostiaBody(responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                             HStack(spacing: 8) {
                                 ForEach(visibilityOptions, id: \.self) { opt in
                                     FilterChip(title: opt == "public" ? "Public" : "Private",
@@ -310,7 +352,7 @@ struct CreateExperienceFromDiscoverSheet: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Description")
-                                .font(.system(size: responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                                .font(.nostiaBody(responsive.fontSize(14), weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                             LinkInsertBar(text: $description)
                             TextEditor(text: $description)
                                 .frame(minHeight: responsive.spacing(72)).padding(8)

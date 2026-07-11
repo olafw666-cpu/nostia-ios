@@ -34,7 +34,7 @@ struct OrgEventsView: View {
                 } else {
                     ForEach(events) { event in
                         Button { selectedEvent = event } label: { ExperiencePreviewCard(event: event) }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.nostiaTap)
                     }
                 }
             }
@@ -90,7 +90,7 @@ struct CreateOrgEventSheet: View {
                         Map(position: $previewPosition) {
                             Annotation("", coordinate: coordinate) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 30)).foregroundColor(Color.nostiaAccent)
+                                    .font(.nostiaBody(30)).foregroundColor(Color.nostiaAccent)
                             }
                         }
                         .frame(height: 140).cornerRadius(14).allowsHitTesting(false)
@@ -99,7 +99,7 @@ struct CreateOrgEventSheet: View {
                     NostiaTextField(label: "Experience Title *", placeholder: "What's happening?", text: $title)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Location *").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        Text("Location *").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         AddressSearchField(locationName: $locationName) { coord, _ in
                             coordinate = coord
                             previewPosition = .region(MKCoordinateRegion(
@@ -112,14 +112,14 @@ struct CreateOrgEventSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Date & Time *").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        Text("Date & Time *").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         DatePicker("", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                             .datePickerStyle(.compact).labelsHidden().padding(12)
                             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                        Text("Description").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         TextEditor(text: $description)
                             .frame(minHeight: 72).padding(12)
                             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))

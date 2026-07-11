@@ -73,10 +73,10 @@ struct ExperienceChatSheet: View {
                     Task { await vm.submit(experienceId: experienceId) }
                 } label: {
                     if vm.isSubmitting {
-                        ProgressView().tint(.white).frame(width: 36, height: 36)
+                        ProgressView().tint(.white).frame(width: 44, height: 44)
                     } else {
                         Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white).frame(width: 36, height: 36)
+                            .foregroundColor(.white).frame(width: 44, height: 44)
                             .background(
                                 vm.newComment.trimmingCharacters(in: .whitespaces).isEmpty
                                     ? AnyShapeStyle(Color.nostiaTextMuted)
@@ -87,7 +87,9 @@ struct ExperienceChatSheet: View {
                             .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
                     }
                 }
+                .buttonStyle(.nostiaTap)
                 .disabled(vm.newComment.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSubmitting)
+                .accessibilityLabel("Send message")
             }
             .padding(.horizontal, responsive.spacing(12)).padding(.vertical, responsive.spacing(8))
             .background(.ultraThinMaterial.opacity(0.9))

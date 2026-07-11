@@ -41,7 +41,9 @@ struct VaultQRView: View {
                                 Label("Copy Link", systemImage: "link")
                                     .font(.footnote.bold())
                                     .foregroundColor(Color.nostiaAccent)
+                                    .padding(.vertical, 10).padding(.horizontal, 6)
                             }
+                            .buttonStyle(.nostiaTap)
 
                             Button {
                                 Task { await loadToken() }
@@ -49,7 +51,9 @@ struct VaultQRView: View {
                                 Label("Refresh", systemImage: "arrow.clockwise")
                                     .font(.footnote.bold())
                                     .foregroundColor(Color.nostiaAccent)
+                                    .padding(.vertical, 10).padding(.horizontal, 6)
                             }
+                            .buttonStyle(.nostiaTap)
                         }
                     }
                 } else if let err = errorMessage {

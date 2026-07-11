@@ -26,7 +26,13 @@ struct StarRatingView: View {
     var body: some View {
         Group {
             if isInteractive {
-                stars.gesture(dragGesture).contentShape(Rectangle())
+                // contentShape must precede .gesture — applied after, the gesture keeps
+                // the glyph-only hit area and taps between stars are dead. The vertical
+                // padding gives the drag strip a finger-sized height.
+                stars
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                    .gesture(dragGesture)
             } else {
                 stars
             }

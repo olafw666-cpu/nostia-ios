@@ -27,14 +27,14 @@ struct VaultContentView: View {
                     ZStack(alignment: .bottomTrailing) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Total expenses")
-                                .font(.system(size: 13)).foregroundColor(.white.opacity(0.85))
+                                .font(.nostiaBody(13)).foregroundColor(.white.opacity(0.85))
                             Text(String(format: "$%.2f", data.totalAmount ?? 0))
                                 .font(.nostiaDisplay(40, weight: .heavy)).foregroundColor(.white)
                             if let mine = data.balances.first(where: { $0.id == currentUserId }), abs(mine.balance) > 0.005 {
                                 Text(mine.balance >= 0
                                      ? String(format: "You're owed $%.2f", mine.balance)
                                      : String(format: "You owe $%.2f", abs(mine.balance)))
-                                    .font(.system(size: 12.5)).foregroundColor(.white.opacity(0.92))
+                                    .font(.nostiaBody(12.5)).foregroundColor(.white.opacity(0.92))
                                     .padding(.top, 4)
                             }
                         }
@@ -43,7 +43,7 @@ struct VaultContentView: View {
                         if !isKicked {
                             Button { Haptics.impact(.medium); showAddExpense = true } label: {
                                 Label("Add", systemImage: "plus")
-                                    .font(.system(size: 14, weight: .bold)).foregroundColor(Color.nostiaAccent)
+                                    .font(.nostiaBody(14, weight: .bold)).foregroundColor(Color.nostiaAccent)
                                     .padding(.horizontal, 16).padding(.vertical, 11)
                                     .background(Capsule().fill(Color.white))
                             }
@@ -85,14 +85,14 @@ struct VaultContentView: View {
                                 HStack(alignment: .top) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(item.debtorDisplay)
-                                            .font(.system(size: 15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                                            .font(.nostiaBody(15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                                         Text("says they paid you in cash for \"\(item.entryDescription)\"")
                                             .font(.caption).foregroundColor(Color.nostiaTextSecond)
                                             .fixedSize(horizontal: false, vertical: true)
                                     }
                                     Spacer()
                                     Text(String(format: "$%.2f", item.amount))
-                                        .font(.system(size: 17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                                        .font(.nostiaBody(17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                                 }
                                 HStack(spacing: 10) {
                                     Button { Haptics.tap(); activeAlert = .confirmDecline(item.id) } label: {
@@ -362,7 +362,7 @@ struct BalanceRow: View {
             HStack(spacing: 12) {
                 AvatarView(initial: String(balance.name.prefix(1)).uppercased(), color: Color.nostiaAccent, size: responsive.spacing(44))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(displayName).font(.system(size: 16, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(displayName).font(.nostiaBody(16, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                     HStack(spacing: 4) {
                         Text("Paid: ").foregroundColor(Color.nostiaTextSecond)
                         Text(String(format: "$%.2f", balance.paid)).foregroundColor(Color.nostiaSuccess)
@@ -390,7 +390,7 @@ struct BalanceRow: View {
             .accessibilityLabel(accessibilityText)
             .accessibilityHint(accessibilityActionHint)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.nostiaTap)
         .disabled(!isPayable && isOwnRow)
     }
 }
@@ -489,22 +489,25 @@ struct ExpenseCard: View {
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(Color.nostiaWarningSoft).frame(width: 40, height: 40)
-                    Image(systemName: "doc.text").foregroundColor(Color.nostiaStar).font(.system(size: 21))
+                    Image(systemName: "doc.text").foregroundColor(Color.nostiaStar).font(.nostiaBody(21))
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.description).font(.system(size: 15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                    Text(entry.description).font(.nostiaBody(15.5, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                     Text(entry.formattedDate).font(.caption).foregroundColor(Color.nostiaTextSecond)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(String(format: "$%.2f", entry.amount))
-                        .font(.system(size: 17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
+                        .font(.nostiaBody(17, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                     Text(entry.currency).font(.caption).foregroundColor(Color.nostiaTextMuted)
                 }
                 if canDelete {
                     Button { showDeleteAlert = true } label: {
-                        Image(systemName: "trash").foregroundColor(Color.nostriaDanger).padding(.leading, 8)
+                        Image(systemName: "trash").foregroundColor(Color.nostriaDanger)
+                            .frame(width: 40, height: 40)
                     }
+                    .buttonStyle(.nostiaTap)
+                    .accessibilityLabel("Delete expense")
                 }
             }
 
@@ -527,10 +530,10 @@ struct ExpenseCard: View {
                     let isOwnSplit = split.userId == currentUserId
                     HStack {
                         Text(splitDisplay)
-                            .font(.system(size: 13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                            .font(.nostiaBody(13.5, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                         Spacer()
                         Text(String(format: "$%.2f", split.amount))
-                            .font(.system(size: 14, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
+                            .font(.nostiaBody(14, weight: .bold)).foregroundColor(Color.nostiaTextPrimary)
                         if split.paid {
                             Label("Paid", systemImage: "checkmark.circle.fill")
                                 .font(.subheadline.bold()).foregroundColor(Color.nostiaSuccess)

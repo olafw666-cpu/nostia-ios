@@ -24,7 +24,7 @@ struct PaymentSetupPromptView: View {
                 Spacer()
 
                 Image(systemName: "banknote.fill")
-                    .font(.system(size: responsive.fontSize(64)))
+                    .font(.nostiaBody(responsive.fontSize(64)))
                     .foregroundStyle(
                         LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
                                        startPoint: .topLeading, endPoint: .bottomTrailing)

@@ -92,7 +92,7 @@ struct OrgManageView: View {
                                    initial: name.isEmpty ? "O" : String(name.prefix(1)).uppercased(),
                                    color: Color.nostriaPurple, size: 84)
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        Image(systemName: "camera.fill").font(.system(size: 12)).foregroundColor(.white)
+                        Image(systemName: "camera.fill").font(.nostiaBody(12)).foregroundColor(.white)
                             .frame(width: 28, height: 28).background(Color.nostiaAccent).clipShape(Circle())
                     }
                     .offset(x: 4, y: 4)
@@ -103,14 +103,14 @@ struct OrgManageView: View {
             NostiaTextField(label: "Name", placeholder: "Organization name", text: $name)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Description").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                Text("Description").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                 TextEditor(text: $description).frame(minHeight: 70).padding(8)
                     .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Rules & Guidelines").font(.system(size: 14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
+                Text("Rules & Guidelines").font(.nostiaBody(14, weight: .semibold)).foregroundColor(Color.nostiaTextSecond)
                 TextEditor(text: $rulesText).frame(minHeight: 60).padding(8)
                     .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
                     .foregroundColor(Color.nostiaTextPrimary).scrollContentBackground(.hidden)

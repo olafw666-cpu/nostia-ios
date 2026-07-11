@@ -20,11 +20,11 @@ struct LoginView: View {
                 .overlay {
                     VStack(spacing: responsive.spacing(16)) {
                         Image(systemName: "safari.fill")
-                            .font(.system(size: responsive.fontSize(72)))
+                            .font(.nostiaBody(responsive.fontSize(72)))
                             .foregroundColor(.white)
                             .shadow(color: .white.opacity(0.3), radius: 20)
                         Text("Welcome Back")
-                            .font(.system(size: responsive.fontSize(34), weight: .bold))
+                            .font(.nostiaBody(responsive.fontSize(34), weight: .bold))
                             .foregroundColor(.white)
                         Text("Sign in to continue your adventure")
                             .font(.subheadline)
@@ -72,7 +72,7 @@ struct LoginView: View {
                                 Text("Login")
                             }
                         }
-                        .font(.system(size: responsive.fontSize(18), weight: .bold))
+                        .font(.nostiaBody(responsive.fontSize(18), weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(responsive.spacing(18))
@@ -118,7 +118,7 @@ struct NostiaTextField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                 .foregroundColor(Color.nostiaTextSecond)
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
@@ -139,7 +139,7 @@ struct NostiaSecureField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: responsive.fontSize(14), weight: .semibold))
+                .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
                 .foregroundColor(Color.nostiaTextSecond)
             HStack {
                 Group {
@@ -150,7 +150,10 @@ struct NostiaSecureField: View {
                 Button { show.toggle() } label: {
                     Image(systemName: show ? "eye.slash" : "eye")
                         .foregroundColor(Color.nostiaTextMuted)
+                        .frame(width: 36, height: 36)
                 }
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel(show ? "Hide password" : "Show password")
             }
             .padding(responsive.spacing(16))
             .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
