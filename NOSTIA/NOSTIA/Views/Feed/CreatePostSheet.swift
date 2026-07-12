@@ -19,16 +19,24 @@ struct CreatePostSheet: View {
                         .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
                         .foregroundColor(Color.nostiaTextPrimary)
 
-                    // Photo preview — shown in full (no cropping) so the user sees exactly
-                    // what will appear in the post.
+                    // Photo preview — rendered with the same clamped aspect ratio as
+                    // PostCard (1.91:1 … 3:4) so the user sees exactly what will appear
+                    // in the feed, including any center-crop of extreme ratios.
                     if let imgData = vm.newPostImageData,
                        let data = Data(base64Encoded: imgData),
-                       let uiImage = UIImage(data: data) {
+                       let uiImage = UIImage(data: data), uiImage.size.height > 0 {
+                        let displayRatio = min(max(uiImage.size.width / uiImage.size.height, 3.0 / 4.0), 1.91)
                         ZStack(alignment: .topTrailing) {
-                            Image(uiImage: uiImage)
-                                .resizable().scaledToFit()
+                            Color.clear
+                                .aspectRatio(displayRatio, contentMode: .fit)
                                 .frame(maxWidth: .infinity)
-                                .frame(maxHeight: responsive.spacing(360))
+                                .overlay(
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .allowsHitTesting(false)
+                                )
+                                .clipped()
                                 .cornerRadius(14)
                             Button {
                                 vm.newPostImageData = nil
@@ -57,9 +65,13 @@ struct CreatePostSheet: View {
                             guard let item,
                                   let data = try? await item.loadTransferable(type: Data.self),
                                   let img = UIImage(data: data) else { return }
-                            // Landscape photos let the user choose crop vs. scale-to-fit.
-                            // Portrait / square photos already display in full, so use them as-is.
-                            if img.size.width > img.size.height {
+                            // The feed shows photos between 1.91:1 and 3:4 in full.
+                            // Landscape photos keep the fit-vs-crop choice; photos taller
+                            // than 3:4 (e.g. 9:16 screenshots) would be auto-cropped, so
+                            // the editor lets the user pick what's kept. Portrait/square
+                            // photos inside the range display in full — attach as-is.
+                            let ratio = img.size.height > 0 ? img.size.width / img.size.height : 1
+                            if img.size.width > img.size.height || ratio < 3.0 / 4.0 {
                                 editorImage = EditableImage(image: img)
                             } else {
                                 attach(img)

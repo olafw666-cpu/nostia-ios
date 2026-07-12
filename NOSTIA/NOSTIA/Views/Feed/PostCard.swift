@@ -101,17 +101,26 @@ struct PostCard: View {
             }
             .padding(.horizontal, responsive.spacing(14)).padding(.top, responsive.spacing(14)).padding(.bottom, responsive.spacing(10))
 
-            // Image (if any) — shown in full (scaledToFit) so vertical phone photos and
-            // user-cropped images aren't cut off. The image bytes already reflect the
-            // crop / scale-to-fit choice made when the post was created.
+            // Image (if any) — Instagram-style scaling: the image always spans the full
+            // card width and its height comes from the photo's own aspect ratio, clamped
+            // between 1.91:1 (landscape) and 3:4 (portrait). Photos inside that range
+            // (incl. the composer's 4:5 crop and native iPhone 3:4 shots) render
+            // uncropped; extreme ratios (9:16 screenshots, panoramas) are center-cropped
+            // to the nearest bound instead of letterboxed small.
             if let imgData = post.imageData,
                let data = Data(base64Encoded: imgData),
-               let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
+               let uiImage = UIImage(data: data), uiImage.size.height > 0 {
+                let displayRatio = min(max(uiImage.size.width / uiImage.size.height, 3.0 / 4.0), 1.91)
+                Color.clear
+                    .aspectRatio(displayRatio, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .frame(maxHeight: responsive.spacing(440))
+                    .overlay(
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .allowsHitTesting(false)
+                    )
+                    .clipped()
             }
 
             // Content

@@ -1,13 +1,16 @@
 import SwiftUI
 import UIKit
 
-/// Lets the user decide how a **wide / landscape** photo is attached to a post:
+/// Lets the user decide how a photo outside the feed's "shown in full" shape is attached:
 ///
-/// - **Fit** keeps the whole image (just scaled down) — nothing is cut off.
+/// - **Fit / Auto** keeps the original bytes. The feed renders photos at their own aspect
+///   ratio clamped to 1.91:1 … 3:4 (Instagram model), so in-range photos show whole and
+///   out-of-range ones are center-cropped — the preview here mirrors that exactly.
 /// - **Crop** lets them pan & pinch to choose exactly what to keep, in a tall 4:5 frame.
 ///
-/// Portrait / square photos skip this entirely (they already display in full), so the
-/// editor is only presented for landscape images where the user has a real choice to make.
+/// Presented for landscape photos (fit-vs-crop is a stylistic choice) and for photos
+/// taller than 3:4 (which the feed would otherwise auto-crop). Portrait/square photos
+/// inside the range skip the editor — they already display in full.
 struct PostImageEditor: View {
     let image: UIImage
     /// Called with the final image to attach (the original for *Fit*, the cropped region for *Crop*).
@@ -20,6 +23,20 @@ struct PostImageEditor: View {
         var id: String { rawValue }
     }
     @State private var mode: Mode = .fit
+
+    /// Whether the feed can show this photo without trimming (PostCard clamps
+    /// display ratios to 1.91:1 … 3:4).
+    private var isWithinFeedRange: Bool {
+        guard image.size.height > 0 else { return true }
+        let ratio = image.size.width / image.size.height
+        return ratio >= 3.0 / 4.0 && ratio <= 1.91
+    }
+
+    /// Display ratio the feed will actually use for this photo.
+    private var feedDisplayRatio: CGFloat {
+        guard image.size.height > 0 else { return 1 }
+        return min(max(image.size.width / image.size.height, 3.0 / 4.0), 1.91)
+    }
 
     // Interactive crop transform (only used in `.crop` mode).
     @State private var scale: CGFloat = 1
@@ -37,7 +54,11 @@ struct PostImageEditor: View {
 
                 VStack(spacing: 18) {
                     Picker("", selection: $mode) {
-                        ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(Mode.allCases) { m in
+                            // "Whole photo" would be a lie for out-of-range photos —
+                            // the feed center-crops them, so the mode reads "Auto".
+                            Text(m == .fit && !isWithinFeedRange ? "Auto" : m.rawValue).tag(m)
+                        }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 24)
@@ -46,17 +67,28 @@ struct PostImageEditor: View {
                     Spacer(minLength: 0)
 
                     if mode == .fit {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
+                        // Rendered at the feed's clamped ratio so the preview is exactly
+                        // what PostCard will show (identical to the whole photo when the
+                        // ratio is in range, center-cropped when it isn't).
+                        Color.clear
+                            .aspectRatio(feedDisplayRatio, contentMode: .fit)
                             .frame(maxWidth: geo.size.width - 32, maxHeight: cropH + 60)
+                            .overlay(
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .allowsHitTesting(false)
+                            )
+                            .clipped()
                             .cornerRadius(12)
                     } else {
                         cropWindow(cropW: cropW, cropH: cropH)
                     }
 
                     Text(mode == .fit
-                         ? "The whole photo will be shown in your post."
+                         ? (isWithinFeedRange
+                            ? "The whole photo will be shown in your post."
+                            : "The feed trims photos this shape — the middle is kept. Use Crop to choose exactly what's shown.")
                          : "Drag and pinch to choose what to keep.")
                         .font(.footnote)
                         .foregroundColor(.white.opacity(0.7))

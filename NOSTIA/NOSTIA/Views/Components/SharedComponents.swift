@@ -813,7 +813,14 @@ struct FeedPostCardSkeleton: View {
             }
             .padding(.horizontal, r.spacing(14)).padding(.top, r.spacing(14)).padding(.bottom, r.spacing(10))
 
-            SkeletonRect(height: 200, cornerRadius: 0)
+            // 4:5 mirrors PostCard's typical portrait photo so content loads in
+            // without a big layout jump.
+            Rectangle()
+                .fill(Color(uiColor: .systemGray5))
+                .aspectRatio(4.0 / 5.0, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .shimmer()
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 8) {
                 SkeletonBar(height: 12)

@@ -103,10 +103,23 @@ struct CreateOrgPostSheet: View {
                             .font(.caption).foregroundColor(Color.nostiaTextSecond)
                     }
 
-                    if let imageData, let data = Data(base64Encoded: imageData), let img = UIImage(data: data) {
+                    // Preview matches PostCard's clamped aspect ratio (1.91:1 … 3:4) so the
+                    // composer shows exactly how the photo will render in the feed.
+                    if let imageData, let data = Data(base64Encoded: imageData),
+                       let img = UIImage(data: data), img.size.height > 0 {
+                        let displayRatio = min(max(img.size.width / img.size.height, 3.0 / 4.0), 1.91)
                         ZStack(alignment: .topTrailing) {
-                            Image(uiImage: img).resizable().scaledToFill()
-                                .frame(maxWidth: .infinity).frame(height: 180).clipped().cornerRadius(14)
+                            Color.clear
+                                .aspectRatio(displayRatio, contentMode: .fit)
+                                .frame(maxWidth: .infinity)
+                                .overlay(
+                                    Image(uiImage: img)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .allowsHitTesting(false)
+                                )
+                                .clipped()
+                                .cornerRadius(14)
                             Button { self.imageData = nil; selectedPhoto = nil } label: {
                                 Image(systemName: "xmark.circle.fill").font(.title2).foregroundColor(.white)
                                     .shadow(color: .black.opacity(0.4), radius: 3)
