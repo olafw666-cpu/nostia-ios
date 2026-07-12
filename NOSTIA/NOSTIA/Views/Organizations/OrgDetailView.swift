@@ -8,6 +8,7 @@ struct OrgDetailView: View {
     var onChanged: (() -> Void)? = nil
 
     @EnvironmentObject private var locationManager: LocationManager
+    @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var org: Organization?
@@ -17,6 +18,7 @@ struct OrgDetailView: View {
     @State private var pendingJoin = false    // waiting on a fresh GPS fix to join
     @State private var alertMessage: String?
     @State private var showLeaveConfirm = false
+    @State private var showDevDeleteConfirm = false
 
     private var myRole: String? { org?.myRole }
 
@@ -37,17 +39,27 @@ struct OrgDetailView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if let org {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     if org.canManage {
                         NavigationLink {
                             OrgManageView(orgId: org.id, onChanged: { Task { await load() }; onChanged?() })
                         } label: {
                             Image(systemName: "gearshape").foregroundColor(Color.nostiaTextPrimary)
                         }
-                    } else if org.myRole == "member" {
+                    }
+                    // Dev accounts may delete ANY org (owner already has delete via Manage);
+                    // plain members get their Leave action here.
+                    if org.myRole == "member" || (authManager.isDev && !org.isOwner) {
                         Menu {
-                            Button(role: .destructive) { showLeaveConfirm = true } label: {
-                                Label("Leave organization", systemImage: "rectangle.portrait.and.arrow.right")
+                            if org.myRole == "member" {
+                                Button(role: .destructive) { showLeaveConfirm = true } label: {
+                                    Label("Leave organization", systemImage: "rectangle.portrait.and.arrow.right")
+                                }
+                            }
+                            if authManager.isDev && !org.isOwner {
+                                Button(role: .destructive) { showDevDeleteConfirm = true } label: {
+                                    Label("Delete Organization (Dev)", systemImage: "trash")
+                                }
                             }
                         } label: {
                             Image(systemName: "ellipsis").foregroundColor(Color.nostiaTextPrimary)
@@ -72,6 +84,12 @@ struct OrgDetailView: View {
         .confirmationDialog("Leave this organization?", isPresented: $showLeaveConfirm, titleVisibility: .visible) {
             Button("Leave", role: .destructive) { Task { await leave() } }
             Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Delete this organization?", isPresented: $showDevDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Organization", role: .destructive) { Task { await devDeleteOrg() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Dev action: all posts, experiences and membership records will be permanently deleted. This cannot be undone.")
         }
         .alert("Organization", isPresented: Binding(
             get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } }
@@ -134,26 +152,37 @@ struct OrgDetailView: View {
 
     private func joinCard(_ org: Organization) -> some View {
         VStack(spacing: 10) {
-            if org.hasPendingRequest {
+            // Devs can always join directly (server bypasses the gates), even with a
+            // pending request outstanding — the direct join consumes it.
+            if org.hasPendingRequest && !authManager.isDev {
                 Label("Request pending approval", systemImage: "clock")
                     .font(.subheadline.bold()).foregroundColor(Color.nostiaWarning)
             } else {
-                if org.locationVerificationEnabled {
-                    Text("You must be within the organization's allowed area to \(org.privacy == "private" ? "request to join" : "join").")
+                if authManager.isDev {
+                    Text("Dev account: location and approval requirements are bypassed.")
                         .font(.caption).foregroundColor(Color.nostiaTextMuted)
                         .multilineTextAlignment(.center)
-                }
-                if org.privacy == "private" {
-                    Text("This is a private organization. Your request will be reviewed.")
-                        .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                        .multilineTextAlignment(.center)
+                } else {
+                    if org.locationVerificationEnabled {
+                        Text("You must be within the organization's allowed area to \(org.privacy == "private" ? "request to join" : "join").")
+                            .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                            .multilineTextAlignment(.center)
+                    }
+                    if org.privacy == "private" {
+                        Text("This is a private organization. Your request will be reviewed.")
+                            .font(.caption).foregroundColor(Color.nostiaTextMuted)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 Button {
                     Task { await attemptJoin() }
                 } label: {
                     HStack {
                         if isJoining || pendingJoin { ProgressView().tint(.white) }
-                        else { Text(org.privacy == "private" ? "Request to Join" : "Join").fontWeight(.bold) }
+                        else {
+                            Text(org.privacy == "private" && !authManager.isDev ? "Request to Join" : "Join")
+                                .fontWeight(.bold)
+                        }
                     }
                     .frame(maxWidth: .infinity).padding()
                     .background(LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
@@ -187,6 +216,12 @@ struct OrgDetailView: View {
 
     private func attemptJoin() async {
         guard let org else { return }
+        // Dev accounts skip location gathering entirely — the server bypasses the zone
+        // gate and the private approval queue for them.
+        if authManager.isDev {
+            await doJoin(lat: nil, lng: nil)
+            return
+        }
         // Zone-gated orgs need a live location for BOTH direct joins and private join
         // requests — the server rejects out-of-zone requests too (Section 10).
         if org.locationVerificationEnabled {
@@ -224,6 +259,17 @@ struct OrgDetailView: View {
     private func leave() async {
         do {
             try await OrganizationsAPI.shared.leave(id: orgId)
+            Haptics.success()
+            onChanged?()
+            dismiss()
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func devDeleteOrg() async {
+        do {
+            try await OrganizationsAPI.shared.delete(id: orgId)
             Haptics.success()
             onChanged?()
             dismiss()

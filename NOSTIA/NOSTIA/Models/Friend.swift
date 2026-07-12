@@ -17,6 +17,20 @@ struct FollowStatus: Codable {
     var isMutual: Bool
 }
 
+// One entry from /follow/suggestions — people worth following, ranked server-side by
+// proximity and follower count. Only a coarse isNearby flag is exposed, never location.
+struct SuggestedUser: Codable, Identifiable {
+    let id: Int
+    let username: String
+    let name: String
+    var homeStatus: String?
+    var isDev: Bool?
+    let followerCount: Int
+    let isNearby: Bool
+
+    var initial: String { String(name.prefix(1)).uppercased() }
+}
+
 struct FollowLocation: Codable, Identifiable {
     let id: Int
     let name: String

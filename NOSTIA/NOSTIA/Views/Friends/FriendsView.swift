@@ -79,6 +79,12 @@ struct FriendsView: View {
                     .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
                 }
             } else {
+                // People worth following — ranked server-side by proximity and how many
+                // followers they already have. Hidden while empty (incl. first load).
+                if !vm.suggestions.isEmpty {
+                    suggestionsCarousel
+                }
+
                 // Tab selector
                 HStack(spacing: 8) {
                     TabButton(title: "Followers (\(vm.followers.count))", isActive: vm.activeTab == .followers) {
@@ -205,6 +211,37 @@ struct FriendsView: View {
         }
     }
 
+    private var suggestionsCarousel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Suggested for You")
+                .font(.subheadline.bold())
+                .foregroundColor(Color.nostiaTextSecond)
+                .padding(.horizontal, responsive.spacing(16))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(vm.suggestions) { user in
+                        SuggestedUserCard(
+                            user: user,
+                            onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
+                            onFollow: { Task { await vm.follow(userId: user.id) } }
+                        )
+                        .contextMenu {
+                            if authManager.isDev {
+                                Button(role: .destructive) {
+                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
+                                } label: {
+                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, responsive.spacing(16))
+            }
+        }
+        .padding(.bottom, 10)
+    }
+
     @ViewBuilder
     private func messageButton(for user: FollowUser) -> some View {
         Button {
@@ -294,6 +331,53 @@ struct FollowUserRow<Trailing: View>: View {
         .padding(responsive.spacing(16))
         .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 4)
+    }
+}
+
+// Compact card in the "Suggested for You" carousel: identity on top, the two ranking
+// signals (Nearby badge + follower count) in the middle, Follow below.
+struct SuggestedUserCard: View {
+    let user: SuggestedUser
+    let onProfileTap: () -> Void
+    let onFollow: () -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Button(action: onProfileTap) {
+                VStack(spacing: 6) {
+                    AvatarView(initial: user.initial, color: Color.nostiaAccent, size: 52)
+                    Text(user.name).font(.subheadline.bold()).lineLimit(1)
+                        .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextPrimary))
+                    Text("@\(user.username)").font(.caption2).lineLimit(1)
+                        .foregroundStyle(.nostiaUsername(isDev: user.isDev == true, fallback: Color.nostiaTextSecond))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.nostiaTap)
+
+            HStack(spacing: 6) {
+                if user.isNearby {
+                    Label("Nearby", systemImage: "location.fill")
+                        .font(.caption2.bold())
+                        .foregroundColor(Color.nostiaAccent)
+                }
+                Text("\(user.followerCount) follower\(user.followerCount == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundColor(Color.nostiaTextMuted)
+            }
+            .lineLimit(1)
+
+            Button(action: onFollow) {
+                Text("Follow")
+                    .font(.caption.bold()).foregroundColor(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .background(Color.nostiaAccent).cornerRadius(8)
+            }
+            .buttonStyle(.nostiaTap)
+        }
+        .padding(12)
+        .frame(width: 150)
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

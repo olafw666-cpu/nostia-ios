@@ -48,4 +48,8 @@ final class FriendsAPI {
     func getLocations() async throws -> [FollowLocation] {
         return try await client.request("/follow/locations")
     }
+
+    func getSuggestions() async throws -> [SuggestedUser] {
+        return try await client.request("/follow/suggestions")
+    }
 }

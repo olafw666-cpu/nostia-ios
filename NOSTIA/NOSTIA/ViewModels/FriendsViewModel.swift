@@ -5,6 +5,7 @@ import Foundation
 final class FriendsViewModel: ObservableObject {
     @Published var followers: [FollowUser] = []
     @Published var following: [FollowUser] = []
+    @Published var suggestions: [SuggestedUser] = []
     @Published var searchResults: [UserSearchResult] = []
     @Published var searchQuery = ""
     @Published var searchPerformed = false
@@ -27,6 +28,8 @@ final class FriendsViewModel: ObservableObject {
         }
         async let followersData = FriendsAPI.shared.getFollowers()
         async let followingData = FriendsAPI.shared.getFollowing()
+        // Suggestions are best-effort decoration — a failure never blocks the lists.
+        async let suggestionsData = try? FriendsAPI.shared.getSuggestions()
         do {
             let (flrs, flng) = try await (followersData, followingData)
             followers = flrs; following = flng
@@ -39,6 +42,7 @@ final class FriendsViewModel: ObservableObject {
         } catch {
             if followers.isEmpty { errorMessage = error.localizedDescription }
         }
+        if let sugg = await suggestionsData { suggestions = sugg }
         isLoading = false
     }
 
@@ -64,6 +68,7 @@ final class FriendsViewModel: ObservableObject {
     func follow(userId: Int) async -> Bool {
         do {
             try await FriendsAPI.shared.follow(userId: userId)
+            suggestions.removeAll { $0.id == userId }   // drop instantly; loadAll refreshes the rest
             await CacheManager.shared.invalidate(CacheKey.followersList)
             await CacheManager.shared.invalidate(CacheKey.followingList)
             await CacheManager.shared.invalidate(CacheKey.homeFeed)
@@ -93,6 +98,7 @@ final class FriendsViewModel: ObservableObject {
             try await ExperiencesAPI.shared.adminDeleteUser(id: id)
             followers.removeAll { $0.id == id }
             following.removeAll { $0.id == id }
+            suggestions.removeAll { $0.id == id }
             searchResults.removeAll { $0.id == id }
         } catch {
             errorMessage = error.localizedDescription
