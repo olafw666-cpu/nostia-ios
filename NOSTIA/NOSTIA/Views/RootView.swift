@@ -50,13 +50,26 @@ struct RootView: View {
                 .presentationBackground(Color.nostiaBackground)
         }
         .onOpenURL { url in
-            guard url.scheme == "nostia",
-                  url.host == "invite",
-                  let token = url.pathComponents.last, !token.isEmpty else { return }
-            if authManager.isAuthenticated {
-                Task { await redeemToken(token) }
-            } else {
-                UserDefaults.standard.set(token, forKey: "nostia_pending_invite_token")
+            guard url.scheme == "nostia" else { return }
+            switch url.host {
+            case "invite":
+                guard let token = url.pathComponents.last, !token.isEmpty else { return }
+                if authManager.isAuthenticated {
+                    Task { await redeemToken(token) }
+                } else {
+                    UserDefaults.standard.set(token, forKey: "nostia_pending_invite_token")
+                }
+            case "event":
+                // nostia://event/<id> — from the shared-invite landing page's "Open in
+                // Nostia" button. Routes through the same target pushes use.
+                guard let idPart = url.pathComponents.last, let eventId = Int(idPart) else { return }
+                if authManager.isAuthenticated {
+                    DeepLinkRouter.shared.route(.event(eventId: eventId))
+                } else {
+                    UserDefaults.standard.set(eventId, forKey: "nostia_pending_event_id")
+                }
+            default:
+                break
             }
         }
         .alert("Joined Vault", isPresented: $showInviteJoined) {
@@ -73,6 +86,14 @@ struct RootView: View {
             if let token = UserDefaults.standard.string(forKey: "nostia_pending_invite_token") {
                 UserDefaults.standard.removeObject(forKey: "nostia_pending_invite_token")
                 Task { await redeemToken(token) }
+            }
+            let pendingEventId = UserDefaults.standard.integer(forKey: "nostia_pending_event_id")
+            if pendingEventId > 0 {
+                UserDefaults.standard.removeObject(forKey: "nostia_pending_event_id")
+                // MainTabView mounts on the isAuthenticated flip above and picks this
+                // pending target up in its .onAppear (its .onChange can't fire for a
+                // target set before it exists).
+                DeepLinkRouter.shared.route(.event(eventId: pendingEventId))
             }
             maybeShowThemePrompt()
         }

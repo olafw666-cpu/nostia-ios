@@ -62,6 +62,12 @@ struct MainTabView: View {
             loadHeaderUser()
             // Request push permission once the user is in the app (not on first launch).
             PushNotificationManager.shared.requestAuthorizationIfAppropriate()
+            // A deep link that arrived before this view mounted (e.g. an invite link
+            // opened while logged out) is already sitting in pendingTarget — .onChange
+            // below never fires for it, so consume it here.
+            if deepLinkRouter.pendingTarget != nil {
+                handleDeepLink(deepLinkRouter.pendingTarget)
+            }
         }
         .onChange(of: deepLinkRouter.pendingTarget) {
             handleDeepLink(deepLinkRouter.pendingTarget)

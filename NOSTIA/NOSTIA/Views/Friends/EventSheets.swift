@@ -165,6 +165,7 @@ struct ExperienceDetailSheet: View {
     @State private var showCreatorProfile = false
     @State private var showFlyer = false
     @State private var showChat = false
+    @State private var showInviteCompose = false
     @State private var selectedFlyerItem: PhotosPickerItem?
     @State private var isFlyerUploading = false
     @State private var flyerError: String?
@@ -258,6 +259,21 @@ struct ExperienceDetailSheet: View {
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
                         }
 
+                        // Text an invite link to anyone in the user's contacts. Hidden for org
+                        // and invitee-gated experiences, where the link would dead-end for
+                        // recipients who can't view the event.
+                        if isLinkShareable {
+                            if MessageComposeView.canSendText {
+                                Button { Haptics.tap(); showInviteCompose = true } label: {
+                                    inviteButtonLabel
+                                }
+                            } else {
+                                // Simulator / iPads without SMS relay: same message via the
+                                // system share sheet instead of the Messages composer.
+                                ShareLink(item: inviteMessageText) { inviteButtonLabel }
+                            }
+                        }
+
                         Divider().background(Color.nostiaDivider)
 
                         // D1: two-state Visited / Visiting control.
@@ -327,6 +343,10 @@ struct ExperienceDetailSheet: View {
             .sheet(isPresented: $showChat) {
                 ExperienceChatSheet(experienceId: currentEvent.id)
             }
+            .sheet(isPresented: $showInviteCompose) {
+                MessageComposeView(messageBody: inviteMessageText)
+                    .ignoresSafeArea()
+            }
             .sheet(isPresented: $showCreatorProfile) {
                 if let creatorId = currentEvent.createdBy {
                     NavigationStack { PublicProfileView(userId: creatorId) }
@@ -339,6 +359,32 @@ struct ExperienceDetailSheet: View {
             }
         }
         .presentationBackground(Color.nostiaBackground)
+    }
+
+    // MARK: - Invite via Messages
+
+    private var inviteButtonLabel: some View {
+        Label("Invite via Messages", systemImage: "message")
+            .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
+            .frame(maxWidth: .infinity).padding(.vertical, 11)
+            .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
+    }
+
+    /// Public experiences are viewable by any link recipient; follower-visibility ones open
+    /// for followers (the landing page shows a generic card either way). Org and
+    /// invitee-gated 'private' experiences stay in-app only.
+    private var isLinkShareable: Bool {
+        guard currentEvent.orgId == nil else { return false }
+        let vis = currentEvent.visibility ?? "public"
+        return vis == "public" || vis == "followers" || vis == "friends"
+    }
+
+    private var inviteMessageText: String {
+        var lines = ["Join me at \"\(currentEvent.title)\" on Nostia!"]
+        if let when = currentEvent.formattedSchedule { lines.append("📅 \(when)") }
+        if let loc = currentEvent.location, !loc.isEmpty { lines.append("📍 \(loc)") }
+        lines.append("\(AppConfig.experienceInviteBaseURL)/\(currentEvent.id)")
+        return lines.joined(separator: "\n")
     }
 
     // D1: tap a state to select it; tap the selected state again to clear it ("none").
