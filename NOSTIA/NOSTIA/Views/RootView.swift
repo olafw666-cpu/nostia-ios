@@ -7,6 +7,7 @@ struct RootView: View {
     @State private var showProfileBuilder = false
     @State private var showPaymentSetupPrompt = false
     @State private var showThemePrompt = false
+    @State private var showAppTour = false
     @State private var inviteJoinedVault: String?
     @State private var showInviteJoined = false
     // Cold-launch splash. `@State` on the persistent root view means this only shows once
@@ -40,7 +41,11 @@ struct RootView: View {
                 showProfileBuilder = false
             }
         }
-        .fullScreenCover(isPresented: $showPaymentSetupPrompt) {
+        .fullScreenCover(isPresented: $showPaymentSetupPrompt, onDismiss: {
+            // End of the first-run cover chain (profile → payments): a fresh signup
+            // now gets the app tour before anything else competes for the screen.
+            maybeShowAppTour()
+        }) {
             PaymentSetupPromptView {
                 showPaymentSetupPrompt = false
             }
@@ -95,12 +100,31 @@ struct RootView: View {
                 // target set before it exists).
                 DeepLinkRouter.shared.route(.event(eventId: pendingEventId))
             }
+            // Tour before theme prompt — for a fresh signup both are blocked here by the
+            // profile-builder cover; the payment cover's onDismiss picks the tour up. This
+            // call covers the recovery path (app killed mid-tour, token expired, re-login).
+            maybeShowAppTour()
             maybeShowThemePrompt()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
             showProfileBuilder = false
             showPaymentSetupPrompt = false
+            showAppTour = false
+        }
+        // Settings → Help → "Replay App Tour". MainTabView closes its sheets on the same
+        // notification so the overlay isn't buried under them.
+        .onReceive(NotificationCenter.default.publisher(for: .replayAppTour)) { _ in
+            guard authManager.isAuthenticated else { return }
+            withAnimation(.easeOut(duration: 0.25)) { showAppTour = true }
+        }
+        // New-user walkthrough. An overlay (not a cover) so the real tabs stay visible
+        // behind its scrim — the tour switches them as it narrates each screen.
+        .overlay {
+            if showAppTour {
+                AppTourView { finishAppTour() }
+                    .zIndex(50)
+            }
         }
         .overlay {
             if isLaunching {
@@ -114,6 +138,7 @@ struct RootView: View {
             // splash briefly so the mark spins ~twice, then reveal the app.
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
+            maybeShowAppTour()
             maybeShowThemePrompt()
         }
         // Drive the whole UI's appearance from the user's choice (default Dark) by pushing the
@@ -128,12 +153,30 @@ struct RootView: View {
     }
 
     /// Show the one-time appearance prompt once the user is in the app — but never on top of
-    /// the first-run profile/payment setup covers.
+    /// the first-run profile/payment setup covers or the app tour (call `maybeShowAppTour`
+    /// first at shared call sites; `finishAppTour` re-runs this when the tour ends).
     private func maybeShowThemePrompt() {
         guard authManager.isAuthenticated,
               themeManager.shouldShowFirstRunPrompt,
-              !showProfileBuilder, !showPaymentSetupPrompt else { return }
+              !showProfileBuilder, !showPaymentSetupPrompt, !showAppTour else { return }
         showThemePrompt = true
+    }
+
+    /// Start the new-user walkthrough if signup queued one (`nostia_pending_app_tour`)
+    /// and no first-run cover is on screen. The flag only clears on finish/skip, so a
+    /// tour interrupted by an app kill comes back on the next launch.
+    private func maybeShowAppTour() {
+        guard authManager.isAuthenticated,
+              UserDefaults.standard.bool(forKey: "nostia_pending_app_tour"),
+              !showProfileBuilder, !showPaymentSetupPrompt else { return }
+        withAnimation(.easeOut(duration: 0.25)) { showAppTour = true }
+    }
+
+    private func finishAppTour() {
+        UserDefaults.standard.removeObject(forKey: "nostia_pending_app_tour")
+        withAnimation(.easeOut(duration: 0.25)) { showAppTour = false }
+        DeepLinkRouter.shared.selectedTab = 0
+        maybeShowThemePrompt()
     }
 
     @MainActor

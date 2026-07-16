@@ -72,6 +72,12 @@ struct MainTabView: View {
         .onChange(of: deepLinkRouter.pendingTarget) {
             handleDeepLink(deepLinkRouter.pendingTarget)
         }
+        // "Replay App Tour" lives in Settings, two sheets deep (Profile → Settings).
+        // Close them so the tour overlay RootView is about to show isn't buried.
+        .onReceive(NotificationCenter.default.publisher(for: .replayAppTour)) { _ in
+            showProfile = false
+            showNotifications = false
+        }
         // Re-fetch the unread count on dismiss — reads/deletes made inside the sheet
         // must clear the bell badge as soon as the sheet closes.
         .sheet(isPresented: $showNotifications, onDismiss: { loadUnreadCount() }) {

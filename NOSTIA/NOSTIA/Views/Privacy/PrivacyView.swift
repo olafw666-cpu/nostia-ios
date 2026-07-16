@@ -103,6 +103,26 @@ struct PrivacyView: View {
                         }
                     }
 
+                    // Help section
+                    GlassSection(title: "Help") {
+                        Button {
+                            Haptics.tap()
+                            // RootView shows the tour; MainTabView closes the sheets
+                            // this row is sitting inside.
+                            NotificationCenter.default.post(name: .replayAppTour, object: nil)
+                        } label: {
+                            HStack {
+                                Image(systemName: "figure.wave").foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                Text("Replay App Tour").foregroundColor(Color.nostiaTextPrimary)
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                            }
+                            .font(.subheadline).padding(responsive.spacing(16))
+                        }
+                        .buttonStyle(.nostiaTap)
+                        .accessibilityHint("Shows the walkthrough of the app's main features again")
+                    }
+
                     // Notifications section
                     GlassSection(title: "Notifications") {
                         Button { navigateToNotifications = true } label: {
@@ -365,6 +385,7 @@ struct PrivacyView: View {
             }
             UserDefaults.standard.removeObject(forKey: "nostia_pending_invite_token")
             UserDefaults.standard.removeObject(forKey: "nostia_pending_profile_setup")
+            UserDefaults.standard.removeObject(forKey: "nostia_pending_app_tour")
             authManager.logout()
         } catch {
             isDeletingAccount = false

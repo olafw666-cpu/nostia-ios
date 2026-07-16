@@ -75,6 +75,9 @@ final class AuthViewModel: ObservableObject {
                 await enrollPasskeyQuietly()
             }
             UserDefaults.standard.set(true, forKey: "nostia_pending_profile_setup")
+            // Queue the first-login walkthrough; RootView shows it after the
+            // profile/payment covers finish and clears the flag on finish/skip.
+            UserDefaults.standard.set(true, forKey: "nostia_pending_app_tour")
             NotificationCenter.default.post(name: .userDidLogin, object: nil)
             isLoading = false
             return true

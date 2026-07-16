@@ -134,4 +134,7 @@ final class AuthManager: ObservableObject {
 extension Notification.Name {
     static let userDidLogout = Notification.Name("userDidLogout")
     static let userDidLogin = Notification.Name("userDidLogin")
+    /// Settings → Help → "Replay App Tour": RootView shows the tour overlay,
+    /// MainTabView closes any sheets sitting on top of it.
+    static let replayAppTour = Notification.Name("replayAppTour")
 }
