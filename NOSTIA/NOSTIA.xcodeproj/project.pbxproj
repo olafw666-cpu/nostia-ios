@@ -428,6 +428,7 @@
 				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Nostia counts your steps and walking distance to track your daily adventure.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nostia accesses your photos to share images with friends.";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Nostia uses tracking data to help personalize your experience and improve the app.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -471,6 +472,7 @@
 				INFOPLIST_KEY_NSContactsUsageDescription = "Nostia uses your contacts to help you find friends on the app.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nostia uses your location to show nearby events and share your position with friends.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Nostia counts your steps and walking distance to track your daily adventure.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nostia accesses your photos to share images with friends.";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Nostia uses tracking data to help personalize your experience and improve the app.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

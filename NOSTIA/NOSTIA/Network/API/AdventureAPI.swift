@@ -1,8 +1,8 @@
 import Foundation
 
-/// Adventure Page endpoints (spec §11). The client only ever sends difficulty,
-/// an optional prompt, and step-check/complete calls — points, step counts,
-/// cycle timing and source are all server-decided.
+/// Adventure Page endpoints. The client only ever sends difficulty, pedometer
+/// readings, and complete/discard calls — points, targets, cycle timing and progress
+/// clamping are all server-decided.
 final class AdventureAPI {
     static let shared = AdventureAPI()
     private let client = APIClient.shared
@@ -13,34 +13,36 @@ final class AdventureAPI {
         try await client.request("/adventures/current")
     }
 
-    /// 202 → `jobId` set (poll). 200 → `adventure` set (instant fallback path).
-    /// 422 (prompt filtered, credit intact) and 429 (cycle not elapsed) surface
-    /// as `APIError.httpError` — match on the status code.
-    func generate(difficulty: AdventureDifficulty, prompt: String?) async throws -> AdventureGenerateResponse {
-        var body: [String: Any] = ["difficulty": difficulty.rawValue]
-        if let prompt, !prompt.isEmpty { body["prompt"] = prompt }
-        return try await client.request("/adventures/generate", method: "POST", body: body)
+    /// Always 200 with the adventure — it's a pool draw, not a model call.
+    /// 429 (cycle not elapsed) surfaces as `APIError.httpError`.
+    func generate(difficulty: AdventureDifficulty) async throws -> AdventureGenerateResponse {
+        try await client.request(
+            "/adventures/generate", method: "POST",
+            body: ["difficulty": difficulty.rawValue]
+        )
     }
 
-    func jobStatus(id: Int) async throws -> AdventureJobStatus {
-        try await client.request("/adventures/jobs/\(id)")
+    /// Cumulative pedometer reading since the adventure was issued — not a delta, so
+    /// re-sends are idempotent. The server clamps against elapsed time and only ever
+    /// ratchets progress upward.
+    func reportProgress(adventureId: Int, steps: Int, distanceM: Double) async throws -> AdventureProgressResponse {
+        try await client.request(
+            "/adventures/\(adventureId)/progress", method: "POST",
+            body: ["steps": steps, "distance_m": Int(distanceM.rounded())]
+        )
     }
 
-    /// Toggle-ON only (no uncheck in V1).
-    func checkStep(adventureId: Int, order: Int) async throws {
-        try await client.requestVoid("/adventures/\(adventureId)/steps/\(order)/check", method: "POST")
-    }
-
+    /// Checks the server's stored progress, never anything sent here. Sync first.
     func complete(adventureId: Int) async throws -> AdventureCompleteResponse {
         try await client.request("/adventures/\(adventureId)/complete", method: "POST")
     }
 
-    /// Valid only within 5 minutes of issuance with zero steps checked (§6).
+    /// Valid only within 5 minutes of issuance, once per cycle.
     func discard(adventureId: Int) async throws {
         try await client.requestVoid("/adventures/\(adventureId)/discard", method: "POST")
     }
 
-    // MARK: - Cosmetics store (§9)
+    // MARK: - Cosmetics store
 
     func getCosmetics() async throws -> CosmeticCatalog {
         try await client.request("/cosmetics")

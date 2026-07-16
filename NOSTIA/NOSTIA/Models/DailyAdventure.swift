@@ -1,40 +1,80 @@
 import Foundation
 
-// MARK: - Adventure Page models (Adventure Page spec §3/§11)
+// MARK: - Adventure Page models
 //
-// `DailyAdventure` is the AI-generated (or pool-served — the client can't tell,
-// by design) daily quest. Distinct from the legacy `Adventure` discovery model.
+// `DailyAdventure` is the pool-served daily adventure: a measured physical challenge
+// with a step target and a walking-distance target. Distinct from the legacy
+// `Adventure` discovery model.
 
 struct DailyAdventure: Codable, Identifiable {
     let id: Int
     let title: String
     let description: String
     let difficulty: String
-    let stepCount: Int
     let points: Int
     let status: String        // active | completed | expired | discarded
     let issuedAt: String?
     let completedAt: String?
-    var steps: [DailyAdventureStep]
+
+    // Optional because pre-rework rows serialize as null. A row with no targets is
+    // history — render it without the progress section rather than as 0/0.
+    let stepsTarget: Int?
+    let distanceTargetM: Int?
+    let stepsProgress: Int
+    let distanceProgressM: Int
+    let targetsMet: Bool
 
     enum CodingKeys: String, CodingKey {
-        case id, title, description, difficulty, points, status, steps
-        case stepCount = "step_count"
+        case id, title, description, difficulty, points, status
         case issuedAt = "issued_at"
         case completedAt = "completed_at"
+        case stepsTarget = "steps_target"
+        case distanceTargetM = "distance_target_m"
+        case stepsProgress = "steps_progress"
+        case distanceProgressM = "distance_progress_m"
+        case targetsMet = "targets_met"
+    }
+
+    /// Progress fields default rather than throw. A malformed *present* value fails the
+    /// whole enclosing decode — so if a rolled-back server omits them, the synthesized
+    /// initializer would leave users with no adventure at all instead of an adventure
+    /// with no progress section. Degrade, don't disappear.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        description = try c.decode(String.self, forKey: .description)
+        difficulty = try c.decode(String.self, forKey: .difficulty)
+        points = try c.decode(Int.self, forKey: .points)
+        status = try c.decode(String.self, forKey: .status)
+        issuedAt = try c.decodeIfPresent(String.self, forKey: .issuedAt)
+        completedAt = try c.decodeIfPresent(String.self, forKey: .completedAt)
+        stepsTarget = try c.decodeIfPresent(Int.self, forKey: .stepsTarget)
+        distanceTargetM = try c.decodeIfPresent(Int.self, forKey: .distanceTargetM)
+        stepsProgress = try c.decodeIfPresent(Int.self, forKey: .stepsProgress) ?? 0
+        distanceProgressM = try c.decodeIfPresent(Int.self, forKey: .distanceProgressM) ?? 0
+        targetsMet = try c.decodeIfPresent(Bool.self, forKey: .targetsMet) ?? false
     }
 
     var isActive: Bool { status == "active" }
-    var allStepsChecked: Bool { steps.allSatisfy(\.checked) }
-    var checkedCount: Int { steps.filter(\.checked).count }
     var issuedDate: Date? { AdventureDates.parse(issuedAt) }
-}
 
-struct DailyAdventureStep: Codable, Identifiable {
-    let order: Int
-    let text: String
-    var checked: Bool
-    var id: Int { order }
+    /// The 24h window closes on the client too: past it, progress stops accruing
+    /// (the server clamps to the same boundary).
+    var windowEnd: Date? { issuedDate?.addingTimeInterval(24 * 3600) }
+
+    /// Only measured rows have a progress section to draw.
+    var isMeasured: Bool { stepsTarget != nil && distanceTargetM != nil }
+
+    var stepsFraction: Double {
+        guard let t = stepsTarget, t > 0 else { return 0 }
+        return min(1, Double(stepsProgress) / Double(t))
+    }
+
+    var distanceFraction: Double {
+        guard let t = distanceTargetM, t > 0 else { return 0 }
+        return min(1, Double(distanceProgressM) / Double(t))
+    }
 }
 
 /// GET /api/adventures/current — the single source of truth for AdventureView.
@@ -52,22 +92,15 @@ struct AdventureCurrentState: Codable {
     var nextAvailableDate: Date? { AdventureDates.parse(nextAvailableAt) }
 }
 
-/// POST /api/adventures/generate — 202 carries job_id, 200 carries the adventure
-/// (instant fallback path). Both fields optional so one type decodes either.
+/// POST /api/adventures/generate — always 200 with the adventure. Generation is a
+/// draw from the pre-generated pool, so there is no job to poll.
 struct AdventureGenerateResponse: Codable {
-    let jobId: Int?
-    let adventure: DailyAdventure?
-
-    enum CodingKeys: String, CodingKey {
-        case adventure
-        case jobId = "job_id"
-    }
+    let adventure: DailyAdventure
 }
 
-/// GET /api/adventures/jobs/:id
-struct AdventureJobStatus: Codable {
-    let status: String        // queued | running | done | error
-    let adventure: DailyAdventure?
+/// POST /api/adventures/:id/progress
+struct AdventureProgressResponse: Codable {
+    let adventure: DailyAdventure
 }
 
 /// POST /api/adventures/:id/complete
@@ -113,8 +146,9 @@ struct CosmeticPurchaseResponse: Codable {
     }
 }
 
-// MARK: - Difficulty (client mirror of the server's §5 table — display only;
-// the server re-derives steps/points from the difficulty enum it receives)
+// MARK: - Difficulty (client mirror of the server's points table — display only; the
+// server re-derives points from the difficulty enum it receives. Targets are NOT
+// mirrored: they vary per adventure and only the served row knows them.)
 
 enum AdventureDifficulty: String, CaseIterable, Identifiable {
     case easy, medium, advanced
@@ -129,14 +163,6 @@ enum AdventureDifficulty: String, CaseIterable, Identifiable {
         }
     }
 
-    var stepCount: Int {
-        switch self {
-        case .easy: return 3
-        case .medium: return 5
-        case .advanced: return 8
-        }
-    }
-
     var points: Int {
         switch self {
         case .easy: return 25
@@ -145,12 +171,32 @@ enum AdventureDifficulty: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Indicative ranges only — the actual pair comes from the pool row. Mirrors
+    /// TARGET_ENVELOPES in services/adventureTargets.js.
     var blurb: String {
         switch self {
-        case .easy: return "Short, low-effort tasks"
-        case .medium: return "Moderate multi-part tasks"
-        case .advanced: return "Long-form, multi-part tasks"
+        case .easy: return "About 2–5k steps · 1.5–4 km"
+        case .medium: return "About 6–12k steps · 5–10 km"
+        case .advanced: return "About 13–25k steps · 10–18 km"
         }
+    }
+}
+
+// MARK: - Formatting
+
+enum AdventureFormat {
+    static func steps(_ n: Int) -> String {
+        n >= 1000 ? String(format: "%.1fk", Double(n) / 1000) : "\(n)"
+    }
+
+    /// Metric or imperial to match the device locale — a distance target is the whole
+    /// point of the feature, so it has to read naturally.
+    static func distance(_ meters: Int) -> String {
+        let usesMetric = Locale.current.measurementSystem != .us
+        if usesMetric {
+            return String(format: "%.2f km", Double(meters) / 1000)
+        }
+        return String(format: "%.2f mi", Double(meters) / 1609.344)
     }
 }
 

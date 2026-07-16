@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// Adventure tab (replaces Explore — Adventure Page spec §1). One AI-generated
-/// adventure per rolling 24h: pick a difficulty, optionally steer it with a
-/// prompt, check off steps, earn points, spend them on profile themes.
+/// Adventure tab. One adventure per rolling 24h, drawn from a pre-generated pool:
+/// pick a difficulty, then go and physically do it. Success is measured from the
+/// phone's pedometer — hit both the step target and the distance target — and earns
+/// points that buy profile themes.
 struct AdventureView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = AdventureViewModel()
     @State private var selectedDifficulty: AdventureDifficulty = .easy
-    @State private var prompt = ""
     @State private var showStore = false
     @State private var showDiscardConfirm = false
     @State private var showIntro = !UserDefaults.standard.bool(forKey: AdventureView.introSeenKey)
@@ -33,9 +34,14 @@ struct AdventureView: View {
             .padding(.bottom, 110) // clear the floating tab bar
         }
         .background(Color.nostiaBackground.ignoresSafeArea())
-        .scrollDismissesKeyboard(.interactively)
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
+        .onChange(of: scenePhase) { _, phase in
+            // A backgrounded app misses nothing — the pedometer logs in hardware and
+            // the query on .active backfills the whole window — but we still need the
+            // hook to re-read it and to flush on the way out.
+            viewModel.onScenePhaseChange(phase)
+        }
         .sheet(isPresented: $showStore) {
             ThemeStoreView(balance: viewModel.pointsBalance) {
                 Task { await viewModel.load() }
@@ -87,11 +93,15 @@ struct AdventureView: View {
 
     @ViewBuilder
     private var content: some View {
+        if viewModel.motionUnavailable || viewModel.motionDenied {
+            motionPermissionCard
+        }
+
         if let adventure = viewModel.adventure {
             if adventure.isActive {
                 if viewModel.canGenerateNow {
-                    // >24h old but never completed: still completable until the
-                    // user generates again (§6) — offer both.
+                    // >24h old but never completed: still completable until the user
+                    // generates again — offer both.
                     generateSection(title: "New adventure available")
                     adventureCard(adventure, interactive: true)
                 } else {
@@ -116,7 +126,45 @@ struct AdventureView: View {
         }
     }
 
-    // MARK: - Generate form (§12.1)
+    // MARK: - Motion permission
+
+    /// The feature cannot work without motion data, so say so plainly rather than
+    /// showing a progress bar that will never move.
+    private var motionPermissionCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "figure.walk.motion")
+                    .font(.nostiaBody(18, weight: .semibold))
+                    .foregroundColor(Color.nostriaDanger)
+                Text(viewModel.motionUnavailable ? "Step tracking unavailable" : "Motion access is off")
+                    .font(.nostiaDisplay(15, weight: .heavy))
+                    .foregroundColor(Color.nostiaTextPrimary)
+            }
+            Text(viewModel.motionUnavailable
+                 ? "This device can't count steps, so adventures can't be tracked here."
+                 : "Adventures are measured from your steps and walking distance. Turn on Motion & Fitness for Nostia in Settings to track them.")
+                .font(.nostiaBody(13))
+                .foregroundColor(Color.nostiaTextSecond)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if viewModel.motionDenied, let url = URL(string: UIApplication.openSettingsURLString) {
+                Button {
+                    Haptics.tap()
+                    UIApplication.shared.open(url)
+                } label: {
+                    Text("Open Settings")
+                        .font(.nostiaBody(14, weight: .bold))
+                        .foregroundColor(Color.nostiaAccent)
+                }
+                .buttonStyle(.nostiaTap)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .nostiaCard(cornerRadius: 16)
+    }
+
+    // MARK: - Generate form
 
     private func generateSection(title: String) -> some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -130,40 +178,10 @@ struct AdventureView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("Steer it with a theme (optional)", text: $prompt, axis: .vertical)
-                    .font(.nostiaBody(15))
-                    .foregroundColor(Color.nostiaTextPrimary)
-                    .lineLimit(2...4)
-                    .padding(14)
-                    .nostiaCard(cornerRadius: 14, elevation: .flat)
-                    .onChange(of: prompt) {
-                        if prompt.count > 280 { prompt = String(prompt.prefix(280)) }
-                    }
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done") { hideKeyboard() }
-                        }
-                    }
-                HStack {
-                    if let promptError = viewModel.promptError {
-                        Text(promptError)
-                            .font(.nostiaBody(12))
-                            .foregroundColor(Color.nostriaDanger)
-                    }
-                    Spacer()
-                    Text("\(prompt.count)/280")
-                        .font(.nostiaBody(11))
-                        .foregroundColor(Color.nostiaTextMuted)
-                }
-            }
-
             NostiaPrimaryButton(title: "Generate Adventure", systemImage: "sparkles") {
                 Haptics.tap()
-                hideKeyboard()
                 markIntroSeen()
-                Task { await viewModel.generate(difficulty: selectedDifficulty, prompt: prompt) }
+                Task { await viewModel.generate(difficulty: selectedDifficulty) }
             }
         }
         .padding(16)
@@ -184,15 +202,12 @@ struct AdventureView: View {
                     Text(difficulty.blurb)
                         .font(.nostiaBody(12))
                         .foregroundColor(selected ? .white.opacity(0.85) : Color.nostiaTextSecond)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(difficulty.stepCount) steps")
-                        .font(.nostiaBody(12, weight: .semibold))
-                    Text("+\(difficulty.points) pts")
-                        .font(.nostiaDisplay(13, weight: .heavy))
-                }
-                .foregroundColor(selected ? .white : Color.nostiaAccent)
+                Spacer(minLength: 8)
+                Text("+\(difficulty.points) pts")
+                    .font(.nostiaDisplay(13, weight: .heavy))
+                    .foregroundColor(selected ? .white : Color.nostiaAccent)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
@@ -209,20 +224,16 @@ struct AdventureView: View {
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
-    // MARK: - Crafting state (§2 client wait UX)
+    // MARK: - Generating state
 
     private var craftingCard: some View {
         VStack(spacing: 14) {
             ProgressView()
                 .controlSize(.large)
                 .tint(Color.nostiaAccent)
-            Text("Crafting your adventure…")
+            Text("Finding your adventure…")
                 .font(.nostiaDisplay(17, weight: .heavy))
                 .foregroundColor(Color.nostiaTextPrimary)
-            Text("This can take a minute. We'll also send a notification when it's ready.")
-                .font(.nostiaBody(13))
-                .foregroundColor(Color.nostiaTextSecond)
-                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
@@ -230,7 +241,7 @@ struct AdventureView: View {
         .nostiaWarmCard(cornerRadius: 20)
     }
 
-    // MARK: - Adventure card + steps
+    // MARK: - Adventure card + targets
 
     private func adventureCard(_ adventure: DailyAdventure, interactive: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -257,24 +268,13 @@ struct AdventureView: View {
                 .foregroundColor(Color.nostiaTextSecond)
                 .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: 0) {
-                ForEach(adventure.steps) { step in
-                    stepRow(step, adventure: adventure, interactive: interactive)
-                    if step.order != adventure.steps.last?.order {
-                        Rectangle()
-                            .fill(Color.nostiaDivider)
-                            .frame(height: 1)
-                            .padding(.leading, 40)
-                    }
-                }
+            // Pre-rework rows carry no targets — they're history, so there's nothing
+            // to draw. Rendering 0/0 bars would be a lie.
+            if adventure.isMeasured {
+                targetsPanel(adventure)
             }
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.nostiaCard))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.nostiaCardStroke, lineWidth: 0.75)
-            )
 
-            if interactive && adventure.isActive {
+            if interactive && adventure.isActive && adventure.isMeasured {
                 completeButton(adventure)
                 if viewModel.canDiscard {
                     Button {
@@ -293,45 +293,77 @@ struct AdventureView: View {
         .nostiaWarmCard(cornerRadius: 20)
     }
 
-    private func stepRow(_ step: DailyAdventureStep, adventure: DailyAdventure, interactive: Bool) -> some View {
-        Button {
-            guard interactive, adventure.isActive, !step.checked else { return }
-            viewModel.checkStep(step.order)
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: step.checked ? "checkmark.circle.fill" : "circle")
-                    .font(.nostiaBody(22))
-                    .foregroundColor(step.checked ? Color.nostiaSuccess : Color.nostiaTextMuted)
-                Text(step.text)
-                    .font(.nostiaBody(14))
-                    .foregroundColor(step.checked ? Color.nostiaTextSecond : Color.nostiaTextPrimary)
-                    .strikethrough(step.checked, color: Color.nostiaTextMuted)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
+    private func targetsPanel(_ adventure: DailyAdventure) -> some View {
+        VStack(spacing: 14) {
+            targetBar(
+                icon: "shoeprints.fill",
+                label: "Steps",
+                current: AdventureFormat.steps(adventure.stepsProgress),
+                target: AdventureFormat.steps(adventure.stepsTarget ?? 0),
+                fraction: adventure.stepsFraction
+            )
+            targetBar(
+                icon: "ruler.fill",
+                label: "Distance",
+                current: AdventureFormat.distance(adventure.distanceProgressM),
+                target: AdventureFormat.distance(adventure.distanceTargetM ?? 0),
+                fraction: adventure.distanceFraction
+            )
         }
-        .buttonStyle(.nostiaTap)
-        .disabled(!interactive || !adventure.isActive || step.checked)
-        .accessibilityLabel("Step \(step.order): \(step.text)")
-        .accessibilityAddTraits(step.checked ? [.isButton, .isSelected] : .isButton)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.nostiaCard))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.nostiaCardStroke, lineWidth: 0.75)
+        )
+    }
+
+    private func targetBar(icon: String, label: String, current: String, target: String, fraction: Double) -> some View {
+        let done = fraction >= 1
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 7) {
+                Image(systemName: done ? "checkmark.circle.fill" : icon)
+                    .font(.nostiaBody(14, weight: .semibold))
+                    .foregroundColor(done ? Color.nostiaSuccess : Color.nostiaTextMuted)
+                Text(label)
+                    .font(.nostiaBody(13, weight: .semibold))
+                    .foregroundColor(Color.nostiaTextSecond)
+                Spacer()
+                Text("\(current) / \(target)")
+                    .font(.nostiaBody(13, weight: .bold))
+                    .foregroundColor(done ? Color.nostiaSuccess : Color.nostiaTextPrimary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.nostiaDivider)
+                    Capsule()
+                        .fill(done ? Color.nostiaSuccess : Color.nostiaAccent)
+                        .frame(width: max(0, geo.size.width * fraction))
+                }
+            }
+            .frame(height: 8)
+            .animation(.easeOut(duration: 0.3), value: fraction)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(current) of \(target)\(done ? ", complete" : "")")
     }
 
     private func completeButton(_ adventure: DailyAdventure) -> some View {
-        let ready = adventure.allStepsChecked
+        let ready = adventure.targetsMet
         return Button {
             guard ready else { return }
             Haptics.tap()
             Task { await viewModel.complete() }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "flag.checkered")
-                    .font(.nostiaBody(17, weight: .semibold))
-                Text(ready ? "Complete Adventure  ·  +\(adventure.points) pts"
-                           : "Check all steps to complete (\(adventure.checkedCount)/\(adventure.stepCount))")
+                if viewModel.isSyncing {
+                    ProgressView().controlSize(.small).tint(.white)
+                } else {
+                    Image(systemName: "flag.checkered")
+                        .font(.nostiaBody(17, weight: .semibold))
+                }
+                Text(ready ? "Complete Adventure  ·  +\(adventure.points) pts" : "Keep going")
                     .font(.nostiaBody(15, weight: .bold))
             }
             .foregroundColor(ready ? .white : Color.nostiaTextMuted)
@@ -346,7 +378,7 @@ struct AdventureView: View {
         .disabled(!ready)
     }
 
-    // MARK: - Countdown (§12.1 cooldown state)
+    // MARK: - Countdown (cooldown state)
 
     private var countdownCard: some View {
         VStack(spacing: 8) {
@@ -396,22 +428,22 @@ struct AdventureView: View {
         }
     }
 
-    // MARK: - First-run explainer (§1)
+    // MARK: - First-run explainer
 
     private var introOverlay: some View {
         ZStack {
             Color.black.opacity(0.45).ignoresSafeArea()
             VStack(spacing: 16) {
-                Image(systemName: "sparkles")
+                Image(systemName: "figure.walk.motion")
                     .font(.nostiaBody(40))
                     .foregroundColor(Color.nostiaAccent)
                 Text("Daily Adventures")
                     .font(.nostiaDisplay(22, weight: .heavy))
                     .foregroundColor(Color.nostiaTextPrimary)
                 VStack(alignment: .leading, spacing: 12) {
-                    introRow(icon: "wand.and.stars", text: "One personal adventure per day, crafted for you. Add a theme if you like.")
+                    introRow(icon: "sparkles", text: "One adventure per day. Tap Generate and you get a real challenge to go and do.")
+                    introRow(icon: "shoeprints.fill", text: "Every adventure has a step target and a distance target. Hit both and it's yours.")
                     introRow(icon: "chart.bar.fill", text: "Pick Easy, Medium or Advanced — bigger adventures earn more points (25 / 50 / 100).")
-                    introRow(icon: "checklist", text: "Check off every step, then complete it to bank the points.")
                     introRow(icon: "paintpalette.fill", text: "Spend points on exclusive profile themes in the store.")
                 }
                 NostiaPrimaryButton(title: "Let's go") {
