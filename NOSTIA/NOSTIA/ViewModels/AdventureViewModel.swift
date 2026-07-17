@@ -10,7 +10,8 @@ final class AdventureViewModel: ObservableObject {
 
     @Published var state: AdventureCurrentState?
     @Published var isLoading = false
-    @Published var isCrafting = false          // generate request in flight
+    @Published var isCrafting = false          // generate request in flight (incl. reveal hold)
+    @Published var craftingStartedAt: Date?    // drives the crafting card's phased copy
     @Published var errorMessage: String?
     @Published var celebrationPoints: Int?     // set on completion → points toast
     @Published var pointsBalance: Int = 0
@@ -115,12 +116,29 @@ final class AdventureViewModel: ObservableObject {
 
     // MARK: - Generation
 
+    /// The reveal hold: a pool draw returns in milliseconds, but an adventure that
+    /// appears instantly reads as dispensed, not made. Keep the crafting state up for
+    /// 20–30s before revealing — deliberate UX, not a bug. The adventure is already
+    /// issued server-side the moment the API call returns, so an interruption mid-hold
+    /// (background, force-quit) loses nothing: /current shows it on the next load.
+    /// Errors skip the hold — nobody should wait half a minute to see a failure.
+    private static let craftHold: ClosedRange<Double> = 20...30
+
     func generate(difficulty: AdventureDifficulty) async {
         errorMessage = nil
         isCrafting = true
-        defer { isCrafting = false }
+        let craftStart = Date()
+        craftingStartedAt = craftStart
+        defer {
+            isCrafting = false
+            craftingStartedAt = nil
+        }
         do {
             _ = try await AdventureAPI.shared.generate(difficulty: difficulty)
+            let hold = Double.random(in: Self.craftHold) - Date().timeIntervalSince(craftStart)
+            if hold > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(hold * 1_000_000_000))
+            }
             resetSyncState()
             await load()
             await syncProgress(force: true)  // baseline from issue time

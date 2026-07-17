@@ -226,15 +226,35 @@ struct AdventureView: View {
 
     // MARK: - Generating state
 
+    /// The reveal hold is 20–30s (see AdventureViewModel.craftHold); a static spinner
+    /// that long reads as frozen. Advance the copy every 6s off the VM's existing
+    /// 1s clock tick — the last phase sticks until the reveal.
+    private static let craftingPhases = [
+        "Finding your adventure…",
+        "Pacing out the distance…",
+        "Setting your step targets…",
+        "Balancing the challenge…",
+        "Adding the finishing touches…",
+    ]
+
+    private var craftingMessage: String {
+        guard let start = viewModel.craftingStartedAt else { return Self.craftingPhases[0] }
+        let phase = Int(viewModel.now.timeIntervalSince(start) / 6)
+        return Self.craftingPhases[max(0, min(phase, Self.craftingPhases.count - 1))]
+    }
+
     private var craftingCard: some View {
         VStack(spacing: 14) {
             ProgressView()
                 .controlSize(.large)
                 .tint(Color.nostiaAccent)
-            Text("Finding your adventure…")
+            Text(craftingMessage)
                 .font(.nostiaDisplay(17, weight: .heavy))
                 .foregroundColor(Color.nostiaTextPrimary)
+                .id(craftingMessage)
+                .transition(.opacity)
         }
+        .animation(.easeInOut(duration: 0.35), value: craftingMessage)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
         .padding(.horizontal, 20)
