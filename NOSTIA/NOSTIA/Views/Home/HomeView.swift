@@ -76,6 +76,29 @@ struct HomeView: View {
         }
         .navigationTitle("Nostia")
         .navigationBarTitleDisplayMode(.inline)
+        // Tour replay in the header's left corner (the right corner holds the shared
+        // bell + avatar cluster). Same 40pt bubble as the bell; RootView presents the
+        // tour and MainTabView closes any sheets over it.
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    Haptics.tap()
+                    NotificationCenter.default.post(name: .replayAppTour, object: nil)
+                } label: {
+                    Circle()
+                        .fill(Color.nostiaCard)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: Color.nostiaShadow.opacity(0.08), radius: 8, y: 2)
+                        .overlay(
+                            Image(systemName: "questionmark")
+                                .font(.nostiaBody(18))
+                                .foregroundColor(Color.nostiaTextSecond)
+                        )
+                }
+                .accessibilityLabel("App tour")
+                .accessibilityHint("Replays the walkthrough of the app's main features")
+            }
+        }
         .onTapGesture(count: 2) { Haptics.tap(); showBackgroundMenu = true }
         .task {
             await vm.loadAll()

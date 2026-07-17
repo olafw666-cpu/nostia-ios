@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-07-11"
+    static let tosVersion = "2026-07-16"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: July 11, 2026
+Effective Date: July 16, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -17,7 +17,7 @@ By accessing or using Nostia, you confirm that you are at least 13 years of age,
 
 2. DESCRIPTION OF SERVICE
 
-Nostia is a social travel application that allows users to plan trips, split expenses, discover and share local experiences, join location-based organizations, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking, trip task lists, and date polls); experience creation, discovery, tagging, and rating; the ability to mark experiences as visited or to visit; direct messaging between mutual followers; a social feed; location-based organizations (groups whose content is available to members within a defined geographic area); map-based experience exploration; daily AI-generated adventures with an in-app points system and a cosmetic theme store; crash pads (offers by mutual followers to host each other); and sharing experience invite links by text message or other channels.
+Nostia is a social travel application that allows users to plan trips, split expenses, discover and share local experiences, join location-based organizations, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking, trip task lists, and date polls); experience creation, discovery, tagging, and rating; the ability to mark experiences as visited or to visit; direct messaging between mutual followers; a social feed; location-based organizations (groups whose content is available to members within a defined geographic area); map-based experience exploration; daily adventures with movement goals measured by your device's step counter, together with an in-app points system and a cosmetic theme store; crash pads (offers by mutual followers to host each other); sharing experience invite links by text message or other channels; and an optional guided tour that walks new users through the App's main features (replayable from Settings).
 
 3. ACCOUNT REGISTRATION
 
@@ -67,17 +67,18 @@ Cash payments: Recording a cash payment sends a verification request to the memb
 
 Disputes and reversals: If a card payment is disputed or reversed, the related transfer to its recipient may be reversed and the corresponding split may be reopened. We are not responsible for any payment failures, disputes, or errors arising from Stripe's processing. You are responsible for ensuring your payment information is accurate. Nostia does not mediate financial disputes between users.
 
-7. DAILY ADVENTURES AND AI-GENERATED CONTENT
+7. DAILY ADVENTURES, AI-GENERATED CONTENT, AND MOVEMENT GOALS
 
-Nostia's Adventure feature generates a personalized daily activity suggestion ("adventure") using artificial intelligence, optionally steered by a short theme you provide. You acknowledge and agree that:
+Nostia's Adventure feature offers a daily activity suggestion ("adventure") drawn from a pool of suggestions generated in advance by artificial intelligence on Nostia's own infrastructure and reviewed before release. Each adventure carries movement goals (steps and walking distance) and a completion window; your progress toward those goals is measured from your device's step counter (see Section 10 and our Privacy Policy). You acknowledge and agree that:
 - Adventure content is generated automatically and may be inaccurate, impractical, or unsuitable for your circumstances. It is provided for entertainment and inspiration only and is not professional, medical, safety, legal, or travel advice.
-- You alone decide whether and how to act on an adventure. Use your own judgment, take account of weather, terrain, your physical condition, and your surroundings, and comply with all applicable laws, rules, and property rights while doing so. You undertake real-world activities at your own risk.
+- Adventures involve real-world physical activity such as walking. You alone decide whether and how to act on an adventure. Use your own judgment, take account of weather, terrain, your physical condition, and your surroundings, and comply with all applicable laws, rules, and property rights while doing so. You undertake real-world activities at your own risk; if you are unsure whether an activity level is appropriate for you, consult a medical professional first.
 - Never follow a suggestion that appears unsafe or unlawful — skip or discard the adventure instead, and report it through the App's support channels so we can improve the feature.
 - We may review, filter, moderate, or regenerate AI-generated content and may modify, suspend, or discontinue the Adventure feature at any time.
 
 8. ADVENTURE POINTS AND VIRTUAL ITEMS
 
 Completing adventures earns points that can be spent on cosmetic items (such as profile themes) in the in-app store. You acknowledge and agree that:
+- Points are awarded for genuinely meeting an adventure's measured movement goals. Falsifying, simulating, or otherwise manipulating step or distance data to earn points violates these Terms and may result in removal of points or items and account action.
 - Points and cosmetic items are earned through in-app activity only. They cannot be purchased with money, transferred, exchanged, or redeemed for cash or anything of value outside the App, and they have no monetary value.
 - Points and cosmetic items are a limited, revocable, non-transferable license, not property. We may adjust point balances or item prices, and may revoke points or items obtained through abuse, bugs, or violations of these Terms.
 - Points and cosmetic items are forfeited when your account is deleted or terminated, and may expire or be modified if a feature is discontinued. No refund or compensation is owed for any of the above.
@@ -90,9 +91,11 @@ The Crash Pads feature lets mutual followers offer to host each other. Listings 
 - Hosts are responsible for ensuring they may lawfully host guests (including compliance with leases, building rules, local laws, and tax obligations) and for the condition of their accommodation. Guests are responsible for their own conduct and belongings.
 - Nostia is not responsible for and does not mediate disputes, damages, losses, or injuries arising from stays arranged through Crash Pads. Report safety concerns or misconduct through the in-app reporting tools.
 
-10. LOCATION DATA
+10. LOCATION AND MOTION DATA
 
 The App may request access to your device's location to enable map-based features, experience discovery, eligibility for location-based organizations, and location sharing. Location access is optional but may limit functionality if denied. See our Privacy Policy for details on how location data is used.
+
+The Adventure feature may request access to Motion & Fitness data (your device's step count and estimated walking distance) to measure adventure progress. Motion access is optional: the rest of the App works normally without it, but adventure progress cannot be measured. Steps and distance are measured on your device by iOS; only cumulative totals for an active adventure are sent to our servers. Your routes and movement history are never accessed or collected.
 
 11. INTELLECTUAL PROPERTY
 
@@ -100,7 +103,7 @@ All content, design, graphics, interfaces, and software that are part of the App
 
 12. THIRD-PARTY SERVICES
 
-Nostia integrates with third-party services including Stripe for payments and payouts (including Stripe Connect), Apple Pay as a payment method (processed by Stripe), and Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services. Adventure generation runs on Nostia's own infrastructure; your adventure prompts are not sent to third-party AI providers.
+Nostia integrates with third-party services including Stripe for payments and payouts (including Stripe Connect), Apple Pay as a payment method (processed by Stripe), and Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services. Adventure content is generated and reviewed on Nostia's own infrastructure — no third-party AI provider is involved, and your data is never sent to one. Step and distance measurement for adventures is performed on your device by Apple's Motion & Fitness framework.
 
 13. DISCLAIMERS
 
@@ -138,7 +141,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: July 11, 2026
+Effective Date: July 16, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -148,7 +151,7 @@ a) Information You Provide
 - Account information: username, full name, email address, password (stored hashed), and profile picture
 - Profile content: bio, profile photo
 - User-generated content: posts, comments, experience descriptions, ratings and reviews, trip details (including trip tasks and date poll votes), and content you share within organizations
-- Adventure prompts: if you type an optional theme when generating a daily adventure, that text is processed to generate your adventure and stored with it. Adventure generation runs on Nostia's own infrastructure; prompts are never sent to third-party AI providers.
+- Motion & Fitness data: if you grant Motion & Fitness permission, your device's step count and estimated walking distance are used to measure progress on your active daily adventure. Measurement happens on your device via iOS; only cumulative totals (steps and distance in meters) since the adventure was issued are sent to our server. We never receive your routes or movement history, and no motion data is read while you have no active adventure.
 - Crash pad listings and requests: if you offer a crash pad, the listing details you enter (title, description, approximate area, capacity) are stored and shown to your mutual followers. Nostia asks only for an approximate area and does not require your exact address; requests to stay (including optional dates and a message) are stored and shown to the host.
 - Payment information: processed by Stripe; we store only Stripe identifiers (customer ID and, if you set up payouts, a connected-account ID) and the last four digits of saved cards. Apple Pay payments are processed by Stripe; we never receive your Apple Pay card details. If you set up payouts to receive money from other members, the identity and banking details you provide during Stripe onboarding are collected and held by Stripe, not by us.
 - Face ID security (passkeys): if you enable Face ID security, we store a passkey public-key credential and a device name for each device you enroll. Your biometric data never leaves your device — Apple only tells us whether the check succeeded.
@@ -159,7 +162,7 @@ b) Information Collected Automatically
 - Device identifiers and platform information for push notifications
 - App usage logs for debugging and improving the service
 - IP address and user-agent string recorded at account creation and login for security purposes
-- Adventure activity: which adventures you generate, complete, or discard, your points balance, and cosmetic items you unlock
+- Adventure activity: which adventures you receive, complete, or discard, your recorded progress toward each adventure's step and distance goals, your points balance, and cosmetic items you unlock
 
 c) Information From Third Parties
 - Stripe provides payment processing status and webhook events related to your transactions
@@ -169,7 +172,7 @@ c) Information From Third Parties
 We use the information we collect to:
 - Provide, operate, and maintain the Nostia service
 - Enable social features including following, messaging, experience discovery, location-based organizations, and crash pads
-- Generate your personalized daily adventures and operate the points system and cosmetic store
+- Provide your daily adventures, measure and store your progress toward their movement goals, and operate the points system and cosmetic store
 - Process vault payments and expense splits via Stripe
 - Send in-app notifications and push notifications (where consented)
 - Monitor for security threats, fraud, and abuse
@@ -183,12 +186,12 @@ We do not use your information for targeted advertising, and we do not use your 
 We do not sell your personal information. We may share information in the following limited circumstances:
 
 a) With Other Users
-Content you post publicly (feed posts, public experiences, ratings and reviews) is visible to other Nostia users. Content you share within an organization is visible to that organization's members. Trip details, tasks, date polls, and vault activity are visible to the members of that trip. Crash pad listings are visible only to your mutual followers, and stay requests are visible only to the host. Your daily adventures are private to you. Your username and profile picture are visible when you interact socially on the platform. Direct messages are visible only to you and the recipient.
+Content you post publicly (feed posts, public experiences, ratings and reviews) is visible to other Nostia users. Content you share within an organization is visible to that organization's members. Trip details, tasks, date polls, and vault activity are visible to the members of that trip. Crash pad listings are visible only to your mutual followers, and stay requests are visible only to the host. Your daily adventures and your progress toward them are private to you. Your username and profile picture are visible when you interact socially on the platform. Direct messages are visible only to you and the recipient.
 
 If you or another user shares an invite link to a publicly-visible experience, its public details (title, host name, location, and date) are shown on a public Nostia web page to anyone who opens the link, including people who are not Nostia users. Experiences that are not public (followers-only, invite-only, or organization experiences) are never shown on these pages. Invite messages are composed and sent from your device's own messaging app — Nostia does not see or store the recipients or the message.
 
 b) With Service Providers
-We share data with Stripe (payment processing, including Apple Pay transactions) and Apple (push notifications) solely to operate those features. Adventure generation does not involve third-party AI providers.
+We share data with Stripe (payment processing, including Apple Pay transactions) and Apple (push notifications) solely to operate those features. Adventure content is prepared on Nostia's own infrastructure and does not involve third-party AI providers; step and distance measurement happens on your device.
 
 c) For Legal Reasons
 We may disclose information if required by law, regulation, or legal process, or to protect the rights, property, or safety of Nostia, its users, or the public.
@@ -204,7 +207,7 @@ We retain your account data for as long as your account is active. You may reque
 
 We implement reasonable technical and organizational measures to protect your information against unauthorized access, alteration, disclosure, or destruction. Passwords are stored using industry-standard bcrypt hashing. Short-lived JWTs are used for session management. Optional passkey-based two-factor authentication (Face ID) is available for account sign-in and recovery; only the public half of the passkey is stored on our servers. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.
 
-6. LOCATION DATA
+6. LOCATION AND MOTION DATA
 
 We only collect precise location data if you explicitly grant location permission on your device. Location data is used to:
 - Show nearby experiences on the map
@@ -212,7 +215,9 @@ We only collect precise location data if you explicitly grant location permissio
 - Determine eligibility for location-based organizations
 - Periodically sync your approximate location for friend-map features
 
-You can revoke location permission at any time in your device Settings.
+Motion & Fitness: we only read step and distance data if you explicitly grant Motion & Fitness permission on your device, and it is used solely to measure progress on your active daily adventure. The Adventure feature's movement goals cannot be tracked without it; the rest of the App is unaffected.
+
+You can revoke location or Motion & Fitness permission at any time in your device Settings.
 
 7. PUSH NOTIFICATIONS
 
@@ -248,7 +253,7 @@ For privacy-related questions or requests, use the Data Export or Delete My Data
     static let communityGuidelines = """
 COMMUNITY GUIDELINES
 
-Effective Date: July 11, 2026
+Effective Date: July 16, 2026
 
 Nostia is a platform built around shared travel experiences, adventure, and genuine human connection. These Community Guidelines describe the standards we expect all users to uphold to keep Nostia a safe, welcoming, and enjoyable place.
 
@@ -326,7 +331,7 @@ Crash pads run on trust between mutual followers. Hosting or staying with someon
 Daily adventures are AI-generated suggestions, not instructions.
 - Do not attempt to manipulate adventure generation into producing harmful, unlawful, or abusive content
 - Do not follow (or pressure others to follow) suggestions that are unsafe or unlawful — discard them and report the content
-- Complete adventures honestly; do not abuse bugs or automation to farm points
+- Complete adventures honestly — do not fake, simulate, or manipulate step or distance data, and do not abuse bugs or automation to farm points
 
 10. PRIVACY
 
