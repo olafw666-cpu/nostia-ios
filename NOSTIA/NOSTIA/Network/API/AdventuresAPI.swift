@@ -105,6 +105,22 @@ final class ExperiencesAPI {
         return try await client.request("/users/\(userId)/visited")
     }
 
+    // MARK: - Experience invites ("come with me")
+
+    /// Send this experience to friends you want to go with. Each newly-invited
+    /// recipient gets an in-app notification + push. Ids come back sorted into
+    /// newly invited / already invited (no re-notify) / not eligible.
+    func inviteFriends(experienceId: Int, userIds: [Int]) async throws -> ExperienceInviteResult {
+        return try await client.request("/experiences/\(experienceId)/invite", method: "POST", body: ["userIds": userIds])
+    }
+
+    /// Ids the caller has already invited to this experience — drives the picker's
+    /// "Invited" state across sessions.
+    func getSentInvites(experienceId: Int) async throws -> [Int] {
+        let res: SentInvitesResponse = try await client.request("/experiences/\(experienceId)/invite")
+        return res.invitedUserIds
+    }
+
     // Experience chat — reuses the FeedComment shape returned by the server.
     func getExperienceComments(experienceId: Int) async throws -> [FeedComment] {
         return try await client.request("/experiences/\(experienceId)/comments")
@@ -129,4 +145,16 @@ final class ExperiencesAPI {
     func deleteExperience(_ experienceId: Int) async throws {
         try await client.requestVoid("/experiences/\(experienceId)", method: "DELETE")
     }
+}
+
+/// POST /experiences/:id/invite — per-recipient outcome. `skipped` ids couldn't be
+/// invited (no follow relationship either way, or they can't view the experience).
+struct ExperienceInviteResult: Decodable {
+    let invited: [Int]
+    let alreadyInvited: [Int]
+    let skipped: [Int]
+}
+
+struct SentInvitesResponse: Decodable {
+    let invitedUserIds: [Int]
 }

@@ -72,6 +72,11 @@ struct HomeView: View {
         }
         .refreshable {
             await vm.loadAll()
+            // Nearby + themed rows come from the location-scoped fetch — without this,
+            // pull-to-refresh left them stale.
+            if let loc = locationManager.location {
+                await vm.updateLocation(loc)
+            }
             await feedVM.loadFeed()
         }
         .navigationTitle("Nostia")
@@ -200,6 +205,7 @@ struct HomeView: View {
     private var iPadLayout: some View {
         VStack(spacing: responsive.spacing(20)) {
             welcomeHeader
+            loadErrorBanner
 
             HStack(alignment: .top, spacing: responsive.spacing(20)) {
                 // Left column: stats + events
@@ -226,6 +232,7 @@ struct HomeView: View {
     private var phoneLayout: some View {
         LazyVStack(spacing: responsive.spacing(18)) {
             welcomeHeader
+            loadErrorBanner
             statCards
             forYouSection
             NostiaSearchBar(placeholder: "Search places & experiences…") { activeSheet = .search([]) }
@@ -242,6 +249,55 @@ struct HomeView: View {
 
     // MARK: - Sections
 
+    /// A user whose profile has a blank/whitespace name would otherwise render
+    /// "Welcome back, " — fall back to the same placeholder as a missing user.
+    private var welcomeName: String {
+        let name = vm.user?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? "Adventurer" : name
+    }
+
+    /// Shown when the initial profile load failed (offline, expired session mid-refresh,
+    /// server hiccup). Without it a failed `loadAll` left Home silently empty with no
+    /// way back besides discovering pull-to-refresh.
+    @ViewBuilder
+    private var loadErrorBanner: some View {
+        if vm.errorMessage != nil {
+            HStack(spacing: 12) {
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.nostiaBody(18, weight: .semibold))
+                    .foregroundColor(Color.nostiaWarning)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Couldn't load your Home")
+                        .font(.nostiaBody(14, weight: .bold))
+                        .foregroundColor(Color.nostiaTextPrimary)
+                    Text("Check your connection and try again.")
+                        .font(.nostiaBody(12))
+                        .foregroundColor(Color.nostiaTextSecond)
+                }
+                Spacer()
+                Button {
+                    Haptics.tap()
+                    Task {
+                        await vm.loadAll()
+                        if let loc = locationManager.location { await vm.updateLocation(loc) }
+                        await feedVM.loadFeed()
+                    }
+                } label: {
+                    Text("Retry")
+                        .font(.nostiaBody(13, weight: .bold))
+                        .foregroundColor(Color.nostiaAccent)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Color.nostiaAccent.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.nostiaTap)
+            }
+            .padding(14)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Home failed to load. Retry.")
+        }
+    }
+
     @ViewBuilder
     private var welcomeHeader: some View {
         HStack(alignment: .top) {
@@ -250,7 +306,7 @@ struct HomeView: View {
                     .font(.nostiaBody(15, weight: .medium))
                     .tracking(2.7)
                     .foregroundColor(Color.nostiaAccent)
-                Text("Welcome back, \(vm.user?.name ?? "Adventurer")")
+                Text("Welcome back, \(welcomeName)")
                     .font(.nostiaDisplay(isIPad ? 34 : 28))
                     .foregroundColor(Color.nostiaTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -280,7 +336,7 @@ struct HomeView: View {
                 selectedTab = 2
             }
             StatCard(icon: "person.2.fill", color: Color.nostiaAccent,
-                     count: vm.followers.count, label: "Following") {
+                     count: vm.following.count, label: "Following") {
                 selectedTab = 4
             }
             StatCard(icon: "location.north.fill", color: Color.nostiaAccent,

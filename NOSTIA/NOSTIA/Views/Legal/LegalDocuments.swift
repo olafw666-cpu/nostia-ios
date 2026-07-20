@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-07-16"
+    static let tosVersion = "2026-07-19"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: July 16, 2026
+Effective Date: July 19, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -17,7 +17,7 @@ By accessing or using Nostia, you confirm that you are at least 13 years of age,
 
 2. DESCRIPTION OF SERVICE
 
-Nostia is a social travel application that allows users to plan trips, split expenses, discover and share local experiences, join location-based organizations, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking, trip task lists, and date polls); experience creation, discovery, tagging, and rating; the ability to mark experiences as visited or to visit; direct messaging between mutual followers; a social feed; location-based organizations (groups whose content is available to members within a defined geographic area); map-based experience exploration; daily adventures with movement goals measured by your device's step counter, together with an in-app points system and a cosmetic theme store; crash pads (offers by mutual followers to host each other); sharing experience invite links by text message or other channels; and an optional guided tour that walks new users through the App's main features (replayable from Settings).
+Nostia is a social travel application that allows users to plan trips, split expenses, discover and share local experiences, join location-based organizations, follow other users, and share content. Features include but are not limited to: trip vaults (shared expense tracking, trip task lists, and date polls); experience creation, discovery, tagging, and rating; the ability to mark experiences as visited or to visit; direct messaging between mutual followers; a social feed; location-based organizations (groups whose content is available to members within a defined geographic area); map-based experience exploration; daily adventures with movement goals measured by your device's step counter, together with an in-app points system and a cosmetic theme store; crash pads (offers by mutual followers to host each other); sharing experience invite links by text message or other channels; inviting people you are connected with on Nostia to join you at an experience, which sends them a notification; and an optional guided tour that walks new users through the App's main features (replayable from Settings).
 
 3. ACCOUNT REGISTRATION
 
@@ -54,6 +54,8 @@ By posting content to Nostia (including text, photos, experience information, ra
 You represent and warrant that you own or have the necessary rights to the content you post, and that your content does not infringe any third-party intellectual property, privacy, or other rights.
 
 Experience invite links: you and other users can share links to experiences by text message or other channels. When an experience is publicly visible, its public details (title, host name, location, and date) may be displayed on a public Nostia web page to anyone who opens such a link, including people who are not Nostia users. Experiences that are not publicly visible are never shown on these pages.
+
+In-app experience invitations: you can invite another Nostia user to join you at an experience. Invitations can only be sent between users who have a follow relationship, and only for experiences the recipient is able to view; the recipient receives a notification showing your name and the experience. Repeated invitations to the same person for the same experience do not send additional notifications. Do not use invitations to harass other users — invitation abuse is treated as a violation of these Terms and our Community Guidelines.
 
 We reserve the right to remove content that violates these Terms or that we deem inappropriate, without prior notice.
 
@@ -141,7 +143,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: July 16, 2026
+Effective Date: July 19, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -189,6 +191,8 @@ a) With Other Users
 Content you post publicly (feed posts, public experiences, ratings and reviews) is visible to other Nostia users. Content you share within an organization is visible to that organization's members. Trip details, tasks, date polls, and vault activity are visible to the members of that trip. Crash pad listings are visible only to your mutual followers, and stay requests are visible only to the host. Your daily adventures and your progress toward them are private to you. Your username and profile picture are visible when you interact socially on the platform. Direct messages are visible only to you and the recipient.
 
 If you or another user shares an invite link to a publicly-visible experience, its public details (title, host name, location, and date) are shown on a public Nostia web page to anyone who opens the link, including people who are not Nostia users. Experiences that are not public (followers-only, invite-only, or organization experiences) are never shown on these pages. Invite messages are composed and sent from your device's own messaging app — Nostia does not see or store the recipients or the message.
+
+If you invite another user to an experience in-app, that user receives an in-app notification (and, if they have push enabled, a push notification) showing your name and the experience. We store a record of who invited whom to which experience so the App can show you who you have already invited and never notify the same person twice for the same experience. In-app invitations can only be exchanged between users with a follow relationship, and only for experiences the recipient can already view under its visibility settings.
 
 b) With Service Providers
 We share data with Stripe (payment processing, including Apple Pay transactions) and Apple (push notifications) solely to operate those features. Adventure content is prepared on Nostia's own infrastructure and does not involve third-party AI providers; step and distance measurement happens on your device.

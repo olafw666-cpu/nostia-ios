@@ -166,6 +166,7 @@ struct ExperienceDetailSheet: View {
     @State private var showFlyer = false
     @State private var showChat = false
     @State private var showInviteCompose = false
+    @State private var showInviteFriends = false
     @State private var selectedFlyerItem: PhotosPickerItem?
     @State private var isFlyerUploading = false
     @State private var flyerError: String?
@@ -259,6 +260,17 @@ struct ExperienceDetailSheet: View {
                                 .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
                         }
 
+                        // In-app "come with me" invite: pick from people you're connected
+                        // with; each newly-invited person gets a push. Shown for every
+                        // experience — the server (and the picker's per-row feedback)
+                        // handles recipients who can't view it.
+                        Button { Haptics.tap(); showInviteFriends = true } label: {
+                            Label("Invite Friends", systemImage: "person.crop.circle.badge.plus")
+                                .font(.footnote.bold()).foregroundColor(Color.nostiaAccent)
+                                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                                .background(Color.nostiaAccent.opacity(0.12)).cornerRadius(12)
+                        }
+
                         // Text an invite link to anyone in the user's contacts. Hidden for org
                         // and invitee-gated experiences, where the link would dead-end for
                         // recipients who can't view the event.
@@ -342,6 +354,9 @@ struct ExperienceDetailSheet: View {
             }
             .sheet(isPresented: $showChat) {
                 ExperienceChatSheet(experienceId: currentEvent.id)
+            }
+            .sheet(isPresented: $showInviteFriends) {
+                InviteFriendsSheet(experienceId: currentEvent.id)
             }
             .sheet(isPresented: $showInviteCompose) {
                 MessageComposeView(messageBody: inviteMessageText)
@@ -453,6 +468,213 @@ struct ExperienceDetailSheet: View {
             flyerError = "Failed to upload flyer. Please try again."
         }
         isFlyerUploading = false
+    }
+}
+
+// MARK: - InviteFriendsSheet ("come with me")
+
+/// Pick people you're connected with (following or followers, de-duplicated) and send
+/// them this experience. Each tap invites one person immediately; the row flips to
+/// "Invited" and stays that way across sessions (the server never re-notifies a
+/// duplicate). People who can't view the experience come back as skipped and the row
+/// says so instead of failing silently.
+struct InviteFriendsSheet: View {
+    let experienceId: Int
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var responsive: ResponsiveLayoutManager
+
+    @State private var people: [FollowUser] = []
+    @State private var invitedIds: Set<Int> = []
+    @State private var sendingIds: Set<Int> = []
+    @State private var ineligibleIds: Set<Int> = []
+    @State private var searchText = ""
+    @State private var isLoading = true
+    @State private var loadFailed = false
+
+    private var filteredPeople: [FollowUser] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return people }
+        return people.filter {
+            $0.name.localizedCaseInsensitiveContains(query) ||
+            $0.username.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if !people.isEmpty {
+                        searchField
+                            .padding(.horizontal, responsive.spacing(16))
+                            .padding(.top, responsive.spacing(16))
+                    }
+
+                    if isLoading {
+                        ProgressView().tint(Color.nostiaAccent)
+                            .frame(maxWidth: .infinity).padding(40)
+                    } else if loadFailed {
+                        EmptyStateView(
+                            icon: "wifi.exclamationmark",
+                            text: "Couldn't load your people",
+                            sub: "Check your connection and try again"
+                        )
+                        .padding(.top, responsive.spacing(32))
+                    } else if people.isEmpty {
+                        EmptyStateView(
+                            icon: "person.2",
+                            text: "No one to invite yet",
+                            sub: "Follow people (or gain followers) to invite them along"
+                        )
+                        .padding(.top, responsive.spacing(32))
+                    } else if filteredPeople.isEmpty {
+                        Text("No matches for \"\(searchText)\"")
+                            .font(.footnote).foregroundColor(Color.nostiaTextSecond)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, responsive.spacing(32))
+                    } else {
+                        // Modifiers on a ForEach hit every row — wrap once for the
+                        // section's top inset.
+                        VStack(spacing: 0) {
+                            ForEach(filteredPeople) { person in
+                                personRow(person)
+                                    .padding(.horizontal, responsive.spacing(16))
+                                    .padding(.vertical, 4)
+                            }
+                        }
+                        .padding(.top, responsive.spacing(10))
+                    }
+                    Spacer(minLength: responsive.spacing(32))
+                }
+                .frame(maxWidth: responsive.sheetMaxWidth)
+                .frame(maxWidth: .infinity)
+            }
+            .background(.clear)
+            .navigationTitle("Invite Friends")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }.foregroundColor(Color.nostiaAccent)
+                }
+            }
+            .task { await load() }
+        }
+        .presentationBackground(Color.nostiaBackground)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.nostiaBody(14)).foregroundColor(Color.nostiaTextMuted)
+            TextField("Search people", text: $searchText)
+                .font(.nostiaBody(15))
+                .foregroundColor(Color.nostiaTextPrimary)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.nostiaBody(14)).foregroundColor(Color.nostiaTextMuted)
+                }
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(12)
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    @ViewBuilder
+    private func personRow(_ person: FollowUser) -> some View {
+        HStack(spacing: responsive.spacing(12)) {
+            AvatarView(initial: person.initial, color: Color.nostiaAccent, size: responsive.spacing(38))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(person.name)
+                    .font(.nostiaBody(responsive.fontSize(14), weight: .semibold))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                Text("@\(person.username)")
+                    .font(.nostiaBody(responsive.fontSize(12)))
+                    .foregroundColor(Color.nostiaTextSecond)
+                if ineligibleIds.contains(person.id) {
+                    Text("Can't view this experience")
+                        .font(.nostiaBody(responsive.fontSize(11)))
+                        .foregroundColor(Color.nostiaWarning)
+                }
+            }
+            Spacer()
+            inviteButton(for: person)
+        }
+        .padding(responsive.spacing(14))
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    @ViewBuilder
+    private func inviteButton(for person: FollowUser) -> some View {
+        if invitedIds.contains(person.id) {
+            Label("Invited", systemImage: "checkmark")
+                .font(.nostiaBody(13, weight: .bold))
+                .foregroundColor(Color.nostiaSuccess)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(Color.nostiaSuccess.opacity(0.12), in: Capsule())
+        } else if sendingIds.contains(person.id) {
+            ProgressView().tint(Color.nostiaAccent)
+                .padding(.horizontal, 16).padding(.vertical, 4)
+        } else if ineligibleIds.contains(person.id) {
+            Text("Unavailable")
+                .font(.nostiaBody(13, weight: .bold))
+                .foregroundColor(Color.nostiaTextMuted)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+        } else {
+            Button { Haptics.tap(); Task { await invite(person) } } label: {
+                Text("Invite")
+                    .font(.nostiaBody(13, weight: .bold))
+                    .foregroundColor(Color.nostiaAccent)
+                    .padding(.horizontal, 14).padding(.vertical, 7)
+                    .background(Color.nostiaAccent.opacity(0.12), in: Capsule())
+            }
+            .buttonStyle(.nostiaTap)
+            .accessibilityLabel("Invite \(person.name)")
+        }
+    }
+
+    private func load() async {
+        isLoading = true
+        loadFailed = false
+        async let followingReq = FriendsAPI.shared.getFollowing()
+        async let followersReq = FriendsAPI.shared.getFollowers()
+        async let sentReq = ExperiencesAPI.shared.getSentInvites(experienceId: experienceId)
+
+        let following = try? await followingReq
+        let followers = try? await followersReq
+        if following == nil && followers == nil {
+            // Both fetches failing is a connectivity problem, not an empty social graph.
+            loadFailed = true
+            isLoading = false
+            return
+        }
+        var seen = Set<Int>()
+        people = ((following ?? []) + (followers ?? [])).filter { seen.insert($0.id).inserted }
+        invitedIds = Set((try? await sentReq) ?? [])
+        isLoading = false
+    }
+
+    private func invite(_ person: FollowUser) async {
+        guard !sendingIds.contains(person.id), !invitedIds.contains(person.id) else { return }
+        sendingIds.insert(person.id)
+        defer { sendingIds.remove(person.id) }
+        do {
+            let result = try await ExperiencesAPI.shared.inviteFriends(
+                experienceId: experienceId, userIds: [person.id]
+            )
+            if result.invited.contains(person.id) || result.alreadyInvited.contains(person.id) {
+                invitedIds.insert(person.id)
+                Haptics.success()
+            } else {
+                ineligibleIds.insert(person.id)
+            }
+        } catch {
+            // Leave the row tappable — a transient failure shouldn't burn the invite.
+        }
     }
 }
 
