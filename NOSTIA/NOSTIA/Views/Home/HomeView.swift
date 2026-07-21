@@ -21,6 +21,8 @@ struct HomeView: View {
     @State private var showOrganizations = false
     @State private var showCrashPads = false
     @State private var forYouPage = 0
+    // Tapping a post author pushes their profile onto the Home nav stack.
+    @State private var profileDestination: ProfileDestination?
 
     private var isIPad: Bool { hSizeClass == .regular }
 
@@ -188,6 +190,10 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showCrashPads) {
             CrashPadsView()
+        }
+        // Tapping a post author opens their profile (pushed on the Home nav stack).
+        .navigationDestination(item: $profileDestination) { dest in
+            PublicProfileView(userId: dest.id)
         }
         .alert("Blocked", isPresented: Binding(
             get: { feedVM.moderationMessage != nil },
@@ -587,6 +593,7 @@ struct HomeView: View {
                         },
                         onEdit: post.userId == authManager.currentUserId ? { activeSheet = .editPost(post) } : nil,
                         onComment: { activeSheet = .comments(post) },
+                        onProfileTap: { profileDestination = ProfileDestination(id: $0) },
                         onReport: { feedVM.reportTarget = ReportTarget(contentType: "post", contentId: post.id) },
                         onBlockUser: { Task { await feedVM.blockUser(userId: post.userId, username: post.username) } },
                         isLikeProcessing: feedVM.likingPostIds.contains(post.id),
