@@ -170,6 +170,10 @@ struct ExperienceDetailSheet: View {
     @State private var selectedFlyerItem: PhotosPickerItem?
     @State private var isFlyerUploading = false
     @State private var flyerError: String?
+    // Asked once, right after the user marks an experience visited: 9 visits had
+    // produced 9 posts app-wide, so the moment someone confirms they went
+    // somewhere is the one moment they have something to post about.
+    @State private var showPostPrompt = false
 
     private var currentUserId: Int? { AuthManager.shared.currentUserId }
     private var isCreator: Bool { currentEvent.createdBy != nil && currentEvent.createdBy == currentUserId }
@@ -372,6 +376,32 @@ struct ExperienceDetailSheet: View {
                 guard let item else { return }
                 Task { await uploadFlyer(item) }
             }
+            // Post-visit nudge. Deliberately NOT a nested composer sheet: this repo
+            // presents one sheet at a time, so accepting dismisses this sheet and
+            // hands off via NotificationCenter, and Home opens the composer.
+            .confirmationDialog(
+                "Share your visit?",
+                isPresented: $showPostPrompt,
+                titleVisibility: .visible
+            ) {
+                Button("Share a photo") {
+                    Haptics.tap()
+                    let title = currentEvent.title
+                    let id = currentEvent.id
+                    dismiss()
+                    // Let the dismissal settle before the composer is requested.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        NotificationCenter.default.post(
+                            name: .composePostForExperience,
+                            object: nil,
+                            userInfo: ["title": title, "experienceId": id]
+                        )
+                    }
+                }
+                Button("Not now", role: .cancel) {}
+            } message: {
+                Text("You visited \(currentEvent.title). Post a photo so your followers can see it.")
+            }
         }
         .presentationBackground(Color.nostiaBackground)
     }
@@ -424,6 +454,12 @@ struct ExperienceDetailSheet: View {
         do {
             let updated = try await vm.setStatus(experienceId: currentEvent.id, status: newStatus)
             currentEvent = updated
+            // Only on the transition INTO visited, and only once per experience —
+            // re-toggling must not re-nag.
+            if willBeVisited && !wasVisited && !ExperiencePostPrompt.wasShown(for: currentEvent.id) {
+                ExperiencePostPrompt.markShown(for: currentEvent.id)
+                showPostPrompt = true
+            }
         } catch {
             currentEvent.myStatus = previousStatus
             currentEvent.visitedCount = previousVisited
@@ -966,5 +1002,35 @@ struct LinkInsertSheet: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Post-visit prompt
+
+extension Notification.Name {
+    /// Posted after the user accepts the post-visit nudge. HomeView listens and
+    /// opens the composer — the prompt itself lives inside a sheet that has to
+    /// dismiss first, so the request is handed off rather than presented in place.
+    static let composePostForExperience = Notification.Name("com.nostia.composePostForExperience")
+}
+
+/// Remembers which experiences have already prompted, so re-toggling visited (or
+/// reopening the sheet) never nags twice. Local-only by design: a missed prompt
+/// is not worth a server round-trip or a schema column.
+enum ExperiencePostPrompt {
+    private static let key = "nostia_visited_post_prompted_ids"
+
+    static func wasShown(for experienceId: Int) -> Bool {
+        let ids = UserDefaults.standard.array(forKey: key) as? [Int] ?? []
+        return ids.contains(experienceId)
+    }
+
+    static func markShown(for experienceId: Int) {
+        var ids = UserDefaults.standard.array(forKey: key) as? [Int] ?? []
+        guard !ids.contains(experienceId) else { return }
+        ids.append(experienceId)
+        // Bound the list; the oldest prompts are the least likely to recur.
+        if ids.count > 200 { ids.removeFirst(ids.count - 200) }
+        UserDefaults.standard.set(ids, forKey: key)
     }
 }

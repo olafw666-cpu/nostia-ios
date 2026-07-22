@@ -23,6 +23,11 @@ struct HomeView: View {
     @State private var forYouPage = 0
     // Tapping a post author pushes their profile onto the Home nav stack.
     @State private var profileDestination: ProfileDestination?
+    // Today's quest, surfaced on Home. Only 3 of 54 users had ever opened the
+    // Adventure tab, so the daily pool was invisible — this pulls it onto the
+    // screen everyone already lands on. nil + loaded = nothing active yet.
+    @State private var todaysAdventure: DailyAdventure?
+    @State private var adventureLoaded = false
 
     private var isIPad: Bool { hSizeClass == .regular }
 
@@ -73,6 +78,7 @@ struct HomeView: View {
             }
         }
         .refreshable {
+            await loadTodaysAdventure()
             await vm.loadAll()
             // Nearby + themed rows come from the location-scoped fetch — without this,
             // pull-to-refresh left them stale.
@@ -108,6 +114,7 @@ struct HomeView: View {
         }
         .onTapGesture(count: 2) { Haptics.tap(); showBackgroundMenu = true }
         .task {
+            await loadTodaysAdventure()
             await vm.loadAll()
             locationManager.startPeriodicSync()
             if let loc = locationManager.location {
@@ -125,11 +132,28 @@ struct HomeView: View {
         }
         .onChange(of: selectedTab) { _, newTab in
             if newTab == 0 {
-                Task { await vm.loadAll() }
+                // Also refresh the quest card: coming back from the Adventure tab
+                // after starting or finishing one must not leave it stale.
+                Task {
+                    await loadTodaysAdventure()
+                    await vm.loadAll()
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .profileUpdated)) { _ in
             Task { await vm.loadAll() }
+        }
+        // Hand-off from the post-visit prompt (see ExperienceDetailSheet): that
+        // prompt lives inside a sheet which must dismiss before a composer can be
+        // presented, so it posts here instead of stacking sheets. Seeds the draft
+        // with the place name — a blank composer is most of why people don't post.
+        .onReceive(NotificationCenter.default.publisher(for: .composePostForExperience)) { note in
+            let title = note.userInfo?["title"] as? String
+            selectedTab = 0
+            if feedVM.newPostContent.isEmpty, let title {
+                feedVM.newPostContent = "Visited \(title) — "
+            }
+            feedVM.showCreateSheet = true
         }
         .onChange(of: locationManager.location) { _, newLoc in
             guard let loc = newLoc else { return }
@@ -217,6 +241,7 @@ struct HomeView: View {
                 // Left column: stats + events
                 VStack(spacing: responsive.spacing(16)) {
                     statCards
+                    adventureCard
                     forYouSection
                     orgsButton
                     if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
@@ -240,6 +265,7 @@ struct HomeView: View {
             welcomeHeader
             loadErrorBanner
             statCards
+            adventureCard
             forYouSection
             NostiaSearchBar(placeholder: "Search places & experiences…") { activeSheet = .search([]) }
             if !vm.upcomingEvents.isEmpty { upcomingEventsSection }
@@ -355,6 +381,78 @@ struct HomeView: View {
     /// One "Community" section instead of a full-width promo per feature — orgs and
     /// crash pads share a row of two compact cards, keeping Home short.
     @ViewBuilder
+    /// Today's adventure, promoted onto Home. Tapping switches to the Adventure
+    /// tab rather than duplicating its logic here — the pedometer, generation and
+    /// completion all stay in AdventureView; this is a signpost, not a second
+    /// implementation. Hidden entirely until the fetch resolves so the layout
+    /// doesn't jump, and hidden on failure rather than showing an error (Home has
+    /// its own error banner for things that matter).
+    @ViewBuilder
+    private var adventureCard: some View {
+        if adventureLoaded {
+            Button {
+                Haptics.tap()
+                selectedTab = 1
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(Color.nostiaAccentSoft).frame(width: 44, height: 44)
+                        Image(systemName: "sparkles")
+                            .font(.nostiaBody(19, weight: .semibold))
+                            .foregroundColor(Color.nostiaAccent)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(adventureCardTitle)
+                            .font(.nostiaBody(15, weight: .bold))
+                            .foregroundColor(Color.nostiaTextPrimary)
+                            .lineLimit(1)
+                        Text(adventureCardSubtitle)
+                            .font(.nostiaBody(12))
+                            .foregroundColor(Color.nostiaTextSecond)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: "chevron.right")
+                        .font(.nostiaBody(13, weight: .semibold))
+                        .foregroundColor(Color.nostiaTextSecond)
+                }
+                .padding(14)
+                .nostiaCard(in: RoundedRectangle(cornerRadius: 18))
+            }
+            .buttonStyle(.nostiaTap)
+            .accessibilityLabel(adventureCardTitle)
+            .accessibilityHint(adventureCardSubtitle)
+        }
+    }
+
+    private var adventureCardTitle: String {
+        guard let adv = todaysAdventure, adv.isActive else { return "Today's adventure" }
+        return adv.title
+    }
+
+    /// Leads with concrete progress when the pedometer has reported any — "you're
+    /// partway there" is a much stronger reason to tap than a generic nudge.
+    private var adventureCardSubtitle: String {
+        guard let adv = todaysAdventure, adv.isActive else {
+            return "Start a quest and earn points toward a theme"
+        }
+        if let target = adv.stepsTarget, target > 0, adv.stepsProgress > 0 {
+            let pct = min(99, Int((Double(adv.stepsProgress) / Double(target)) * 100))
+            return "\(pct)% there — \(adv.stepsProgress)/\(target) steps · \(adv.points) pts"
+        }
+        return "In progress · \(adv.points) pts"
+    }
+
+    private func loadTodaysAdventure() async {
+        // Never surfaces an error: a failed fetch just leaves the card hidden.
+        let state = try? await AdventureAPI.shared.getCurrent()
+        todaysAdventure = state?.adventure
+        adventureLoaded = true
+    }
+
     private var orgsButton: some View {
         VStack(alignment: .leading, spacing: 10) {
             NostiaRowHeader(title: "Community", actionTitle: nil)

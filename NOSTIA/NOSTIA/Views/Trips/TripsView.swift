@@ -16,6 +16,53 @@ struct TripsView: View {
         let message: String
     }
 
+    /// Actionable empty state: says what a vault is *for*, then offers both ways in
+    /// (create, or join someone else's by QR) as real buttons.
+    private var vaultEmptyState: some View {
+        VStack(spacing: responsive.spacing(14)) {
+            Image(systemName: "creditcard")
+                .font(.nostiaBody(responsive.fontSize(52)))
+                .foregroundStyle(Color.nostiaAccent.opacity(0.7))
+
+            Text("No vaults yet")
+                .font(.title3.bold())
+                .foregroundColor(Color.nostiaTextPrimary)
+
+            Text("A vault is a shared pot for a trip or a night out — add the people you're with, log what everyone spends, and settle up without the maths.")
+                .font(.subheadline)
+                .foregroundColor(Color.nostiaTextSecond)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                Haptics.tap()
+                showCreateSheet = true
+            } label: {
+                Text("Create your first vault")
+                    .font(.nostiaBody(15, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.nostiaAccent, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.nostiaTap)
+            .padding(.top, 2)
+
+            Button {
+                Haptics.tap()
+                Task { await requestCameraAndScan() }
+            } label: {
+                Text("Join with a QR code")
+                    .font(.nostiaBody(14, weight: .semibold))
+                    .foregroundColor(Color.nostiaAccent)
+            }
+            .buttonStyle(.nostiaTap)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, responsive.spacing(44))
+        .padding(.horizontal, responsive.spacing(28))
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
@@ -31,7 +78,12 @@ struct TripsView: View {
                     if vm.isLoading && vm.trips.isEmpty {
                         VaultListSkeletonView()
                     } else if vm.trips.isEmpty {
-                        EmptyStateView(icon: "creditcard", text: "No vaults yet", sub: "Create your first vault!")
+                        // 0 of 54 users had ever created a vault. The old empty state
+                        // said "Create your first vault!" but wasn't tappable — the only
+                        // way in was the floating +, which reads as decoration on an
+                        // otherwise empty screen. Explain the feature and make the
+                        // empty state itself the button.
+                        vaultEmptyState
                     } else {
                         ForEach(vm.trips) { trip in
                             TripCard(trip: trip) {
