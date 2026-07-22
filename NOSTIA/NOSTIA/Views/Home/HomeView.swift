@@ -378,9 +378,6 @@ struct HomeView: View {
         }
     }
 
-    /// One "Community" section instead of a full-width promo per feature — orgs and
-    /// crash pads share a row of two compact cards, keeping Home short.
-    @ViewBuilder
     /// Today's adventure, promoted onto Home. Tapping switches to the Adventure
     /// tab rather than duplicating its logic here — the pedometer, generation and
     /// completion all stay in AdventureView; this is a signpost, not a second
@@ -453,6 +450,8 @@ struct HomeView: View {
         adventureLoaded = true
     }
 
+    /// One "Community" section instead of a full-width promo per feature — orgs and
+    /// crash pads share a row of two compact cards, keeping Home short.
     private var orgsButton: some View {
         VStack(alignment: .leading, spacing: 10) {
             NostiaRowHeader(title: "Community", actionTitle: nil)
