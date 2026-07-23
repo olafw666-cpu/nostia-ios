@@ -14,6 +14,9 @@ final class PlanViewModel: ObservableObject {
     @Published var locationDenied = false
     @Published var selectedVibe: PlanVibe?
     @Published var showDetail = false
+    /// Surfaced when the live-validation pass changed the plan under the user
+    /// — they must never find a swapped stop without being told why.
+    @Published var validationNote: String?
 
     private let api = PlansAPI.shared
 
@@ -78,12 +81,67 @@ final class PlanViewModel: ObservableObject {
 
     private func apply(_ resp: PlanResponse) {
         if let p = resp.plan {
+            let isNewPlan = plan?.id != p.id
             plan = p
             deadZoneReason = nil
+            if isNewPlan {
+                MapKitEnrichmentService.shared.clearMemo()
+                Task { await validateRenderedStops() }
+            }
         } else {
             // §13 dead zone: honest empty state, never a fake plan.
             plan = nil
             deadZoneReason = resp.reason ?? "Nothing composable nearby right now."
+        }
+    }
+
+    // MARK: - Live validation (§5)
+
+    /// Render-time liveness pass over the stops actually shown — never the
+    /// candidates the composer considered, which is what caps enrichment cost
+    /// (§11). A confident negative drops the stop and asks the server to
+    /// recompose; anything uncertain leaves the plan alone.
+    func validateRenderedStops() async {
+        guard let current = plan, current.isLive else { return }
+        for stop in current.stops where stop.status == "planned" && stop.completedByMe != true {
+            let result = await MapKitEnrichmentService.shared.enrich(
+                placeId: stop.placeId, name: stop.name, lat: stop.lat, lng: stop.lng
+            )
+            guard result.shouldRecompose else { continue }
+            do {
+                let resp = try await PlansAPI.shared.recompose(
+                    planId: current.id, stopId: stop.id, reason: result.recomposeReason
+                )
+                plan = resp.plan
+                validationNote = resp.swapped
+                    ? "\(stop.name) looked closed — swapped it out."
+                    : "\(stop.name) looked closed, and there was nothing else close by. Dropped it."
+                // The plan changed underneath us; re-run against the new set.
+                return await validateRenderedStops()
+            } catch {
+                // A failed recompose must not break the plan the user is holding.
+                return
+            }
+        }
+    }
+
+    /// Explicit "this place is gone" from the user — the freshest signal the
+    /// durable layer can get. Files the report, then recomposes the stop.
+    func reportStopClosed(_ stop: PlanStop) async {
+        guard let current = plan else { return }
+        if let placeId = stop.placeId {
+            try? await PlansAPI.shared.reportPlace(placeId: placeId, reason: "closed")
+        }
+        do {
+            let resp = try await PlansAPI.shared.recompose(
+                planId: current.id, stopId: stop.id, reason: "closed"
+            )
+            plan = resp.plan
+            validationNote = resp.swapped
+                ? "Thanks — swapped in somewhere else."
+                : "Thanks. Nothing else nearby fit, so that stop is off the plan."
+        } catch {
+            validationNote = "Couldn't update the plan. Try again."
         }
     }
 }

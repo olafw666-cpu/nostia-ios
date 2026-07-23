@@ -110,6 +110,30 @@ final class PlansAPI {
     func createVault(planId: Int) async throws -> PlanVaultResponse {
         try await client.request("/plans/\(planId)/vault", method: "POST")
     }
+
+    // MARK: - Live validation (§5)
+
+    /// Drop-and-recompose after a render-time liveness failure. The server
+    /// swaps in the best same-category candidate within walking range, or
+    /// drops the stop when the layer has nothing left. Only the verdict
+    /// travels — never any enrichment data.
+    func recompose(planId: Int, stopId: Int, reason: String) async throws -> RecomposeResponse {
+        try await client.request(
+            "/plans/\(planId)/stops/\(stopId)/recompose", method: "POST",
+            body: ["reason": reason]
+        )
+    }
+
+    /// User-reported dead venue. K distinct reporters tombstone the place so
+    /// it is never served again.
+    func reportPlace(placeId: Int, reason: String) async throws {
+        try await client.requestVoid("/places/\(placeId)/report", method: "POST", body: ["reason": reason])
+    }
+}
+
+struct RecomposeResponse: Codable {
+    let plan: AdventurePlan
+    let swapped: Bool
 }
 
 struct PlanVaultResponse: Codable {

@@ -87,6 +87,23 @@ struct PlanDetailView: View {
 
                 timeline(plan)
 
+                // The live-validation pass can change the plan while the user
+                // is looking at it (§5 drop-and-recompose) — say so plainly.
+                if let note = vm.validationNote {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.nostiaBody(13, weight: .bold))
+                            .foregroundColor(Color.nostiaAccent)
+                        Text(note)
+                            .font(.nostiaBody(13))
+                            .foregroundColor(Color.nostiaTextSecond)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                    }
+                    .padding(12)
+                    .nostiaCard(cornerRadius: 14)
+                }
+
                 if let status = photoStatus {
                     Text(status)
                         .font(.nostiaBody(13))
@@ -174,6 +191,17 @@ struct PlanDetailView: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+        // Standing at a shuttered venue is the freshest liveness signal there
+        // is (§5) — one tap files it and recomposes the stop.
+        .contextMenu {
+            if stop.status == "planned" && stop.completedByMe != true {
+                Button(role: .destructive) {
+                    Task { await vm.reportStopClosed(stop) }
+                } label: {
+                    Label("This place is closed", systemImage: "xmark.circle")
+                }
+            }
+        }
     }
 
     // MARK: - Verification (§6)
