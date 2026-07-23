@@ -33,19 +33,17 @@ struct RootView: View {
             .id(themeManager.accentTheme)
         }
         .fullScreenCover(isPresented: $showProfileBuilder, onDismiss: {
-            // Right after first-time profile setup, offer to set up payments. Guarded by
-            // isAuthenticated so logging out mid-setup doesn't surface the prompt.
-            if authManager.isAuthenticated { showPaymentSetupPrompt = true }
+            // Activation budget (v2 §4: under 90 seconds to a real plan): the
+            // payment cover is OUT of the first-run chain — cards are asked for
+            // contextually, at the first vault (Settings → Payment still works).
+            // Profile → straight to the (3-page) tour → home.
+            maybeShowAppTour()
         }) {
             ProfileBuilderView {
                 showProfileBuilder = false
             }
         }
-        .fullScreenCover(isPresented: $showPaymentSetupPrompt, onDismiss: {
-            // End of the first-run cover chain (profile → payments): a fresh signup
-            // now gets the app tour before anything else competes for the screen.
-            maybeShowAppTour()
-        }) {
+        .fullScreenCover(isPresented: $showPaymentSetupPrompt) {
             PaymentSetupPromptView {
                 showPaymentSetupPrompt = false
             }
@@ -80,7 +78,7 @@ struct RootView: View {
         .alert("Joined Vault", isPresented: $showInviteJoined) {
             Button("OK") {}
         } message: {
-            Text("You've been added to \"\(inviteJoinedVault ?? "the vault")\". Check your Vaults tab.")
+            Text("You've been added to \"\(inviteJoinedVault ?? "the vault")\". Find it under Profile → Your Vaults.")
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogin)) { _ in
             authManager.isAuthenticated = true

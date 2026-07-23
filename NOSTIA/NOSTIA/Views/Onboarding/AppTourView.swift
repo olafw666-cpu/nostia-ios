@@ -15,73 +15,44 @@ struct AppTourView: View {
         let icon: String
         let title: String
         let rows: [(icon: String, text: String)]
-        /// Tab shown behind the scrim while this page is up (Atlas order:
-        /// Home 0 · Adventure 1 · Vaults 2 · Map 3 · Following 4).
+        /// Tab shown behind the scrim while this page is up (v2 IA:
+        /// Adventure 0 · Friends 1).
         let tab: Int
     }
 
-    // Order mirrors a new user's first session: get oriented, then create,
-    // discover, split costs, and follow people.
+    // Three pages, matching the product (v2 §3): start an adventure, show up
+    // to verify it, bring your people. Short on purpose — the activation
+    // budget is 90 seconds and the plan is the pitch, not the tour.
     private static let pages: [TourPage] = [
         TourPage(
-            icon: "hand.wave.fill",
-            title: "Welcome to Nostia",
+            icon: "sparkles",
+            title: "Start an adventure",
             rows: [
-                ("circle.grid.2x2.fill", "The bottom bar moves you around: Home, Adventure, Vaults, Map and Following."),
-                ("bell.fill", "The bell (top right) holds your notifications; your avatar opens your profile and settings."),
-                ("sparkles", "This quick tour shows you the essentials — you can skip it anytime."),
+                ("wand.and.stars", "One tap composes a real plan from where you're standing — a few stops, short walks, timed out."),
+                ("arrow.triangle.2.circlepath", "Not feeling it? Reroll. It's free, and the next plan is always different."),
+                ("map.fill", "Flip the List/Map toggle to see everything around you."),
             ],
             tab: 0
         ),
         TourPage(
-            icon: "house.fill",
-            title: "Home",
+            icon: "checkmark.seal.fill",
+            title: "Show up to make it count",
             rows: [
-                ("square.text.square.fill", "Your feed shows posts from people you follow."),
-                ("wand.and.stars", "For You picks experiences happening near you."),
-                ("magnifyingglass", "Search experiences, or browse rows like Outdoors and Food & Nightlife."),
+                ("location.fill", "At each stop, tap \"I'm here\" — hang out a minute and the stop verifies itself."),
+                ("camera.fill", "Add a photo if you want the night remembered; rate the plan when you're done."),
+                ("star.circle.fill", "Verified stops earn points — spend them in the theme store."),
             ],
             tab: 0
-        ),
-        TourPage(
-            icon: "plus.circle.fill",
-            title: "Create an Experience",
-            rows: [
-                ("hand.tap.fill", "Swipe to the end of For You and tap Create Experience — or press and hold anywhere on the Map."),
-                ("tag.fill", "Give it a title and up to 3 tags so the right people find it."),
-                ("eye.fill", "Choose who sees it — everyone, or just your followers."),
-            ],
-            tab: 0
-        ),
-        TourPage(
-            icon: "map.fill",
-            title: "Find It on the Map",
-            rows: [
-                ("mappin.circle.fill", "Every pin is an experience — tap one for details and to join in."),
-                ("magnifyingglass", "Search any place or address to jump the map there."),
-                ("line.3.horizontal.decrease.circle.fill", "Filter with the Public and Private pills, plus activity tags."),
-            ],
-            tab: 3
-        ),
-        TourPage(
-            icon: "wallet.bifold.fill",
-            title: "Vaults",
-            rows: [
-                ("plus.circle.fill", "Tap the + button to create a vault — a shared pot for a trip or a night out."),
-                ("person.2.badge.plus", "Add people you follow, or let anyone scan the vault's QR code to join."),
-                ("creditcard.fill", "Log expenses, split costs and settle up right in the app."),
-            ],
-            tab: 2
         ),
         TourPage(
             icon: "person.2.fill",
-            title: "Add Friends",
+            title: "Bring your people",
             rows: [
-                ("magnifyingglass", "Search anyone by name or username and tap Follow."),
-                ("person.crop.circle.badge.plus", "Find via Contacts shows you who you already know on Nostia."),
-                ("sparkles", "Check the suggestions row for people near you worth following."),
+                ("square.text.square.fill", "The Friends tab holds your feed — your people and your area, nothing else."),
+                ("person.crop.circle.badge.plus", "Find friends by search or Contacts; orgs and crash pads live under Community."),
+                ("wallet.bifold.fill", "Splitting costs? A vault lives right inside your plan."),
             ],
-            tab: 4
+            tab: 1
         ),
     ]
 
@@ -173,15 +144,11 @@ struct AppTourView: View {
         showTab(for: Self.pages[index])
     }
 
-    /// Bring the described screen up behind the scrim. Reaching the Map page also marks
-    /// the one-time map intro as seen — this page covers the same ground, so letting
-    /// `MapIntroOverlay` greet the user again right after the tour (or render dimmed
-    /// underneath it) would be redundant.
+    /// Bring the described screen up behind the scrim. The tour covers the
+    /// map's ground too, so the one-time map intro is marked seen here.
     private func showTab(for page: TourPage) {
         deepLinkRouter.selectedTab = page.tab
-        if page.tab == 3 {
-            UserDefaults.standard.set(true, forKey: "hasSeenMapIntro")
-        }
+        UserDefaults.standard.set(true, forKey: "hasSeenMapIntro")
     }
 
     private var pageDots: some View {

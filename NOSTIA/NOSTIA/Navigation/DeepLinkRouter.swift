@@ -61,9 +61,10 @@ final class DeepLinkRouter: ObservableObject {
     func route(_ target: Target) {
         switch target {
         case .vault(let tripId):
-            selectedTab = 2             // Vaults tab (Atlas order: Home·Adventure·Vaults·Map·Following)
+            // Vaults stopped being a tab in the IA collapse (v2 §3) — MainTabView
+            // presents the vault list as a sheet; TripsView consumes the trip id.
             if let tripId { pendingVaultTripId = tripId }
-        case .adventure: selectedTab = 1
+        case .adventure: selectedTab = 0 // Adventure IS the home tab now
         case .event, .profile, .notifications:
             break                       // presented modally over the current tab (MainTabView
                                         // fetches the experience for `.event` and sheets it)

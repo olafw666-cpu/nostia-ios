@@ -99,6 +99,8 @@ struct PlanDetailView: View {
 
                 if plan.isGenerated {
                     actions(plan)
+                } else if plan.isLive {
+                    vaultRow(plan)
                 }
             }
             .padding(18)
@@ -286,6 +288,43 @@ struct PlanDetailView: View {
         } catch {
             photoStatus = "Photo upload failed. Try again."
         }
+    }
+
+    // MARK: - Contextual vault (§3: where the expense actually occurs)
+
+    private func vaultRow(_ plan: AdventurePlan) -> some View {
+        Button {
+            Haptics.tap()
+            Task {
+                do {
+                    let resp = try await PlansAPI.shared.createVault(planId: plan.id)
+                    await vm.loadCurrent()
+                    dismiss()
+                    // The vault list sheet presents over the home tab and opens
+                    // the linked trip — same plumbing vault pushes use.
+                    DeepLinkRouter.shared.route(.vault(tripId: resp.tripId))
+                } catch {
+                    photoStatus = "Couldn't set up the vault. Try again."
+                }
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "wallet.bifold.fill")
+                    .font(.nostiaBody(15, weight: .bold))
+                    .foregroundColor(Color.nostiaAccent)
+                Text(plan.tripId == nil ? "Split costs — set up a vault" : "Open this plan's vault")
+                    .font(.nostiaBody(15, weight: .semibold))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.nostiaBody(13, weight: .bold))
+                    .foregroundColor(Color.nostiaTextMuted)
+            }
+            .padding(14)
+        }
+        .buttonStyle(.nostiaTap)
+        .nostiaCard(cornerRadius: 16)
+        .accessibilityLabel(plan.tripId == nil ? "Set up a vault for this plan" : "Open this plan's vault")
     }
 
     // MARK: - Rating (§6: one tap, only after a confirmed completion)

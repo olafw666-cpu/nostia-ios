@@ -82,6 +82,29 @@ actor AuthAPI {
         return res
     }
 
+    /// Sign in with Apple (v2 §4.1: minimal auth). The server verifies the
+    /// identity token against Apple's JWKS and finds-or-creates the account by
+    /// its stable `sub`. `created` = brand-new account (queue first-run setup).
+    func appleLogin(identityToken: String, name: String?) async throws -> (response: AuthResponse, created: Bool) {
+        struct AppleLoginResponse: Codable {
+            let token: String
+            let refreshToken: String?
+            let user: User
+            let created: Bool?
+        }
+        var body: [String: Any] = ["identity_token": identityToken]
+        if let name, !name.isEmpty { body["name"] = name }
+        let res: AppleLoginResponse = try await client.request(
+            "/auth/apple",
+            method: "POST",
+            body: body,
+            requiresAuth: false
+        )
+        AuthManager.shared.saveToken(res.token)
+        if let rt = res.refreshToken { AuthManager.shared.saveRefreshToken(rt) }
+        return (AuthResponse(token: res.token, refreshToken: res.refreshToken, user: res.user), res.created ?? false)
+    }
+
     // Exchange a refresh token for a new access + refresh token pair.
     // Deduplicates concurrent calls — if a refresh is already in flight, all callers
     // await the same Task so token rotation only happens once.

@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct LoginView: View {
@@ -84,6 +85,25 @@ struct LoginView: View {
                         .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 12, y: 6)
                     }
                     .disabled(vm.isLoading)
+
+                    // v2 §4.1 minimal auth: one tap in, no form. Works for both
+                    // returning and brand-new accounts (find-or-create by the
+                    // token's stable sub claim).
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        guard case .success(let auth) = result,
+                              let credential = auth.credential as? ASAuthorizationAppleIDCredential,
+                              let tokenData = credential.identityToken,
+                              let token = String(data: tokenData, encoding: .utf8) else { return }
+                        let name = [credential.fullName?.givenName, credential.fullName?.familyName]
+                            .compactMap { $0 }.joined(separator: " ")
+                        Task { await vm.appleSignIn(identityToken: token, name: name.isEmpty ? nil : name) }
+                    }
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 50)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityLabel("Sign in with Apple")
 
                     Divider().background(Color.nostriaBorder)
 

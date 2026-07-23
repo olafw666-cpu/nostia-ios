@@ -184,6 +184,22 @@ struct ProfileView: View {
                             .buttonStyle(.nostiaTap)
                             .padding(.horizontal, responsive.spacing(20))
 
+                            // Vaults stopped being a tab in the IA collapse
+                            // (v2 §3) — this row and the contextual entry on a
+                            // plan are how the surface is reached now.
+                            Button {
+                                activeSheet = .vaults
+                            } label: {
+                                Label("Your Vaults", systemImage: "wallet.bifold")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(Color.nostiaTextPrimary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(responsive.spacing(16))
+                                    .nostiaButton(in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.nostiaTap)
+                            .padding(.horizontal, responsive.spacing(20))
+
                             Button {
                                 activeSheet = .settings
                             } label: {
@@ -313,6 +329,13 @@ struct ProfileView: View {
             case .organizations:
                 OrganizationsHubView()
                     .presentationBackground(Color.nostiaBackground)
+            case .vaults:
+                NavigationStack {
+                    TripsView()
+                        .background(Color.nostiaBackground.ignoresSafeArea())
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                }
+                .presentationBackground(Color.nostiaBackground)
             case .analytics:
                 NavigationStack {
                     AnalyticsView()
@@ -567,6 +590,7 @@ enum ProfileTab: Hashable {
 enum ProfileSheet: Identifiable {
     case settings
     case organizations
+    case vaults
     case analytics
     case createPost
     case editPost(FeedPost)
@@ -576,6 +600,7 @@ enum ProfileSheet: Identifiable {
         switch self {
         case .settings:           return "settings"
         case .organizations:      return "organizations"
+        case .vaults:             return "vaults"
         case .analytics:          return "analytics"
         case .createPost:         return "createPost"
         case .editPost(let post): return "editPost-\(post.id)"

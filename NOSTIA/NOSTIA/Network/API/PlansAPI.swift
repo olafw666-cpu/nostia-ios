@@ -104,4 +104,20 @@ final class PlansAPI {
     func rate(planId: Int, rating: Int) async throws {
         try await client.requestVoid("/plans/\(planId)/rate", method: "POST", body: ["rating": rating])
     }
+
+    /// Contextual vault (§3): creates/links a trip for this plan with every
+    /// member aboard. Idempotent — returns the existing trip when one is linked.
+    func createVault(planId: Int) async throws -> PlanVaultResponse {
+        try await client.request("/plans/\(planId)/vault", method: "POST")
+    }
+}
+
+struct PlanVaultResponse: Codable {
+    let tripId: Int
+    let created: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case created
+        case tripId = "trip_id"
+    }
 }

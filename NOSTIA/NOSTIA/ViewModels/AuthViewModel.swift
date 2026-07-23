@@ -88,6 +88,29 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    /// Sign in with Apple (v2 §4.1): one tap to a session. A brand-new account
+    /// queues the same first-run setup a password signup gets — minus any
+    /// extraction that could be skipped (no consent quiz here; ToS/privacy are
+    /// linked on the auth screen and recorded server-side as 'apple-signin').
+    func appleSignIn(identityToken: String, name: String?) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let (_, created) = try await AuthAPI.shared.appleLogin(identityToken: identityToken, name: name)
+            if created {
+                UserDefaults.standard.set(true, forKey: "nostia_pending_profile_setup")
+                UserDefaults.standard.set(true, forKey: "nostia_pending_app_tour")
+            }
+            NotificationCenter.default.post(name: .userDidLogin, object: nil)
+            isLoading = false
+            return true
+        } catch {
+            errorMessage = "Apple sign-in didn't go through. Try again."
+            isLoading = false
+            return false
+        }
+    }
+
     private func enrollPasskeyQuietly() async {
         do {
             let options = try await PasskeyAPI.shared.registrationOptions()

@@ -9,37 +9,28 @@ struct MainTabView: View {
     @State private var deepLinkProfileUserId: Int?
     @State private var deepLinkExperience: Experience?
     @State private var deepLinkActionsVM = ExperienceActionsViewModel()
+    @State private var showVaults = false
     @State private var headerImageData: String?
     @State private var headerInitial: String = "U"
 
-    // Atlas bottom-nav order: Home · Adventure · Vaults · Map · Following.
-    // Adventure replaced Explore in the same slot (Adventure Page spec §1); Home is
-    // the discovery surface, and its search bar / "See all"s open ExperienceSearchSheet.
+    // IA collapse (Product Definition v2 §3): two tabs. Adventure is the home
+    // screen and the app's identity (List/Map toggle inside it — the old Map
+    // tab is a view mode now); Friends holds the feed, the graph, and
+    // Community. Vault is contextual (inside a plan / Profile), not a
+    // destination. Old surfaces stay compiled and reachable as screens.
     private let tabs: [AtlasTabBar.Item] = [
-        .init(tab: 0, icon: "house.fill", label: "Home"),
-        .init(tab: 1, icon: "sparkles", label: "Adventure"),
-        .init(tab: 2, icon: "wallet.bifold.fill", label: "Vaults"),
-        .init(tab: 3, icon: "map.fill", label: "Map"),
-        .init(tab: 4, icon: "person.2.fill", label: "Following"),
+        .init(tab: 0, icon: "sparkles", label: "Adventure"),
+        .init(tab: 1, icon: "person.2.fill", label: "Friends"),
     ]
 
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $deepLinkRouter.selectedTab) {
                 tab(0) {
-                    HomeView(selectedTab: $deepLinkRouter.selectedTab)
+                    AdventureHomeView()
                 }
                 tab(1) {
-                    AdventureView()
-                }
-                tab(2) {
-                    TripsView()
-                }
-                tab(3) {
-                    FriendsMapView()
-                }
-                tab(4) {
-                    FriendsView()
+                    FriendsHubView()
                 }
             }
             .tint(Color.nostiaAccent)
@@ -111,6 +102,22 @@ struct MainTabView: View {
         // screen no longer depends on which tab (if any) shows experiences.
         .sheet(item: $deepLinkExperience) { event in
             ExperienceDetailSheet(event: event, vm: deepLinkActionsVM)
+        }
+        // Vaults are contextual now, not a tab (v2 §3): vault pushes and the
+        // Profile → Your Vaults row land here.
+        .sheet(isPresented: $showVaults) {
+            NavigationStack {
+                TripsView()
+                    .background(Color.nostiaBackground.ignoresSafeArea())
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") { showVaults = false }
+                                .foregroundColor(Color.nostiaAccent)
+                        }
+                    }
+                    .toolbarBackground(.hidden, for: .navigationBar)
+            }
+            .presentationBackground(Color.nostiaBackground)
         }
         .sheet(isPresented: $showProfile, onDismiss: { loadHeaderUser() }) {
             NavigationStack {
@@ -202,8 +209,11 @@ struct MainTabView: View {
         )
     }
 
-    /// React to a tapped push (Section 3.3). Tab switching is handled by the router;
-    /// here we present the modal targets (profile, notifications).
+    /// React to a tapped push (Section 3.3). Adventure targets switch to the
+    /// home tab via the router; modal targets present here. Vaults stopped
+    /// being a tab in the IA collapse, so vault pushes present the vault list
+    /// as a sheet — TripsView still consumes pendingVaultTripId to open the
+    /// right trip.
     private func handleDeepLink(_ target: DeepLinkRouter.Target?) {
         guard let target else { return }
         switch target {
@@ -217,7 +227,9 @@ struct MainTabView: View {
         case .notifications:
             showNotifications = true
             PushNotificationManager.shared.clearBadge()
-        case .vault, .adventure:
+        case .vault:
+            showVaults = true
+        case .adventure:
             break // tab already selected by the router
         }
         loadUnreadCount()
