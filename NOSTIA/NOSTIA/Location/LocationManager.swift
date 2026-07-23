@@ -66,6 +66,23 @@ final class LocationManager: NSObject, ObservableObject {
         manager.startUpdatingLocation()
     }
 
+    /// In-context acquisition for "Start an adventure" (Product Definition v2
+    /// §4.2): permission is asked at the moment it buys the user something —
+    /// the tap that needs a location — never on a cold splash screen. Awaits a
+    /// reasonably fresh fix; returns nil on denial or timeout so callers can
+    /// degrade honestly (denied state has its own UI, never a silent failure).
+    func acquireLocation(timeout: TimeInterval = 8) async -> CLLocation? {
+        if let loc = location, loc.timestamp.timeIntervalSinceNow > -300 { return loc }
+        requestLocationOnce() // asks permission if undetermined; the grant callback requests the fix
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if permissionDenied { return nil }
+            if let loc = location, loc.timestamp.timeIntervalSinceNow > -300 { return loc }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+        return location // stale beats nothing for composing a nearby plan
+    }
+
     func stopUpdating() {
         manager.stopUpdatingLocation()
     }

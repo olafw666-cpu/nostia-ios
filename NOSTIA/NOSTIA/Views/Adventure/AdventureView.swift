@@ -7,6 +7,7 @@ import SwiftUI
 struct AdventureView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = AdventureViewModel()
+    @StateObject private var planVM = PlanViewModel()
     @State private var selectedDifficulty: AdventureDifficulty = .easy
     @State private var showStore = false
     @State private var showDiscardConfirm = false
@@ -18,6 +19,10 @@ struct AdventureView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+
+                // Composed plans (Product Definition v2 §4) ship above the
+                // pedometer quest until the IA collapse makes them the home.
+                PlanTonightSection(vm: planVM)
 
                 if viewModel.isLoading {
                     ProgressView()
@@ -34,7 +39,10 @@ struct AdventureView: View {
             .padding(.bottom, 110) // clear the floating tab bar
         }
         .background(Color.nostiaBackground.ignoresSafeArea())
-        .onAppear { viewModel.onAppear() }
+        .onAppear {
+            viewModel.onAppear()
+            Task { await planVM.loadCurrent() }
+        }
         .onDisappear { viewModel.onDisappear() }
         .onChange(of: scenePhase) { _, phase in
             // A backgrounded app misses nothing — the pedometer logs in hardware and
