@@ -50,4 +50,58 @@ final class PlansAPI {
     func accept(planId: Int) async throws -> PlanResponse {
         try await client.request("/plans/\(planId)/accept", method: "POST")
     }
+
+    // MARK: - Completion verification (§6)
+
+    /// Geofence dwell batch. A 422 means the batch didn't survive validation
+    /// (too short, outside the fence, implausible) — surfaced as `httpError`
+    /// with the server's reason so the UI can say why.
+    func verifyDwell(planId: Int, stopId: Int, samples: [[String: Any]]) async throws -> DwellResponse {
+        try await client.request(
+            "/plans/\(planId)/stops/\(stopId)/dwell", method: "POST",
+            body: ["samples": samples]
+        )
+    }
+
+    func captureToken(planId: Int, stopId: Int) async throws -> CaptureTokenResponse {
+        try await client.request("/plans/\(planId)/stops/\(stopId)/capture-token", method: "POST")
+    }
+
+    /// Multipart photo upload. Self-contained (APIClient is JSON-only): the
+    /// JPEG never touches disk on the way out, matching the in-app-camera-only
+    /// capture contract.
+    func uploadStopPhoto(planId: Int, stopId: Int, jpeg: Data, nonce: String) async throws -> PhotoAttachResponse {
+        guard let url = URL(string: AppConfig.apiBaseURL + "/plans/\(planId)/stops/\(stopId)/photo") else {
+            throw APIError.invalidURL
+        }
+        guard let token = AuthManager.shared.getToken() else { throw APIError.noToken }
+
+        let boundary = "nostia-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        func field(_ s: String) { body.append(Data(s.utf8)) }
+        field("--\(boundary)\r\nContent-Disposition: form-data; name=\"nonce\"\r\n\r\n\(nonce)\r\n")
+        field("--\(boundary)\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"stop.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n")
+        body.append(jpeg)
+        field("\r\n--\(boundary)--\r\n")
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.unknown }
+        guard (200..<300).contains(http.statusCode) else {
+            let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.error
+                ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+            throw APIError.httpError(statusCode: http.statusCode, message: msg)
+        }
+        return try JSONDecoder().decode(PhotoAttachResponse.self, from: data)
+    }
+
+    /// One tap, server-gated on a confirmed completion (§6).
+    func rate(planId: Int, rating: Int) async throws {
+        try await client.requestVoid("/plans/\(planId)/rate", method: "POST", body: ["rating": rating])
+    }
 }

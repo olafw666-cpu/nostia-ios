@@ -61,14 +61,17 @@ struct PlanStop: Codable, Identifiable, Equatable {
     let legMeters: Int
     let legWalkMinutes: Int
     let status: String         // planned | dropped | completed
+    let completions: Int?      // confirmed completions across members
+    let completedByMe: Bool?   // viewer has a geofence-confirmed completion
 
     enum CodingKeys: String, CodingKey {
-        case id, ord, name, lat, lng, category, status
+        case id, ord, name, lat, lng, category, status, completions
         case placeId = "place_id"
         case plannedArrival = "planned_arrival"
         case dwellMinutes = "dwell_minutes"
         case legMeters = "leg_meters"
         case legWalkMinutes = "leg_walk_minutes"
+        case completedByMe = "completed_by_me"
     }
 
     var arrivalDate: Date? { PlanDates.parse(plannedArrival) }
@@ -109,6 +112,47 @@ struct PlanMember: Codable, Identifiable, Equatable {
 struct PlanResponse: Codable {
     let plan: AdventurePlan?
     let reason: String?
+}
+
+// MARK: - Completion verification wire types (§6)
+
+/// POST /api/plans/:id/stops/:stopId/dwell
+struct DwellResponse: Codable {
+    let completion: DwellCompletion
+    let stopsCompleted: Int
+    let stopsTotal: Int
+
+    enum CodingKeys: String, CodingKey {
+        case completion
+        case stopsCompleted = "stops_completed"
+        case stopsTotal = "stops_total"
+    }
+}
+
+struct DwellCompletion: Codable {
+    let id: Int
+    let stopId: Int
+    let method: String
+    let dwellSeconds: Int
+    let corroborated: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, method, corroborated
+        case stopId = "stop_id"
+        case dwellSeconds = "dwell_seconds"
+    }
+}
+
+/// POST /api/plans/:id/stops/:stopId/capture-token
+struct CaptureTokenResponse: Codable {
+    let nonce: String
+}
+
+/// POST /api/plans/:id/stops/:stopId/photo
+struct PhotoAttachResponse: Codable {
+    let verdict: String        // pass | fail | unsafe | inconclusive | unjudged
+    let attached: Bool
+    let method: String?
 }
 
 // MARK: - Date parsing
