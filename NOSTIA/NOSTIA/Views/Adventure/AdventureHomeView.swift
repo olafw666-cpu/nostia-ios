@@ -6,6 +6,7 @@ import SwiftUI
 /// what the Experiences surface used to do. Vault and the theme store are
 /// screens reached from here, not destinations.
 struct AdventureHomeView: View {
+    @EnvironmentObject private var deepLinkRouter: DeepLinkRouter
     @StateObject private var planVM = PlanViewModel()
     @State private var viewMode: ViewMode = .list
     @State private var pointsBalance = 0
@@ -49,7 +50,20 @@ struct AdventureHomeView: View {
             await planVM.loadCurrent()
             await loadPoints()
             await loadNearby()
+            // A shared invite link may have arrived before this view mounted.
+            consumePendingInvite(deepLinkRouter.pendingTarget)
         }
+        .onChange(of: deepLinkRouter.pendingTarget) { _, target in
+            consumePendingInvite(target)
+        }
+    }
+
+    /// Redeem a shared plan link (§4.6). Joining is what the k-factor counts,
+    /// so this path has to work from a cold launch too.
+    private func consumePendingInvite(_ target: DeepLinkRouter.Target?) {
+        guard case .planInvite(let token) = target else { return }
+        deepLinkRouter.clear()
+        Task { await planVM.redeem(token: token) }
     }
 
     // MARK: - List side

@@ -12,7 +12,8 @@ final class DeepLinkRouter: ObservableObject {
         case vault(tripId: Int?)     // expense reminder, added-to-vault, payment received
         case profile(userId: Int)    // new follower
         case event(eventId: Int)     // event invite
-        case adventure               // daily adventure ready (Adventure Page spec §2)
+        case adventure               // adventure home
+        case planInvite(token: String) // shared plan link (v2 §4.6)
         case notifications           // fallback
     }
 
@@ -53,6 +54,10 @@ final class DeepLinkRouter: ObservableObject {
             else { route(.notifications) }
         case "adventure_ready":
             route(.adventure)
+        case "plan_invite":
+            // A pushed plan invite already added the member server-side, so
+            // landing on the adventure home shows the plan directly.
+            route(.adventure)
         default:
             route(.notifications)
         }
@@ -65,6 +70,7 @@ final class DeepLinkRouter: ObservableObject {
             // presents the vault list as a sheet; TripsView consumes the trip id.
             if let tripId { pendingVaultTripId = tripId }
         case .adventure: selectedTab = 0 // Adventure IS the home tab now
+        case .planInvite: selectedTab = 0 // redeemed on the home tab
         case .event, .profile, .notifications:
             break                       // presented modally over the current tab (MainTabView
                                         // fetches the experience for `.event` and sheets it)

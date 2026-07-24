@@ -43,6 +43,12 @@ struct PlanDetailView: View {
             }
             .toolbarBackground(.hidden, for: .navigationBar)
         }
+        .sheet(item: $vm.shareLink) { target in
+            ShareSheet(items: [
+                "Come out tonight — \(vm.plan?.title ?? "an adventure") on Nostia",
+                target.url,
+            ])
+        }
         .fullScreenCover(item: $photoStop) { stop in
             CameraCaptureView(
                 promptText: "At \(stop.name) — grab the moment",
@@ -84,6 +90,10 @@ struct PlanDetailView: View {
                         .font(.nostiaBody(13, weight: .semibold))
                         .foregroundColor(Color.nostiaTextMuted)
                 }
+
+                // §4.6: the invite is part of the plan artifact — same screen,
+                // pre-populated, never a follow-up prompt.
+                inviteRow(plan)
 
                 timeline(plan)
 
@@ -316,6 +326,95 @@ struct PlanDetailView: View {
         } catch {
             photoStatus = "Photo upload failed. Try again."
         }
+    }
+
+    // MARK: - Invite (§4.6)
+
+    @ViewBuilder
+    private func inviteRow(_ plan: AdventurePlan) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(plan.members.count > 1 ? "Going" : "Who's coming?")
+                    .font(.nostiaBody(15, weight: .bold))
+                    .foregroundColor(Color.nostiaTextPrimary)
+                Spacer()
+                Button {
+                    Haptics.tap()
+                    Task { await vm.makeShareLink() }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.nostiaBody(12, weight: .bold))
+                        Text("Share")
+                            .font(.nostiaBody(13, weight: .semibold))
+                    }
+                    .foregroundColor(Color.nostiaAccent)
+                }
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel("Share an invite link")
+            }
+
+            if plan.members.count > 1 {
+                HStack(spacing: -6) {
+                    ForEach(plan.members) { member in
+                        UserAvatarView(
+                            imageData: nil,
+                            initial: String((member.name ?? member.username).prefix(1)).uppercased(),
+                            color: member.role == "owner" ? Color.nostiaAccent : Color.nostiaBlue,
+                            size: 30
+                        )
+                        .overlay(Circle().stroke(Color.nostiaCard, lineWidth: 2))
+                    }
+                    Spacer()
+                }
+            }
+
+            if !vm.inviteSuggestions.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(vm.inviteSuggestions) { person in
+                            Button {
+                                Haptics.tap()
+                                Task { await vm.invite(person) }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    UserAvatarView(
+                                        imageData: nil,
+                                        initial: person.initial,
+                                        color: Color.nostiaAccent,
+                                        size: 24
+                                    )
+                                    Text(person.displayName)
+                                        .font(.nostiaBody(13, weight: .semibold))
+                                        .foregroundColor(Color.nostiaTextPrimary)
+                                        .lineLimit(1)
+                                    Image(systemName: vm.invitedUserIds.contains(person.id) ? "checkmark" : "plus")
+                                        .font(.nostiaBody(11, weight: .bold))
+                                        .foregroundColor(Color.nostiaAccent)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(Color.nostiaButton)
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.nostiaTap)
+                            .disabled(vm.invitedUserIds.contains(person.id))
+                            .accessibilityLabel("Invite \(person.displayName)")
+                        }
+                    }
+                }
+            } else if plan.members.count <= 1 {
+                // n=1 with zero friends is a first-class state (§4.6): say
+                // something useful instead of an empty shelf.
+                Text("Going solo works too — share the link if someone should come along.")
+                    .font(.nostiaBody(13))
+                    .foregroundColor(Color.nostiaTextSecond)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .nostiaCard(cornerRadius: 18)
+        .task(id: plan.id) { await vm.loadInviteSuggestions() }
     }
 
     // MARK: - Contextual vault (§3: where the expense actually occurs)

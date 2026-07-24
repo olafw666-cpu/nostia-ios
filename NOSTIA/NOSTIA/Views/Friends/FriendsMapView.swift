@@ -21,6 +21,13 @@ struct FriendsMapView: View {
     @State private var viewportTask: Task<Void, Never>?
     @State private var lastRegion: MKCoordinateRegion?
 
+    // Place pins (v2 §7): verified (human-completed) vs suggested (generated,
+    // unvisited). Server decides the mix — verified first, suggested only
+    // backfills below the density threshold.
+    @State private var placePins: [PlacePin] = []
+    @State private var selectedPlacePin: PlacePin?
+    @State private var showVerifiedOnly = false
+
     // Heatmap (far-out zoom). Filter toggles are session-only @State → reset on app restart.
     @State private var viewportRadiusMiles: Double = 0
     @State private var heatmapCells: [HeatmapCell] = []
@@ -115,6 +122,28 @@ struct FriendsMapView: View {
                         }
                     }
 
+                    // Place pins (v2 §7): Verified (human-completed) and
+                    // Suggested (generated, unvisited) render as different
+                    // SHAPES, and verified always outranks suggested. Hidden
+                    // at heatmap zoom like the experience pins.
+                    if !isHeatmapMode {
+                        ForEach(placePins) { pin in
+                            Annotation(pin.name, coordinate: CLLocationCoordinate2D(
+                                latitude: pin.lat, longitude: pin.lng
+                            ), anchor: .bottom) {
+                                Button { selectedPlacePin = pin } label: {
+                                    if pin.isVerified {
+                                        VerifiedPlacePin(pin: pin)
+                                    } else {
+                                        SuggestedPlacePin(pin: pin)
+                                    }
+                                }
+                                .buttonStyle(.nostiaTap)
+                                .transition(.opacity)
+                            }
+                        }
+                    }
+
                     // Heatmap density blobs — shown only at far-out zoom.
                     if isHeatmapMode {
                         ForEach(heatmapCells) { cell in
@@ -157,6 +186,7 @@ struct FriendsMapView: View {
                             await loadHeatmap()
                         } else {
                             await loadExperiencesForRegion(region)
+                            await loadPlacePins(region)
                         }
                     }
                 }
@@ -215,6 +245,14 @@ struct FriendsMapView: View {
                     // shows/hides their pins — no heatmap refresh needed.
                     FilterChip(title: "Orgs", isActive: filterOrgs) {
                         filterOrgs.toggle()
+                    }
+                    // §7: verified-first is the default; this pill hides the
+                    // machine's guesses entirely.
+                    FilterChip(title: "Verified", isActive: showVerifiedOnly) {
+                        showVerifiedOnly.toggle()
+                        if let region = lastRegion {
+                            Task { await loadPlacePins(region) }
+                        }
                     }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
@@ -299,6 +337,17 @@ struct FriendsMapView: View {
         .sheet(item: $selectedEvent, onDismiss: { Task { await loadAll() } }) { event in
             ExperienceDetailSheet(event: event, vm: adventuresVM)
         }
+        .sheet(item: $selectedPlacePin) { pin in
+            PlacePinCallout(pin: pin) {
+                Task {
+                    try? await PlansAPI.shared.reportPlace(placeId: pin.placeId, reason: "closed")
+                    selectedPlacePin = nil
+                    if let region = lastRegion { await loadPlacePins(region) }
+                }
+            }
+            .presentationDetents([.height(200)])
+            .presentationBackground(Color.nostiaBackground)
+        }
         .sheet(isPresented: $showEventsList) {
             NearbyExperiencesListView(events: visibleExperiences)
         }
@@ -339,6 +388,24 @@ struct FriendsMapView: View {
             minLat: minLat, maxLat: maxLat, minLng: minLng, maxLng: maxLng,
             viewportRadiusMiles: radiusMiles, tags: selectedMapTags
         )) ?? []
+    }
+
+    /// Verified/Suggested place pins for the viewport (v2 §7). The server
+    /// decides the mix; the client only decides whether to ask for verified
+    /// only. Failures leave the previous pins alone rather than blanking the
+    /// map under the user.
+    func loadPlacePins(_ region: MKCoordinateRegion) async {
+        let half = region.span
+        let resp = try? await PlansAPI.shared.placePins(
+            minLat: region.center.latitude - half.latitudeDelta / 2,
+            minLng: region.center.longitude - half.longitudeDelta / 2,
+            maxLat: region.center.latitude + half.latitudeDelta / 2,
+            maxLng: region.center.longitude + half.longitudeDelta / 2,
+            filter: showVerifiedOnly ? "verified" : "all"
+        )
+        if let resp {
+            withAnimation(.easeInOut(duration: 0.2)) { placePins = resp.pins }
+        }
     }
 
     // Fetch the heatmap grid for the active filters. The grid is platform-wide and

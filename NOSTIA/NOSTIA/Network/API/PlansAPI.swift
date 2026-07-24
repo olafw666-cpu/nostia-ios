@@ -129,6 +129,68 @@ final class PlansAPI {
     func reportPlace(placeId: Int, reason: String) async throws {
         try await client.requestVoid("/places/\(placeId)/report", method: "POST", body: ["reason": reason])
     }
+
+    /// Map pins (§7). Verified first and always; Suggested backfills only when
+    /// verified density is thin. `filter: "verified"` shows verified only.
+    func placePins(
+        minLat: Double, minLng: Double, maxLat: Double, maxLng: Double,
+        filter: String = "all"
+    ) async throws -> PlacePinsResponse {
+        let bbox = "\(minLat),\(minLng),\(maxLat),\(maxLng)"
+        return try await client.request("/places/map?bbox=\(bbox)&filter=\(filter)")
+    }
+
+    // MARK: - Invite (§4.6: part of the plan artifact, not a follow-up prompt)
+
+    /// 2–3 pre-populated suggestions, dormancy-boosted. An empty list is a
+    /// valid answer at n=1 — the caller collapses the row rather than nagging.
+    func inviteSuggestions(planId: Int, limit: Int = 3) async throws -> InviteSuggestionsResponse {
+        try await client.request("/plans/\(planId)/invite-suggestions?limit=\(limit)")
+    }
+
+    /// One tap. The invitee joins immediately and gets a push.
+    func invite(planId: Int, userId: Int) async throws -> InviteResponse {
+        try await client.request(
+            "/plans/\(planId)/invite", method: "POST", body: ["user_id": userId]
+        )
+    }
+
+    /// Shareable link for people who aren't on Nostia (or aren't followed).
+    func inviteLink(planId: Int) async throws -> InviteLinkResponse {
+        try await client.request("/plans/\(planId)/invite-link", method: "POST")
+    }
+
+    /// Join from a shared link token (nostia://plan/<token>).
+    func redeemInvite(token: String) async throws -> PlanResponse {
+        try await client.request("/plans/invites/\(token)/redeem", method: "POST")
+    }
+}
+
+struct InviteSuggestionsResponse: Codable {
+    let suggestions: [InviteSuggestion]
+}
+
+struct InviteSuggestion: Codable, Identifiable, Equatable {
+    let id: Int
+    let username: String
+    let name: String?
+    let isDev: Bool?
+
+    var displayName: String { name?.isEmpty == false ? name! : username }
+    var initial: String { String(displayName.prefix(1)).uppercased() }
+}
+
+struct InviteResponse: Codable {
+    let planUpdated: AdventurePlan?
+
+    enum CodingKeys: String, CodingKey {
+        case planUpdated = "plan"
+    }
+}
+
+struct InviteLinkResponse: Codable {
+    let token: String
+    let url: String
 }
 
 struct RecomposeResponse: Codable {

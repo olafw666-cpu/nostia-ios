@@ -71,6 +71,16 @@ struct RootView: View {
                 } else {
                     UserDefaults.standard.set(eventId, forKey: "nostia_pending_event_id")
                 }
+            case "plan":
+                // nostia://plan/<token> — from the /p/<token> landing page. A
+                // logged-out tap is held until after signup, which is exactly
+                // the path the k-factor measures.
+                guard let token = url.pathComponents.last, !token.isEmpty else { return }
+                if authManager.isAuthenticated {
+                    DeepLinkRouter.shared.route(.planInvite(token: token))
+                } else {
+                    UserDefaults.standard.set(token, forKey: "nostia_pending_plan_token")
+                }
             default:
                 break
             }
@@ -89,6 +99,10 @@ struct RootView: View {
             if let token = UserDefaults.standard.string(forKey: "nostia_pending_invite_token") {
                 UserDefaults.standard.removeObject(forKey: "nostia_pending_invite_token")
                 Task { await redeemToken(token) }
+            }
+            if let planToken = UserDefaults.standard.string(forKey: "nostia_pending_plan_token") {
+                UserDefaults.standard.removeObject(forKey: "nostia_pending_plan_token")
+                DeepLinkRouter.shared.route(.planInvite(token: planToken))
             }
             let pendingEventId = UserDefaults.standard.integer(forKey: "nostia_pending_event_id")
             if pendingEventId > 0 {

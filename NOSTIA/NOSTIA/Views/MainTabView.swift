@@ -229,8 +229,8 @@ struct MainTabView: View {
             PushNotificationManager.shared.clearBadge()
         case .vault:
             showVaults = true
-        case .adventure:
-            break // tab already selected by the router
+        case .adventure, .planInvite:
+            break // handled on the home tab (AdventureHomeView consumes the token)
         }
         loadUnreadCount()
         deepLinkRouter.clear()
