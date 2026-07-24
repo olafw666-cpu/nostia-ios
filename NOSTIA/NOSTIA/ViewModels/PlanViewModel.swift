@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import Combine
+import CoreLocation
 
 /// Drives the composed-plan surface (Product Definition v2 §4). One primary
 /// action — start an adventure — with optional, defaulted refinements. The

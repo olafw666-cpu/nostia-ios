@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 /// The home screen and the app's identity (Product Definition v2 §3): opens on
 /// one primary action — Start an adventure — with a List/Map view toggle

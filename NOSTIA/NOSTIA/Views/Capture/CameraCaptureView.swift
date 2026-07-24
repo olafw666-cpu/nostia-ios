@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import Combine
 
 /// In-app camera capture sheet (ported from nostia-adventures-future §4). The
 /// photo library picker is deliberately NOT offered — completion photos must
