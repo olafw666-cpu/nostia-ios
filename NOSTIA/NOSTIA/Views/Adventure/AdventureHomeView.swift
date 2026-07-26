@@ -30,9 +30,11 @@ struct AdventureHomeView: View {
                 listBody
             case .map:
                 // The demoted map keeps everything it had as a tab — friend
-                // pins, experience pins, heatmap, long-press create.
-                FriendsMapView()
-                    .overlay(alignment: .top) { modeToggle.padding(.top, 6) }
+                // pins, experience pins, heatmap, long-press create. The toggle
+                // is handed to it rather than overlaid: the map owns its top
+                // edge (search field, filter pills, tag row) and an overlay
+                // simply drew on top of them.
+                FriendsMapView(topControl: AnyView(mapModeToggle))
             }
         }
         .sheet(isPresented: $showStore) {
@@ -118,7 +120,7 @@ struct AdventureHomeView: View {
         }
     }
 
-    private var modeToggle: some View {
+    private var modePicker: some View {
         Picker("View", selection: $viewMode) {
             ForEach(ViewMode.allCases) { mode in
                 Text(mode.rawValue).tag(mode)
@@ -126,7 +128,21 @@ struct AdventureHomeView: View {
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: 240)
-        .frame(maxWidth: .infinity)
+    }
+
+    /// In the list the toggle sits in the normal content flow.
+    private var modeToggle: some View {
+        modePicker
+            .frame(maxWidth: .infinity)
+    }
+
+    /// Over the map it needs its own surface — a segmented control's material
+    /// alone doesn't separate it from streets, labels and pins.
+    private var mapModeToggle: some View {
+        modePicker
+            .padding(5)
+            .nostiaCard(in: Capsule())
+            .frame(maxWidth: .infinity)
     }
 
     private var nearbySection: some View {

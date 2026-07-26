@@ -69,10 +69,19 @@ struct PlanTonightSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let reason = vm.deadZoneReason {
-                Text(reason)
-                    .font(.nostiaBody(13))
-                    .foregroundColor(Color.nostiaTextSecond)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Out of region is a fact about coverage, not a retryable
+                // hiccup — it gets an icon and the warning tone so it doesn't
+                // read as "try again", which is exactly what it isn't.
+                HStack(alignment: .top, spacing: 6) {
+                    if vm.isOutOfRegion {
+                        Image(systemName: "mappin.slash")
+                            .font(.nostiaBody(12, weight: .semibold))
+                    }
+                    Text(reason)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.nostiaBody(13))
+                .foregroundColor(vm.isOutOfRegion ? Color.nostiaWarning : Color.nostiaTextSecond)
             }
             if let error = vm.errorMessage {
                 Text(error)

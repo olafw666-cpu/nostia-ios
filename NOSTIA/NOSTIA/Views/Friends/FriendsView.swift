@@ -11,155 +11,37 @@ struct FriendsView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
+    /// ONE scroll view for the whole screen. This used to be a VStack whose
+    /// header (search, contacts, suggestions, tab selector) was fixed and whose
+    /// only scrollable part was the List at the bottom — on a phone that left
+    /// the follower rows in a sliver a few rows tall. Everything below the hub's
+    /// section picker now scrolls together, so the lists get the full screen.
+    /// (The screen title lives in FriendsHubView; a second one here was both
+    /// duplicated and wrong — this section shows followers too, not just
+    /// following.)
     var body: some View {
-        VStack(spacing: 0) {
-            NostiaScreenTitle(title: "Following")
-                .padding(.horizontal, responsive.spacing(16))
-                .padding(.top, 6)
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                searchBar
+                contactsButton
 
-            // Search bar — same pill pattern as the rest of the app; the keyboard's
-            // Search key submits (no separate button).
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
-                TextField("Search users…", text: $vm.searchQuery)
-                    .foregroundColor(Color.nostiaTextPrimary)
-                    .submitLabel(.search)
-                    .onSubmit { hideKeyboard(); Task { await vm.search() } }
-                    .autocorrectionDisabled().textInputAutocapitalization(.never)
-                if !vm.searchQuery.isEmpty {
-                    Button { vm.clearSearch() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
-                            .frame(width: 36, height: 36)
-                    }
-                    .buttonStyle(.nostiaTap)
-                    .accessibilityLabel("Clear search")
-                }
-            }
-            .padding(responsive.spacing(12))
-            .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
-
-            // Find via Contacts
-            Button {
-                showContactsPicker = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                    Text("Find via Contacts")
-                        .font(.subheadline)
-                }
-                .foregroundColor(Color.nostiaTextSecond)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .nostiaCard(in: RoundedRectangle(cornerRadius: 12), elevation: .flat)
-            }
-            .buttonStyle(.nostiaTap)
-            .padding(.horizontal, responsive.spacing(16))
-            .padding(.bottom, 8)
-
-            if vm.isSearching {
-                SearchSkeletonView()
-            } else if vm.searchPerformed {
-                if vm.searchResults.isEmpty {
-                    EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
+                if vm.isSearching {
+                    SearchSkeletonView()
+                } else if vm.searchPerformed {
+                    searchResultsSection
                 } else {
-                    List(vm.searchResults) { user in
-                        UserSearchRow(user: user, onFollow: { Task { await vm.follow(userId: user.id) } })
-                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                            .contextMenu {
-                                if authManager.isDev {
-                                    Button(role: .destructive) {
-                                        userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
-                                    } label: {
-                                        Label("Delete User", systemImage: "person.crop.circle.badge.minus")
-                                    }
-                                }
-                            }
+                    // People worth following — ranked server-side by proximity and how many
+                    // followers they already have. Hidden while empty (incl. first load).
+                    if !vm.suggestions.isEmpty {
+                        suggestionsCarousel
                     }
-                    .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
-                }
-            } else {
-                // People worth following — ranked server-side by proximity and how many
-                // followers they already have. Hidden while empty (incl. first load).
-                if !vm.suggestions.isEmpty {
-                    suggestionsCarousel
-                }
-
-                // Tab selector
-                HStack(spacing: 8) {
-                    TabButton(title: "Followers (\(vm.followers.count))", isActive: vm.activeTab == .followers) {
-                        vm.activeTab = .followers
-                    }
-                    TabButton(title: "Following (\(vm.following.count))", isActive: vm.activeTab == .following) {
-                        vm.activeTab = .following
-                    }
-                }
-                .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 8)
-
-                if vm.isLoading && vm.followers.isEmpty && vm.following.isEmpty { FollowSkeletonView() }
-                else if vm.activeTab == .followers {
-                    List(vm.followers) { user in
-                        FollowUserRow(
-                            user: user,
-                            onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
-                            trailingContent: {
-                                AnyView(HStack(spacing: 8) {
-                                    if vm.followingIds.contains(user.id) {
-                                        messageButton(for: user)
-                                    } else {
-                                        followBackButton(for: user)
-                                    }
-                                })
-                            }
-                        )
-                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        .contextMenu {
-                            if authManager.isDev {
-                                Button(role: .destructive) {
-                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
-                                } label: {
-                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
-                    .refreshable { await vm.loadAll() }
-                    .overlay {
-                        if vm.followers.isEmpty {
-                            EmptyStateView(icon: "person.2", text: "No one is following you yet.", sub: "Share your profile to gain followers")
-                        }
-                    }
-                } else {
-                    List(vm.following) { user in
-                        FollowUserRow(
-                            user: user,
-                            onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
-                            trailingContent: {
-                                AnyView(unfollowButton(for: user))
-                            }
-                        )
-                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        .contextMenu {
-                            if authManager.isDev {
-                                Button(role: .destructive) {
-                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
-                                } label: {
-                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.plain).background(.clear).scrollContentBackground(.hidden)
-                    .refreshable { await vm.loadAll() }
-                    .overlay {
-                        if vm.following.isEmpty {
-                            EmptyStateView(icon: "person.badge.plus", text: "You are not following anyone yet.", sub: "Search for users to follow them")
-                        }
-                    }
+                    tabSelector
+                    peopleSection
                 }
             }
+            .padding(.bottom, 16)
         }
+        .refreshable { await vm.loadAll() }
         .background(.clear)
         .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
         .scrollDismissesKeyboard(.immediately)
@@ -211,6 +93,137 @@ struct FriendsView: View {
         }
     }
 
+    // MARK: - Sections
+    //
+    // Each of these is a plain view inside the single LazyVStack above — no
+    // nested ScrollView or List anywhere, which is what made the old layout
+    // scroll in two places at once.
+
+    /// Search bar — same pill pattern as the rest of the app; the keyboard's
+    /// Search key submits (no separate button).
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundColor(Color.nostiaTextSecond)
+            TextField("Search users…", text: $vm.searchQuery)
+                .foregroundColor(Color.nostiaTextPrimary)
+                .submitLabel(.search)
+                .onSubmit { hideKeyboard(); Task { await vm.search() } }
+                .autocorrectionDisabled().textInputAutocapitalization(.never)
+            if !vm.searchQuery.isEmpty {
+                Button { vm.clearSearch() } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(Color.nostiaTextMuted)
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.nostiaTap)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(responsive.spacing(12))
+        .nostiaWarmCard(in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, responsive.spacing(16)).padding(.vertical, responsive.spacing(12))
+    }
+
+    private var contactsButton: some View {
+        Button {
+            showContactsPicker = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.badge.plus")
+                Text("Find via Contacts")
+                    .font(.subheadline)
+            }
+            .foregroundColor(Color.nostiaTextSecond)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .nostiaCard(in: RoundedRectangle(cornerRadius: 12), elevation: .flat)
+        }
+        .buttonStyle(.nostiaTap)
+        .padding(.horizontal, responsive.spacing(16))
+        .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private var searchResultsSection: some View {
+        if vm.searchResults.isEmpty {
+            EmptyStateView(icon: "person", text: "No users found", sub: "Try a different name or username")
+        } else {
+            ForEach(vm.searchResults) { user in
+                UserSearchRow(user: user, onFollow: { Task { await vm.follow(userId: user.id) } })
+                    .padding(.horizontal, responsive.spacing(16))
+                    .contextMenu { devDeleteButton(id: user.id, name: user.name) }
+            }
+        }
+    }
+
+    private var tabSelector: some View {
+        HStack(spacing: 8) {
+            TabButton(title: "Followers (\(vm.followers.count))", isActive: vm.activeTab == .followers) {
+                vm.activeTab = .followers
+            }
+            TabButton(title: "Following (\(vm.following.count))", isActive: vm.activeTab == .following) {
+                vm.activeTab = .following
+            }
+        }
+        .padding(.horizontal, responsive.spacing(16)).padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private var peopleSection: some View {
+        // SearchSkeletonView, not FollowSkeletonView: the latter wraps itself in
+        // a ScrollView, which would nest inside this one.
+        if vm.isLoading && vm.followers.isEmpty && vm.following.isEmpty {
+            SearchSkeletonView()
+        } else if vm.activeTab == .followers {
+            if vm.followers.isEmpty {
+                EmptyStateView(icon: "person.2", text: "No one is following you yet.", sub: "Share your profile to gain followers")
+            } else {
+                ForEach(vm.followers) { user in
+                    FollowUserRow(
+                        user: user,
+                        onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
+                        trailingContent: {
+                            AnyView(HStack(spacing: 8) {
+                                if vm.followingIds.contains(user.id) {
+                                    messageButton(for: user)
+                                } else {
+                                    followBackButton(for: user)
+                                }
+                            })
+                        }
+                    )
+                    .padding(.horizontal, responsive.spacing(16))
+                    .contextMenu { devDeleteButton(id: user.id, name: user.name) }
+                }
+            }
+        } else {
+            if vm.following.isEmpty {
+                EmptyStateView(icon: "person.badge.plus", text: "You are not following anyone yet.", sub: "Search for users to follow them")
+            } else {
+                ForEach(vm.following) { user in
+                    FollowUserRow(
+                        user: user,
+                        onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
+                        trailingContent: { AnyView(unfollowButton(for: user)) }
+                    )
+                    .padding(.horizontal, responsive.spacing(16))
+                    .contextMenu { devDeleteButton(id: user.id, name: user.name) }
+                }
+            }
+        }
+    }
+
+    /// Dev-only hard delete, offered from every row that shows a user.
+    @ViewBuilder
+    private func devDeleteButton(id: Int, name: String) -> some View {
+        if authManager.isDev {
+            Button(role: .destructive) {
+                userToDevDelete = DevDeleteTarget(id: id, name: name)
+            } label: {
+                Label("Delete User", systemImage: "person.crop.circle.badge.minus")
+            }
+        }
+    }
+
     private var suggestionsCarousel: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Suggested for You")
@@ -225,15 +238,7 @@ struct FriendsView: View {
                             onProfileTap: { profileDestination = ProfileDestination(id: user.id) },
                             onFollow: { Task { await vm.follow(userId: user.id) } }
                         )
-                        .contextMenu {
-                            if authManager.isDev {
-                                Button(role: .destructive) {
-                                    userToDevDelete = DevDeleteTarget(id: user.id, name: user.name)
-                                } label: {
-                                    Label("Delete User", systemImage: "person.crop.circle.badge.minus")
-                                }
-                            }
-                        }
+                        .contextMenu { devDeleteButton(id: user.id, name: user.name) }
                     }
                 }
                 .padding(.horizontal, responsive.spacing(16))
@@ -256,8 +261,8 @@ struct FriendsView: View {
                 .background(Color.nostiaAccent).clipShape(Circle())
                 .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 6)
         }
-        // Scoped style: default-style buttons inside List rows let a row tap trigger
-        // them; nostiaTap keeps each button's action on its own frame.
+        // Scoped style: a default-style button inside a tappable row lets the row's
+        // own tap trigger it; nostiaTap keeps each button's action on its own frame.
         .buttonStyle(.nostiaTap)
     }
 

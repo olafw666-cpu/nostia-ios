@@ -12,6 +12,10 @@ final class PlanViewModel: ObservableObject {
     @Published var plan: AdventurePlan?
     @Published var isWorking = false
     @Published var deadZoneReason: String?
+    /// True when the server said the problem is coverage, not this block —
+    /// nothing the user does here (widening, rerolling, waiting) will help, so
+    /// the copy is presented as information rather than a retryable hiccup.
+    @Published var isOutOfRegion = false
     @Published var errorMessage: String?
     @Published var locationDenied = false
     @Published var selectedVibe: PlanVibe?
@@ -90,6 +94,7 @@ final class PlanViewModel: ObservableObject {
             let isNewPlan = plan?.id != p.id
             plan = p
             deadZoneReason = nil
+            isOutOfRegion = false
             if isNewPlan {
                 MapKitEnrichmentService.shared.clearMemo()
                 Task { await validateRenderedStops() }
@@ -98,6 +103,7 @@ final class PlanViewModel: ObservableObject {
             // §13 dead zone: honest empty state, never a fake plan.
             plan = nil
             deadZoneReason = resp.reason ?? "Nothing composable nearby right now."
+            isOutOfRegion = resp.code == "out_of_region"
         }
     }
 

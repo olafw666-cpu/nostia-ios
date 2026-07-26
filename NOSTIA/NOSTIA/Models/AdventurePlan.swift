@@ -112,6 +112,10 @@ struct PlanMember: Codable, Identifiable, Equatable {
 struct PlanResponse: Codable {
     let plan: AdventurePlan?
     let reason: String?
+    /// Why there's no plan: `no_composable_plan` (we cover this city, this spot
+    /// is thin — widening the search can help) vs `out_of_region` (Nostia
+    /// hasn't shipped here, and widening cannot help). Absent on older servers.
+    let code: String?
 }
 
 // MARK: - Completion verification wire types (§6)

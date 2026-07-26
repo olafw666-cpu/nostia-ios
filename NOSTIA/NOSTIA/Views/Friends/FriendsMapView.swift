@@ -2,6 +2,20 @@ import SwiftUI
 import MapKit
 
 struct FriendsMapView: View {
+    /// A control the host screen wants above the map's own chrome — today the
+    /// Adventure home List/Map toggle. It is a parameter rather than an
+    /// `.overlay(alignment: .top)` on the caller's side because an overlay has
+    /// no idea this view already owns the top of the screen: the toggle landed
+    /// directly on top of the place-search field. Passed in, it becomes the
+    /// first row of the same stack and everything below it flows down.
+    var topControl: AnyView?
+
+    // Explicit rather than relying on the synthesized memberwise init, so
+    // `FriendsMapView()` keeps working from every existing call site.
+    init(topControl: AnyView? = nil) {
+        self.topControl = topControl
+    }
+
     @EnvironmentObject private var locationManager: LocationManager
     @State private var friendLocations: [FollowLocation] = []
     @State private var events: [Experience] = []
@@ -229,9 +243,16 @@ struct FriendsMapView: View {
                 .padding(.bottom, 60)
             }
 
-            // Map editor — place search + visibility pills (D2/D4) + tag search (§7). Fixed
-            // at the top. Pills filter which pins are visible AND which types feed the heatmap.
+            // Map editor — host control + place search + visibility pills (D2/D4) + tag
+            // search (§7) + the location notice. Fixed at the top, and the ONLY thing
+            // allowed to draw there: every top-anchored element belongs in this stack so
+            // they can never overlap each other. Pills filter which pins are visible AND
+            // which types feed the heatmap.
             VStack(spacing: 8) {
+                if let topControl {
+                    topControl
+                }
+
                 placeSearchBar
 
                 HStack(spacing: 8) {
@@ -269,6 +290,13 @@ struct FriendsMapView: View {
                     }
                     .padding(.horizontal, 12)
                 }
+
+                // In the stack, not floating at a hard-coded .padding(.top, 164)
+                // measured against the controls above it — that number was already
+                // a guess and adding topControl would have broken it.
+                if locationManager.permissionDenied {
+                    locationDeniedNotice
+                }
             }
             .padding(.top, 8)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -280,38 +308,6 @@ struct FriendsMapView: View {
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .nostiaCard(in: Capsule())
                 .padding(.bottom, 12)
-
-            // Location-denied notice
-            if locationManager.permissionDenied {
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "location.slash.fill").foregroundColor(Color.nostiaWarning)
-                        Text("Location is off").font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
-                    }
-                    Text("Enable location in Settings to see nearby experiences and share your location.")
-                        .font(.caption).foregroundColor(Color.nostiaTextSecond)
-                        .multilineTextAlignment(.center)
-                    Button {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
-                        }
-                    } label: {
-                        Text("Open Settings")
-                            .font(.subheadline.bold()).foregroundColor(.white)
-                            .padding(.horizontal, 16).padding(.vertical, 8)
-                            .background(
-                                LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
-                                               startPoint: .leading, endPoint: .trailing)
-                            )
-                            .cornerRadius(12)
-                    }
-                }
-                .padding(16)
-                .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal)
-                .padding(.top, 164)   // sit below the search bar + visibility pills + tag search
-                .frame(maxHeight: .infinity, alignment: .top)
-            }
         }
         .task {
             await loadAll()
@@ -446,6 +442,37 @@ struct FriendsMapView: View {
         guard !isHeatmapMode, let region = lastRegion else { return }
         viewportTask?.cancel()
         viewportTask = Task { await loadExperiencesForRegion(region) }
+    }
+
+    private var locationDeniedNotice: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "location.slash.fill").foregroundColor(Color.nostiaWarning)
+                Text("Location is off").font(.subheadline.bold()).foregroundColor(Color.nostiaTextPrimary)
+            }
+            Text("Enable location in Settings to see nearby experiences and share your location.")
+                .font(.caption).foregroundColor(Color.nostiaTextSecond)
+                .multilineTextAlignment(.center)
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Text("Open Settings")
+                    .font(.subheadline.bold()).foregroundColor(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .background(
+                        LinearGradient(colors: [Color.nostiaAccent, Color.nostriaPurple],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(12)
+            }
+            .buttonStyle(.nostiaTap)
+        }
+        .padding(16)
+        .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
     }
 
     // MARK: - Place search
