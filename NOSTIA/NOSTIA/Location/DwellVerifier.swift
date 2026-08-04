@@ -30,6 +30,16 @@ final class DwellVerifier: NSObject, ObservableObject {
     private var activePlanId: Int?
     private var activeStopId: Int?
 
+    /// True once any fix in this run was produced by a location simulator
+    /// (Xcode/GPX, a simulated-location profile, a tweak that feeds
+    /// CoreLocation). Security audit F-03: the earn path needs integrity
+    /// controls the completion verdict itself can't supply, and this is one the
+    /// server structurally cannot run — `isSimulatedBySoftware` exists only on
+    /// the device that produced the fix. Spoofed coordinates are otherwise
+    /// indistinguishable from real ones in the posted batch, so a spoofed dwell
+    /// would earn a real completion and real points.
+    private var sawSimulatedFix = false
+
     override init() {
         super.init()
         manager.delegate = self
@@ -54,6 +64,7 @@ final class DwellVerifier: NSObject, ObservableObject {
         activePlanId = planId
         activeStopId = stopId
         samples = []
+        sawSimulatedFix = false
         manager.startUpdatingLocation()
         phase = .sampling(secondsRemaining: dwellSeconds)
 
@@ -76,6 +87,7 @@ final class DwellVerifier: NSObject, ObservableObject {
         countdownTask = nil
         manager.stopUpdatingLocation()
         samples = []
+        sawSimulatedFix = false
         phase = .idle
     }
 
@@ -83,6 +95,15 @@ final class DwellVerifier: NSObject, ObservableObject {
         manager.stopUpdatingLocation()
         countdownTask = nil
         guard let planId = activePlanId, let stopId = activeStopId else { return }
+
+        // Refuse the run outright rather than posting the surviving real fixes —
+        // a batch that was partly simulated tells us nothing about where the
+        // user actually stood.
+        guard !sawSimulatedFix else {
+            samples = []
+            phase = .rejected(reason: "These readings came from a location simulator, so this stop can't be verified. Turn simulated location off and try again.")
+            return
+        }
 
         guard samples.count >= 5 else {
             phase = .failed(message: "Couldn't get enough location fixes — step outside or away from walls and try again.")
@@ -111,6 +132,12 @@ extension DwellVerifier: CLLocationManagerDelegate {
         Task { @MainActor in
             guard case .sampling = self.phase else { return }
             for loc in locations {
+                // Never let a synthetic fix into the batch, and remember that
+                // the run was tainted — `submit()` rejects it (audit F-03).
+                if loc.sourceInformation?.isSimulatedBySoftware == true {
+                    self.sawSimulatedFix = true
+                    continue
+                }
                 self.samples.append([
                     "lat": loc.coordinate.latitude,
                     "lng": loc.coordinate.longitude,
@@ -122,6 +149,6 @@ extension DwellVerifier: CLLocationManagerDelegate {
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("DwellVerifier location error: \(error.localizedDescription)")
+        NostiaLog.error("DwellVerifier", "location error: \(error.localizedDescription)")
     }
 }

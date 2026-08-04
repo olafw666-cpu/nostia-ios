@@ -7,6 +7,22 @@ import Foundation
 final class PlansAPI {
     static let shared = PlansAPI()
     private let client = APIClient.shared
+
+    /// Dedicated session for the multipart photo POST. `URLSession.shared` was
+    /// wrong for this: it carries the process-wide on-disk `URLCache`, so the
+    /// verification exchange could be written to the cache database, and it has
+    /// no request timeout — a stalled upload holds a consumed capture nonce open
+    /// until the OS gives up. Ephemeral + explicit timeouts, matching the
+    /// no-cache posture `APIClient` already sets for JSON.
+    private let uploadSession: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        return URLSession(configuration: config)
+    }()
+
     private init() {}
 
     /// One primary action (§4.4). Refinements are optional and defaulted so the
@@ -69,7 +85,9 @@ final class PlansAPI {
 
     /// Multipart photo upload. Self-contained (APIClient is JSON-only): the
     /// JPEG never touches disk on the way out, matching the in-app-camera-only
-    /// capture contract.
+    /// capture contract. `jpeg` arrives already bounded by `CapturedPhotoBounds`
+    /// (audit F-04) — the filename is a fixed literal, never anything the user
+    /// or the device names, and the server generates the stored path itself.
     func uploadStopPhoto(planId: Int, stopId: Int, jpeg: Data, nonce: String) async throws -> PhotoAttachResponse {
         guard let url = URL(string: AppConfig.apiBaseURL + "/plans/\(planId)/stops/\(stopId)/photo") else {
             throw APIError.invalidURL
@@ -90,7 +108,7 @@ final class PlansAPI {
         field("\r\n--\(boundary)--\r\n")
         request.httpBody = body
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await uploadSession.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw APIError.unknown }
         guard (200..<300).contains(http.statusCode) else {
             let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.error

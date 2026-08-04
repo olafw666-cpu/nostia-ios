@@ -36,7 +36,7 @@ final class PlanViewModel: ObservableObject {
             if let live = resp.plan, live.isLive { plan = live } else { plan = nil }
         } catch {
             // Load failures stay quiet — the CTA still works, which is the product.
-            print("plan current failed: \(error)")
+            NostiaLog.error("Plan", "current failed: \(error)")
         }
     }
 

@@ -17,6 +17,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(_ application: UIApplication,
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("APNs registration failed: \(error.localizedDescription)")
+        NostiaLog.error("Push", "APNs registration failed: \(error.localizedDescription)")
     }
 }

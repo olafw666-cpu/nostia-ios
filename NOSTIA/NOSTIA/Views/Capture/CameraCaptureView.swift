@@ -9,6 +9,9 @@ import Combine
 /// which also means EXIF from the library can never masquerade as a fresh
 /// capture. Camera permission (NSCameraUsageDescription) already ships for the
 /// vault QR scanner.
+///
+/// Captures are handed back already bounded by `CapturedPhotoBounds` — downscaled
+/// and size-capped (audit F-04), so no caller can post a full-resolution original.
 struct CameraCaptureView: View {
     let promptText: String
     let onCapture: (Data) -> Void
@@ -150,10 +153,20 @@ final class CameraController: NSObject, ObservableObject, AVCapturePhotoCaptureD
     func photoOutput(_ output: AVCapturePhotoOutput,
                      didFinishProcessingPhoto photo: AVCapturePhoto,
                      error: Error?) {
-        DispatchQueue.main.async { [self] in
-            isCapturing = false
-            guard error == nil, let data = photo.fileDataRepresentation() else { return }
-            onPhoto?(data)
+        guard error == nil, let raw = photo.fileDataRepresentation() else {
+            DispatchQueue.main.async { [self] in isCapturing = false }
+            return
+        }
+        // Bound the frame here rather than at the upload site, so every consumer
+        // of this view gets a size-capped, EXIF-stripped JPEG and none of them
+        // has to remember to (audit F-04). Off the main thread — re-encoding a
+        // full-resolution capture is long enough to stutter the preview.
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            let bounded = CapturedPhotoBounds.bound(raw)
+            DispatchQueue.main.async { [self] in
+                isCapturing = false
+                onPhoto?(bounded)
+            }
         }
     }
 }

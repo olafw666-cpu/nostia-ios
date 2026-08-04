@@ -56,7 +56,8 @@ struct RootView: View {
             guard url.scheme == "nostia" else { return }
             switch url.host {
             case "invite":
-                guard let token = url.pathComponents.last, !token.isEmpty else { return }
+                // Shape-validated before it is stored or sent (audit D12.6).
+                guard let token = DeepLinkRouter.sanitizedToken(url.pathComponents.last) else { return }
                 if authManager.isAuthenticated {
                     Task { await redeemToken(token) }
                 } else {
@@ -75,7 +76,7 @@ struct RootView: View {
                 // nostia://plan/<token> — from the /p/<token> landing page. A
                 // logged-out tap is held until after signup, which is exactly
                 // the path the k-factor measures.
-                guard let token = url.pathComponents.last, !token.isEmpty else { return }
+                guard let token = DeepLinkRouter.sanitizedToken(url.pathComponents.last) else { return }
                 if authManager.isAuthenticated {
                     DeepLinkRouter.shared.route(.planInvite(token: token))
                 } else {
@@ -117,12 +118,18 @@ struct RootView: View {
             // call covers the recovery path (app killed mid-tour, token expired, re-login).
             maybeShowAppTour()
             maybeShowThemePrompt()
+            // Adopt this account's own palette, then confirm it still owns it
+            // (audit D12.3) — a cosmetic unlock is server state, not device state.
+            themeManager.adoptAccentForSignedInAccount()
+            Task { await themeManager.reconcileAccentEntitlement() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
             showProfileBuilder = false
             showPaymentSetupPrompt = false
             showAppTour = false
+            // Unlocked palettes are per-account, not per-device (audit D12.3).
+            themeManager.clearAccentForSignOut()
         }
         // Settings → Help → "Replay App Tour". MainTabView closes its sheets on the same
         // notification so the overlay isn't buried under them.
@@ -152,6 +159,9 @@ struct RootView: View {
             withAnimation(.easeOut(duration: 0.4)) { isLaunching = false }
             maybeShowAppTour()
             maybeShowThemePrompt()
+            // Cold launch of an already-signed-in session re-checks the palette
+            // against the server's unlock state (audit D12.3).
+            await themeManager.reconcileAccentEntitlement()
         }
         // Drive the whole UI's appearance from the user's choice (default Dark) by pushing the
         // interface-style override onto the window directly. `.system` → `.unspecified`, which

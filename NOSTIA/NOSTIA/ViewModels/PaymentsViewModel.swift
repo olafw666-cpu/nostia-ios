@@ -174,7 +174,9 @@ final class PaymentsViewModel: ObservableObject {
             // generic localizedDescription — the real cause is only in the error's
             // reflection (PaymentSheetError case name / NSError domain+code+userInfo).
             let ns = error as NSError
-            print("[AddCard] PaymentSheet failed: \(String(reflecting: error)) | domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
+            // Debug-only: `userInfo` carries payment-intent identifiers and raw
+            // server messages, which must never reach a release device log.
+            NostiaLog.error("AddCard", "PaymentSheet failed: \(String(reflecting: error)) | domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
             var message = error.localizedDescription
             #if DEBUG
             message += "\n[debug] \(String(reflecting: error))"

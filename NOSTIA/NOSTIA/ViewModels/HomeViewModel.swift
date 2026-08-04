@@ -59,7 +59,7 @@ final class HomeViewModel: ObservableObject {
                 "longitude": location.coordinate.longitude
             ])
         } catch {
-            print("Location sync failed: \(error.localizedDescription)")
+            NostiaLog.error("Home", "Location sync failed: \(error.localizedDescription)")
         }
         async let nearby = ExperiencesAPI.shared.getNearbyExperiences(
             lat: location.coordinate.latitude,

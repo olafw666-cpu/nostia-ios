@@ -103,9 +103,13 @@ final class APIClient {
         urlRequest.httpMethod = method
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        if let token = AuthManager.shared.getToken() {
-            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        // Every `requestVoid` caller is an authenticated mutation. Sending it
+        // token-less (the old behaviour when the Keychain was empty) guaranteed a
+        // 401, and the 401 path calls `logout()` — so a missing token turned a
+        // no-op into a forced sign-out plus a cache wipe. Fail before the wire,
+        // the way `request(_:)` already does.
+        guard let token = AuthManager.shared.getToken() else { throw APIError.noToken }
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         if let body {
             urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)

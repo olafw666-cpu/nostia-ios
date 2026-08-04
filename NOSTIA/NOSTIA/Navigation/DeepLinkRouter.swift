@@ -63,6 +63,24 @@ final class DeepLinkRouter: ObservableObject {
         }
     }
 
+    /// Validates an opaque token lifted out of an external `nostia://` URL
+    /// before it is persisted or pasted into a request path (audit D12.6:
+    /// "DeepLinkRouter validates and authorizes targets"). Everything the
+    /// backend issues for invites and shared plans is `crypto.randomBytes(16)`
+    /// hex — 32 chars — so accepting only URL-safe token characters within a
+    /// sane length rejects path fragments, query junk, percent-encoding and
+    /// absurd lengths at the boundary instead of relaying them to the server.
+    /// Deliberately a shape check, not an authorization check: the server is
+    /// still the only thing that decides whether a well-formed token is valid.
+    nonisolated static func sanitizedToken(_ raw: String?) -> String? {
+        guard let raw, (16...128).contains(raw.count) else { return nil }
+        let isTokenChar: (Character) -> Bool = { ch in
+            ch.isASCII && (ch.isLetter || ch.isNumber || ch == "-" || ch == "_")
+        }
+        guard raw.allSatisfy(isTokenChar) else { return nil }
+        return raw
+    }
+
     func route(_ target: Target) {
         switch target {
         case .vault(let tripId):
