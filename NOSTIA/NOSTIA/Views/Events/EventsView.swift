@@ -412,6 +412,15 @@ struct CreateExperienceFromDiscoverSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
+                    // Return inserts a newline in the description TextEditor, so give
+                    // it an explicit dismiss (matches ProfileBuilderView).
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        .foregroundColor(Color.nostiaAccent)
+                    }
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Back") { step = 0 }.foregroundColor(Color.nostiaTextSecond)
                     }

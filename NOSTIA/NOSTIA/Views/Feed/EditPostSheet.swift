@@ -41,6 +41,15 @@ struct EditPostSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
+                // Return inserts a newline in a TextEditor, so without this there is
+                // no way to put the keyboard away (matches ProfileBuilderView).
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .foregroundColor(Color.nostiaAccent)
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(Color.nostiaTextSecond)

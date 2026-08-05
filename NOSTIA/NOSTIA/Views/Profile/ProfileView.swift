@@ -298,6 +298,17 @@ struct ProfileView: View {
                 }
             }
         }
+        // Return inserts a newline in the bio TextEditor, so give it an explicit
+        // keyboard dismiss (matches ProfileBuilderView).
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .foregroundColor(Color.nostiaAccent)
+            }
+        }
         // A single enum-driven sheet. Stacking many `.sheet(isPresented:)` modifiers on
         // one view is unreliable in SwiftUI (later modifiers shadow earlier ones, which is
         // why the Organizations button silently did nothing) — one `.sheet(item:)` is the
