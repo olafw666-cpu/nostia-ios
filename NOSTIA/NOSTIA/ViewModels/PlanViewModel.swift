@@ -16,6 +16,10 @@ final class PlanViewModel: ObservableObject {
     /// nothing the user does here (widening, rerolling, waiting) will help, so
     /// the copy is presented as information rather than a retryable hiccup.
     @Published var isOutOfRegion = false
+    /// The dead zone's answer instead of a dead end: a location-free adventure
+    /// the user can do from wherever they're standing. Set together with
+    /// `deadZoneReason`; the reason explains, this is the thing to go and do.
+    @Published var anywhere: AnywhereAdventure?
     @Published var errorMessage: String?
     @Published var locationDenied = false
     @Published var selectedVibe: PlanVibe?
@@ -29,6 +33,13 @@ final class PlanViewModel: ObservableObject {
     @Published var shareLink: ShareTarget?
 
     private let api = PlansAPI.shared
+    /// Origin of the last generate, kept so "show me another" doesn't re-acquire
+    /// a location it already has.
+    private var lastOrigin: CLLocationCoordinate2D?
+    /// Cursor through the anywhere pool. Only ever moved by an explicit "show me
+    /// another": re-tapping the main CTA in a dead zone must not silently hand
+    /// back an adventure they already skipped past.
+    private var anywhereSkip = 0
 
     func loadCurrent() async {
         do {
@@ -54,17 +65,56 @@ final class PlanViewModel: ObservableObject {
             return
         }
         locationDenied = false
+        lastOrigin = loc.coordinate
 
         do {
             let resp = try await api.generate(
                 lat: loc.coordinate.latitude,
                 lng: loc.coordinate.longitude,
-                vibe: selectedVibe?.rawValue
+                vibe: selectedVibe?.rawValue,
+                anywhereSkip: anywhereSkip
             )
             apply(resp)
             if plan != nil { showDetail = true }
         } catch {
             errorMessage = "Couldn't put a plan together. Try again."
+        }
+    }
+
+    /// Reroll's equivalent for the dead zone. There is no plan row to reroll out
+    /// here, so this re-asks generate with the pool cursor moved on — which also
+    /// means a user who has since walked into coverage gets a real plan instead,
+    /// handled by `apply` like any other response.
+    func anotherAnywhere() async {
+        guard !isWorking else { return }
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+
+        var resolved = lastOrigin
+        if resolved == nil {
+            resolved = (await LocationManager.shared.acquireLocation())?.coordinate
+        }
+        guard let origin = resolved else {
+            locationDenied = true
+            return
+        }
+        lastOrigin = origin
+        anywhereSkip += 1
+
+        do {
+            let resp = try await api.generate(
+                lat: origin.latitude,
+                lng: origin.longitude,
+                vibe: selectedVibe?.rawValue,
+                anywhereSkip: anywhereSkip
+            )
+            apply(resp)
+            if plan != nil { showDetail = true }
+        } catch {
+            // The card they're already holding stays — a failed swap is not a
+            // reason to take away the thing they had to do.
+            errorMessage = "Couldn't load another one. Try again."
         }
     }
 
@@ -95,15 +145,20 @@ final class PlanViewModel: ObservableObject {
             plan = p
             deadZoneReason = nil
             isOutOfRegion = false
+            anywhere = nil
             if isNewPlan {
                 MapKitEnrichmentService.shared.clearMemo()
                 Task { await validateRenderedStops() }
             }
         } else {
-            // §13 dead zone: honest empty state, never a fake plan.
+            // §13 dead zone: honest empty state, never a fake plan — but not an
+            // empty screen either. The server attaches a location-free adventure
+            // so the tap still ends in something to do; keep the one we're
+            // already showing if this response didn't carry one.
             plan = nil
             deadZoneReason = resp.reason ?? "Nothing composable nearby right now."
             isOutOfRegion = resp.code == "out_of_region"
+            if let fallback = resp.anywhere { anywhere = fallback }
         }
     }
 

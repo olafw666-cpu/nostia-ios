@@ -116,6 +116,30 @@ struct PlanResponse: Codable {
     /// is thin — widening the search can help) vs `out_of_region` (Nostia
     /// hasn't shipped here, and widening cannot help). Absent on older servers.
     let code: String?
+    /// Something to actually do when there's no plan. Present on both dead-zone
+    /// codes; absent on older servers, which is why nothing here is required.
+    let anywhere: AnywhereAdventure?
+}
+
+/// A location-independent adventure, served instead of a composed plan when the
+/// places layer has nothing to compose from. Deliberately NOT an `AdventurePlan`
+/// — it has no stops, no coordinates, no timings and no completion
+/// verification, and the UI must never present it as though it did.
+struct AnywhereAdventure: Codable, Identifiable, Equatable {
+    let id: String
+    let title: String
+    let description: String
+    let steps: [String]
+    let minutes: Int
+
+    /// "about 45 min" / "about 1h 15m" — the only number on the card.
+    var durationLabel: String {
+        minutes < 60
+            ? "about \(minutes) min"
+            : (minutes % 60 == 0
+                ? "about \(minutes / 60)h"
+                : "about \(minutes / 60)h \(minutes % 60)m")
+    }
 }
 
 // MARK: - Completion verification wire types (§6)

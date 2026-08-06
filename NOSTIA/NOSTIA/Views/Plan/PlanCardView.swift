@@ -17,6 +17,11 @@ struct PlanTonightSection: View {
                 planSummaryCard(plan)
             } else {
                 startCard
+                // Out of coverage, the plan card explains why and this one gives
+                // them something to actually go and do (§13).
+                if let anywhere = vm.anywhere, vm.plan == nil {
+                    anywhereCard(anywhere)
+                }
             }
         }
         .sheet(isPresented: $vm.showDetail) {
@@ -119,6 +124,79 @@ struct PlanTonightSection: View {
                 }
             }
         }
+    }
+
+    // MARK: - Anywhere adventure (§13: the dead zone still ends in an adventure)
+
+    /// Shown only when there's no plan. It must not imitate the plan card —
+    /// there are no stops, no map and no timings behind this, and dressing it
+    /// up as a route would be the one dishonest thing on the screen.
+    private func anywhereCard(_ adventure: AnywhereAdventure) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "figure.walk.motion")
+                    .font(.nostiaBody(12, weight: .bold))
+                Text("Works anywhere · \(adventure.durationLabel)")
+                    .font(.nostiaBody(12, weight: .bold))
+                    .textCase(.uppercase)
+                    .kerning(0.5)
+            }
+            .foregroundColor(Color.nostiaAccent)
+
+            Text(adventure.title)
+                .font(.nostiaDisplay(19, weight: .heavy))
+                .foregroundColor(Color.nostiaTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(adventure.description)
+                .font(.nostiaBody(14))
+                .foregroundColor(Color.nostiaTextSecond)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(adventure.steps.enumerated()), id: \.offset) { index, step in
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("\(index + 1)")
+                            .font(.nostiaBody(12, weight: .heavy))
+                            .foregroundColor(Color.nostiaAccent)
+                            .frame(width: 20, height: 20)
+                            .background(Color.nostiaAccent.opacity(0.15))
+                            .clipShape(Circle())
+                        Text(step)
+                            .font(.nostiaBody(14))
+                            .foregroundColor(Color.nostiaTextPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .padding(.top, 2)
+
+            Button {
+                Haptics.tap()
+                Task { await vm.anotherAnywhere() }
+            } label: {
+                HStack(spacing: 6) {
+                    if vm.isWorking {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.nostiaBody(13, weight: .bold))
+                    }
+                    Text("Show me another")
+                        .font(.nostiaBody(14, weight: .semibold))
+                }
+                .foregroundColor(Color.nostiaAccent)
+            }
+            .buttonStyle(.nostiaTap)
+            .disabled(vm.isWorking)
+            .accessibilityLabel("Show me another adventure")
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .nostiaWarmCard(cornerRadius: 20)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(adventure.title), an adventure that works anywhere, \(adventure.durationLabel)")
     }
 
     // MARK: - Live plan state

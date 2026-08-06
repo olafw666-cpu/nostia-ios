@@ -28,6 +28,8 @@ final class PlansAPI {
     /// One primary action (§4.4). Refinements are optional and defaulted so the
     /// whole call works as `generate(lat:lng:)`. `localHour` lets the server
     /// pick morning/afternoon/evening/night templates in the user's own clock.
+    /// `anywhereSkip` only matters in a dead zone: it moves the location-free
+    /// fallback adventure along so "show me another" can't repeat itself.
     func generate(
         lat: Double,
         lng: Double,
@@ -36,9 +38,12 @@ final class PlansAPI {
         groupSize: Int? = nil,
         windowMinutes: Int? = nil,
         distanceM: Double? = nil,
-        localHour: Int = Calendar.current.component(.hour, from: Date())
+        localHour: Int = Calendar.current.component(.hour, from: Date()),
+        anywhereSkip: Int = 0
     ) async throws -> PlanResponse {
-        var body: [String: Any] = ["lat": lat, "lng": lng, "local_hour": localHour]
+        var body: [String: Any] = [
+            "lat": lat, "lng": lng, "local_hour": localHour, "anywhere_skip": anywhereSkip,
+        ]
         if let vibe { body["vibe"] = vibe }
         if let budget { body["budget"] = budget }
         if let groupSize { body["group_size"] = groupSize }
