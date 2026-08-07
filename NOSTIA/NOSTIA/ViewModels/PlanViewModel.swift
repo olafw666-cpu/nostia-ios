@@ -41,6 +41,23 @@ final class PlanViewModel: ObservableObject {
     /// back an adventure they already skipped past.
     private var anywhereSkip = 0
 
+    /// How long the start tap must visibly be working before the adventure lands.
+    ///
+    /// Composition is deterministic and server-local — no model call — so a plan
+    /// comes back in a couple hundred milliseconds and the sheet is up before the
+    /// tap has finished registering as a tap. This is a FLOOR on the working
+    /// state, not a sleep bolted onto the front: a request that already took
+    /// longer than this waits no extra time at all.
+    private static let minimumWorkingSeconds: Double = 1.4
+
+    /// Hold the spinner until `startedAt` is `minimumWorkingSeconds` old.
+    private func holdWorkingState(since startedAt: Date) async {
+        let elapsed = Date().timeIntervalSince(startedAt)
+        guard elapsed < Self.minimumWorkingSeconds else { return }
+        let remaining = Self.minimumWorkingSeconds - elapsed
+        try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+    }
+
     func loadCurrent() async {
         do {
             let resp = try await api.current()
@@ -58,8 +75,11 @@ final class PlanViewModel: ObservableObject {
         isWorking = true
         errorMessage = nil
         deadZoneReason = nil
+        let startedAt = Date()
         defer { isWorking = false }
 
+        // The permission prompt is deliberately outside the hold: a denial is an
+        // answer, and making the user watch a spinner for it would be theatre.
         guard let loc = await LocationManager.shared.acquireLocation() else {
             locationDenied = true
             return
@@ -74,9 +94,13 @@ final class PlanViewModel: ObservableObject {
                 vibe: selectedVibe?.rawValue,
                 anywhereSkip: anywhereSkip
             )
+            // Held before apply, never after: the plan and the sheet have to
+            // arrive together, or the card flashes in and the sheet chases it.
+            await holdWorkingState(since: startedAt)
             apply(resp)
             if plan != nil { showDetail = true }
         } catch {
+            await holdWorkingState(since: startedAt)
             errorMessage = "Couldn't put a plan together. Try again."
         }
     }
