@@ -280,6 +280,10 @@ struct CreateTripSheet: View {
             .frame(maxWidth: .infinity)
         }
         .background(.clear)
+        // The description field is a TextEditor: no return key, so without a Done bar
+        // (and a scroll-to-dismiss) the keyboard opened here could not be closed at all.
+        // Every other TextEditor in the app already carries this pair; this one did not.
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Create Vault")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -294,6 +298,11 @@ struct CreateTripSheet: View {
                 }
                 .fontWeight(.semibold).foregroundColor(Color.nostiaAccent)
                 .disabled(title.isEmpty)
+            }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { hideKeyboard() }
+                    .foregroundColor(Color.nostiaAccent)
             }
         }
     }

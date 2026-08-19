@@ -344,6 +344,16 @@ struct ProfileView: View {
                 NavigationStack {
                     TripsView()
                         .background(Color.nostiaBackground.ignoresSafeArea())
+                        // Every other sheet here carries a Close button; this one did not,
+                        // so "Your Vaults" could only be left by swiping the sheet down —
+                        // and once a vault was pushed on top, with the keyboard up in its
+                        // chat, there was no visible way out of the feature at all.
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Close") { activeSheet = nil }
+                                    .foregroundColor(Color.nostiaAccent)
+                            }
+                        }
                         .toolbarBackground(.hidden, for: .navigationBar)
                 }
                 .presentationBackground(Color.nostiaBackground)

@@ -15,13 +15,22 @@ struct VaultChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if isLoading {
-                LoadingView()
-            } else if messages.isEmpty {
-                EmptyStateView(icon: "bubble.left.and.bubble.right", text: "No messages yet", sub: "Start the conversation!")
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    // Loading and empty states live INSIDE the scroll view on purpose.
+                    // When they sat outside it, an empty vault chat had no scrollable
+                    // surface at all — and with no scroll-to-dismiss, no return key and
+                    // no Done bar, opening the keyboard in a brand-new vault left no way
+                    // to close it again.
+                    if isLoading {
+                        LoadingView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 40)
+                    } else if messages.isEmpty {
+                        EmptyStateView(icon: "bubble.left.and.bubble.right", text: "No messages yet", sub: "Start the conversation!")
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 40)
+                    } else {
                         LazyVStack(spacing: 6) {
                             ForEach(messages) { msg in
                                 if msg.isSystem == true {
@@ -35,10 +44,16 @@ struct VaultChatView: View {
                         }
                         .padding(.horizontal, 16).padding(.vertical, 12)
                     }
-                    .onChange(of: messages.count) { _, _ in
-                        if let last = messages.last {
-                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                        }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .scrollDismissesKeyboard(.interactively)
+                // Belt and braces: a short chat may not scroll far enough to trigger the
+                // interactive dismiss, so a plain tap on the transcript closes it too.
+                .contentShape(Rectangle())
+                .onTapGesture { hideKeyboard() }
+                .onChange(of: messages.count) { _, _ in
+                    if let last = messages.last {
+                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
                 }
             }
@@ -61,6 +76,11 @@ struct VaultChatView: View {
                 HStack(spacing: 10) {
                     TextField("Message...", text: $inputText)
                         .foregroundColor(Color.nostiaTextPrimary)
+                        .submitLabel(.send)
+                        .onSubmit {
+                            guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                            Task { await sendMessage() }
+                        }
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .nostiaCard(in: RoundedRectangle(cornerRadius: 22))
                     Button {
@@ -90,7 +110,7 @@ struct VaultChatView: View {
                 .compactMap { $0 as? UIWindowScene }.first?
                 .windows.first?.safeAreaInsets.bottom ?? 0
             withAnimation(.easeOut(duration: 0.25)) {
-                keyboardHeight = frame.height - safeBottom
+                keyboardHeight = max(0, frame.height - safeBottom)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
@@ -98,6 +118,12 @@ struct VaultChatView: View {
         }
         .task {
             await loadMessages()
+        }
+        // Switching away from the Chat tab (or leaving the vault) while the keyboard is
+        // up otherwise leaves the whole column padded up by a keyboard that is gone.
+        .onDisappear {
+            hideKeyboard()
+            keyboardHeight = 0
         }
     }
 

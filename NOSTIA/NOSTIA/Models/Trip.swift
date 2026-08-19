@@ -13,7 +13,9 @@ struct Trip: Codable, Identifiable, Hashable {
     // Sum of all expenses logged against this vault (server-computed). Shown on the list card.
     var vaultTotal: Double?
 
-    var participantCount: Int { participants?.count ?? 0 }
+    // Kicked members stay in the roster (they keep read-only access until they settle),
+    // so the headline count has to exclude them or a vault reads as bigger than it is.
+    var participantCount: Int { activeParticipants.count }
     var activeParticipants: [TripParticipant] { participants?.filter { $0.status != "kicked" } ?? [] }
 
     /// The vault's total expenses, compactly formatted (see `formatCompactCurrency`).

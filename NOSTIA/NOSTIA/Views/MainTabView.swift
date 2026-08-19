@@ -105,7 +105,7 @@ struct MainTabView: View {
         }
         // Vaults are contextual now, not a tab (v2 §3): vault pushes and the
         // Profile → Your Vaults row land here.
-        .sheet(isPresented: $showVaults) {
+        .sheet(isPresented: $showVaults, onDismiss: { deepLinkRouter.restoreTabBar() }) {
             NavigationStack {
                 TripsView()
                     .background(Color.nostiaBackground.ignoresSafeArea())
@@ -119,7 +119,10 @@ struct MainTabView: View {
             }
             .presentationBackground(Color.nostiaBackground)
         }
-        .sheet(isPresented: $showProfile, onDismiss: { loadHeaderUser() }) {
+        .sheet(isPresented: $showProfile, onDismiss: {
+            loadHeaderUser()
+            deepLinkRouter.restoreTabBar()
+        }) {
             NavigationStack {
                 ProfileView()
                     .navigationBarTitleDisplayMode(.inline)

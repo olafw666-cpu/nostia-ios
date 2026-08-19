@@ -33,6 +33,12 @@ final class DeepLinkRouter: ObservableObject {
     @Published var tabBarHiddenDepth: Int = 0
     var isTabBarHidden: Bool { tabBarHiddenDepth > 0 }
 
+    /// Force the floating bar back on. The depth counter is only as reliable as the
+    /// onAppear/onDisappear pairs feeding it, and SwiftUI does not guarantee onDisappear
+    /// for content torn down with a dismissing sheet. Call this whenever a modal that
+    /// could have contained a hiding screen closes, so the bar can never stay lost.
+    func restoreTabBar() { tabBarHiddenDepth = 0 }
+
     private init() {}
 
     /// Map a push payload's `data` dictionary to a navigation target and route to it.
@@ -108,11 +114,24 @@ struct IdentifiableInt: Identifiable {
 
 private struct HidesAppTabBar: ViewModifier {
     @EnvironmentObject private var router: DeepLinkRouter
+    // Tracks whether *this* instance currently holds a slot in the counter. onAppear can
+    // fire more than once for the same view (re-entering a tab, a re-created navigation
+    // destination) without a matching onDisappear in between; without this latch each
+    // extra onAppear added a claim nothing would ever release, and the bar stayed hidden.
+    @State private var holdsSlot = false
 
     func body(content: Content) -> some View {
         content
-            .onAppear { router.tabBarHiddenDepth += 1 }
-            .onDisappear { router.tabBarHiddenDepth = max(0, router.tabBarHiddenDepth - 1) }
+            .onAppear {
+                guard !holdsSlot else { return }
+                holdsSlot = true
+                router.tabBarHiddenDepth += 1
+            }
+            .onDisappear {
+                guard holdsSlot else { return }
+                holdsSlot = false
+                router.tabBarHiddenDepth = max(0, router.tabBarHiddenDepth - 1)
+            }
     }
 }
 

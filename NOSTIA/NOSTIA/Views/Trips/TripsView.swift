@@ -3,9 +3,14 @@ import AVFoundation
 
 struct TripsView: View {
     @StateObject private var vm = TripsViewModel()
-    @State private var showCreateSheet = false
+    // ONE sheet slot for the screen (project rule): both of these are raised from the
+    // same Menu, and stacked .sheet(isPresented:) modifiers on one view shadow each other.
+    @State private var activeSheet: TripsSheet?
     @State private var tripToDetail: Trip?
-    @State private var showQRScanner = false
+    // A vault to open once whatever is currently presented has finished closing. Pushing
+    // in the same update that dismisses a sheet made the push land behind the sheet (or
+    // get dropped outright), which is why a freshly created vault often just didn't open.
+    @State private var pendingTripToOpen: Trip?
     @State private var scanResultAlert: ScanResultAlert?
     @EnvironmentObject var responsive: ResponsiveLayoutManager
     @EnvironmentObject var deepLinkRouter: DeepLinkRouter
@@ -14,6 +19,9 @@ struct TripsView: View {
         let id = UUID()
         let title: String
         let message: String
+        /// Vault to push once the user taps OK. Deferring the push until the alert is
+        /// gone keeps the two presentations from racing each other.
+        var tripToOpen: Trip? = nil
     }
 
     /// Actionable empty state: says what a vault is *for*, then offers both ways in
@@ -36,7 +44,7 @@ struct TripsView: View {
 
             Button {
                 Haptics.tap()
-                showCreateSheet = true
+                activeSheet = .createVault
             } label: {
                 Text("Create your first vault")
                     .font(.nostiaBody(15, weight: .bold))
@@ -102,7 +110,7 @@ struct TripsView: View {
             .refreshable { await vm.loadTrips() }
 
             Menu {
-                Button { Haptics.tap(); showCreateSheet = true } label: {
+                Button { Haptics.tap(); activeSheet = .createVault } label: {
                     Label("Create Vault", systemImage: "plus.circle")
                 }
                 Button { Haptics.tap(); Task { await requestCameraAndScan() } } label: {
@@ -134,19 +142,33 @@ struct TripsView: View {
         .alert("Error", isPresented: Binding(get: { vm.errorMessage != nil }, set: { if !$0 { vm.errorMessage = nil } })) {
             Button("OK") { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
-        .sheet(isPresented: $showCreateSheet) {
-            CreateTripSheet { title, desc, friendIds in
-                if let trip = await vm.createTrip(title: title, description: desc, friendIds: friendIds) {
-                    showCreateSheet = false
-                    tripToDetail = trip
+        .sheet(item: $activeSheet, onDismiss: {
+            // Now that the sheet is really gone, it is safe to push.
+            if let trip = pendingTripToOpen {
+                pendingTripToOpen = nil
+                tripToDetail = trip
+            }
+        }) { sheet in
+            switch sheet {
+            case .createVault:
+                CreateTripSheet { title, desc, friendIds in
+                    if let trip = await vm.createTrip(title: title, description: desc, friendIds: friendIds) {
+                        pendingTripToOpen = trip
+                        activeSheet = nil
+                    }
                 }
+            case .qrScanner:
+                QRScannerSheet { scanned in Task { await handleScan(scanned) } }
             }
         }
-        .sheet(isPresented: $showQRScanner) {
-            QRScannerSheet { scanned in Task { await handleScan(scanned) } }
-        }
         .alert(item: $scanResultAlert) { a in
-            Alert(title: Text(a.title), message: Text(a.message), dismissButton: .default(Text("OK")))
+            Alert(
+                title: Text(a.title),
+                message: Text(a.message),
+                dismissButton: .default(Text("OK")) {
+                    if let trip = a.tripToOpen { tripToDetail = trip }
+                }
+            )
         }
         .navigationDestination(item: $tripToDetail) { trip in
             VaultDetailView(trip: trip, tripsVM: vm)
@@ -166,7 +188,7 @@ struct TripsView: View {
     private func requestCameraAndScan() async {
         let granted = await AVCaptureDevice.requestAccess(for: .video)
         if granted {
-            showQRScanner = true
+            activeSheet = .qrScanner
         } else {
             scanResultAlert = ScanResultAlert(
                 title: "Camera Required",
@@ -195,17 +217,32 @@ struct TripsView: View {
                 let friendText = friendsAdded > 0
                     ? " Also added \(friendsAdded) new \(friendsAdded == 1 ? "friend" : "friends")."
                     : ""
+                // Alert first, push second. Raising both in the same update made the
+                // navigation push and the alert presentation compete: the alert either
+                // vanished or landed on top of the vault that was still sliding in, and
+                // dismissing it could leave the stack half-transitioned. The push is
+                // deferred to the alert's OK button instead.
                 scanResultAlert = ScanResultAlert(
                     title: "Joined \(result.vaultName)!",
-                    message: "Welcome to the vault!\(friendText)"
+                    message: "Welcome to the vault!\(friendText)",
+                    tripToOpen: result.trip
                 )
-                tripToDetail = result.trip
             }
         } catch {
             scanResultAlert = ScanResultAlert(
                 title: "Could Not Join",
                 message: error.localizedDescription
             )
+        }
+    }
+}
+
+enum TripsSheet: Identifiable {
+    case createVault, qrScanner
+    var id: Int {
+        switch self {
+        case .createVault: return 0
+        case .qrScanner: return 1
         }
     }
 }

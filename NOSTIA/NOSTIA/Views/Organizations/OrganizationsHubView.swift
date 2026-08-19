@@ -6,6 +6,8 @@ struct OrganizationsHubView: View {
     @StateObject private var vm = OrganizationsViewModel()
     @State private var showCreate = false
     @State private var searchTask: Task<Void, Never>?
+    // Always presented as a sheet (from Home, Friends and Profile), so it owns its exit.
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -29,6 +31,13 @@ struct OrganizationsHubView: View {
                 OrgDetailView(orgId: id, onChanged: { Task { await vm.loadMine() } })
             }
             .toolbar {
+                // Without this the only way out of the Organizations sheet was a
+                // swipe-down, which is invisible and easy to miss once a detail screen
+                // has been pushed on top of it.
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }
+                        .foregroundColor(Color.nostiaAccent)
+                }
                 if !vm.ownsAnOrg {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { showCreate = true } label: {

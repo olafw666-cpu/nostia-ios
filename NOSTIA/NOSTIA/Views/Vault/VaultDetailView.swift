@@ -6,17 +6,15 @@ struct VaultDetailView: View {
 
     @State private var selectedTab = 0
     @State private var showEditMenu = false
-    @State private var showEditTitle = false
-    @State private var showEditDescription = false
-    @State private var showAddMemberSheet = false
-    @State private var showKickSheet = false
-    @State private var showTransferSheet = false
-    @State private var showDeleteAlert = false
-    @State private var showQRInvite = false
-    @State private var showAddExpense = false
+    // ONE sheet slot and ONE alert slot for the whole screen. Stacked
+    // .sheet(isPresented:)/.alert(isPresented:) modifiers on the same view shadow each
+    // other, and every one of these is raised from inside the "Vault Options"
+    // confirmation dialog — so the dialog's own dismissal raced the presentation and
+    // "Add Member"/"Kick Member"/"Transfer Leadership" frequently opened nothing at all.
+    @State private var activeSheet: VaultDetailSheet?
+    @State private var activeAlert: VaultDetailAlert?
     @State private var editTitle = ""
     @State private var editDescription = ""
-    @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
@@ -58,15 +56,18 @@ struct VaultDetailView: View {
         // the vault detail sits on the system background (black in dark mode).
         .background(Color.nostiaBackground.ignoresSafeArea())
         .ignoresSafeArea(.keyboard)
-        // Hide the floating tab bar so the vault chat input bar isn't covered by it.
-        .hidesAppTabBar()
+        // NOTE: deliberately no .hidesAppTabBar() here. This screen is only ever reached
+        // inside a sheet (MainTabView's vault sheet, or Profile -> Your Vaults), and a
+        // sheet already covers the floating AtlasTabBar — so hiding it bought nothing but
+        // a global counter that leaked when the sheet tore the whole stack down without
+        // firing onDisappear, leaving the app with no tab bar for the rest of the session.
         .navigationTitle(currentTrip.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if isActiveMember {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showQRInvite = true } label: {
+                    Button { activeSheet = .qrInvite } label: {
                         Image(systemName: "qrcode").foregroundColor(Color.nostiaTextPrimary)
                     }
                 }
@@ -82,62 +83,123 @@ struct VaultDetailView: View {
         .confirmationDialog("Vault Options", isPresented: $showEditMenu, titleVisibility: .visible) {
             Button("Edit Title") {
                 editTitle = currentTrip.title
-                showEditTitle = true
+                activeAlert = .editTitle
             }
             Button("Edit Description") {
                 editDescription = currentTrip.description ?? ""
-                showEditDescription = true
+                activeAlert = .editDescription
             }
-            Button("Add Member") { showAddMemberSheet = true }
-            Button("Kick Member") { showKickSheet = true }
-            Button("Transfer Leadership") { showTransferSheet = true }
-            Button("Delete Vault", role: .destructive) { showDeleteAlert = true }
+            Button("Add Member") { activeSheet = .addMember }
+            Button("Kick Member") { activeSheet = .kickMember }
+            Button("Transfer Leadership") { activeSheet = .transferLeadership }
+            Button("Delete Vault", role: .destructive) { activeAlert = .confirmDelete }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Edit Title", isPresented: $showEditTitle) {
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .addMember:          AddMemberSheet(trip: currentTrip, tripsVM: tripsVM)
+            case .kickMember:         KickMemberSheet(trip: currentTrip, tripsVM: tripsVM)
+            case .transferLeadership: TransferLeadershipSheet(trip: currentTrip, tripsVM: tripsVM)
+            case .qrInvite:           VaultQRView(trip: currentTrip)
+            }
+        }
+        .alert(
+            activeAlert?.title ?? "",
+            isPresented: Binding(get: { activeAlert != nil }, set: { if !$0 { activeAlert = nil } }),
+            presenting: activeAlert
+        ) { alert in
+            alertActions(for: alert)
+        } message: { alert in
+            if let message = alert.message { Text(message) }
+        }
+        // The vault list's error alert lives on TripsView, which is off-screen while this
+        // screen is pushed — so a failed rename/kick/transfer surfaced nowhere and the
+        // buttons simply appeared to do nothing. Bridge the VM's one-shot error here.
+        .onChange(of: tripsVM.errorMessage) { msg in
+            if let msg, !msg.isEmpty {
+                activeAlert = .error(msg)
+                tripsVM.errorMessage = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func alertActions(for alert: VaultDetailAlert) -> some View {
+        switch alert {
+        case .editTitle:
             TextField("Vault title", text: $editTitle)
             Button("Cancel", role: .cancel) {}
             Button("Save") {
-                Task {
-                    isSaving = true
-                    _ = await tripsVM.updateTrip(currentTrip.id, title: editTitle, description: currentTrip.description)
-                    isSaving = false
-                }
+                let newTitle = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !newTitle.isEmpty else { return }
+                Task { _ = await tripsVM.updateTrip(currentTrip.id, title: newTitle, description: currentTrip.description) }
             }
-        }
-        .alert("Edit Description", isPresented: $showEditDescription) {
+        case .editDescription:
             TextField("Description", text: $editDescription)
             Button("Cancel", role: .cancel) {}
             Button("Save") {
-                Task {
-                    isSaving = true
-                    _ = await tripsVM.updateTrip(currentTrip.id, title: currentTrip.title, description: editDescription.isEmpty ? nil : editDescription)
-                    isSaving = false
-                }
+                let newDescription = editDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                Task { _ = await tripsVM.updateTrip(currentTrip.id, title: currentTrip.title, description: newDescription.isEmpty ? nil : newDescription) }
             }
-        }
-        .alert("Delete Vault", isPresented: $showDeleteAlert) {
+        case .confirmDelete:
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 Task {
-                    _ = await tripsVM.deleteTrip(currentTrip.id)
-                    dismiss()
+                    // Only leave the screen if the vault actually went away. This used to
+                    // dismiss unconditionally, so a rejected delete looked like it worked
+                    // until the list reappeared with the vault still in it.
+                    if await tripsVM.deleteTrip(currentTrip.id) { dismiss() }
                 }
             }
-        } message: {
-            Text("Delete \"\(currentTrip.title)\"? All expenses and messages will be removed.")
+        case .error:
+            Button("OK", role: .cancel) {}
         }
-        .sheet(isPresented: $showAddMemberSheet) {
-            AddMemberSheet(trip: currentTrip, tripsVM: tripsVM)
+    }
+}
+
+// MARK: - Single sheet / alert slots
+
+enum VaultDetailSheet: Identifiable {
+    case addMember, kickMember, transferLeadership, qrInvite
+    var id: Int {
+        switch self {
+        case .addMember: return 0
+        case .kickMember: return 1
+        case .transferLeadership: return 2
+        case .qrInvite: return 3
         }
-        .sheet(isPresented: $showKickSheet) {
-            KickMemberSheet(trip: currentTrip, tripsVM: tripsVM)
+    }
+}
+
+enum VaultDetailAlert: Identifiable {
+    case editTitle
+    case editDescription
+    case confirmDelete
+    case error(String)
+
+    var id: String {
+        switch self {
+        case .editTitle: return "editTitle"
+        case .editDescription: return "editDescription"
+        case .confirmDelete: return "confirmDelete"
+        case .error(let msg): return "error:\(msg)"
         }
-        .sheet(isPresented: $showTransferSheet) {
-            TransferLeadershipSheet(trip: currentTrip, tripsVM: tripsVM)
+    }
+
+    var title: String {
+        switch self {
+        case .editTitle: return "Edit Title"
+        case .editDescription: return "Edit Description"
+        case .confirmDelete: return "Delete Vault"
+        case .error: return "Something Went Wrong"
         }
-        .sheet(isPresented: $showQRInvite) {
-            VaultQRView(trip: currentTrip)
+    }
+
+    var message: String? {
+        switch self {
+        case .confirmDelete: return "All expenses and messages will be removed. This cannot be undone."
+        case .error(let msg): return msg
+        case .editTitle, .editDescription: return nil
         }
     }
 }
