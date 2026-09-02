@@ -7,7 +7,6 @@ struct VaultSummary: Codable {
     let vaultLeaderId: Int?
     let currentUserId: Int?
     let unpaidSplits: [UnpaidSplit]?
-    let vaultLeaderHasStripe: Bool?
 }
 
 struct VaultEntry: Codable, Identifiable {
@@ -20,7 +19,6 @@ struct VaultEntry: Codable, Identifiable {
     var paidById: Int?
     var paidByName: String?
     var paidByUsername: String?
-    var paidByHasStripe: Bool?
     var splits: [VaultSplit]?
 
     enum CodingKeys: String, CodingKey {
@@ -28,7 +26,6 @@ struct VaultEntry: Codable, Identifiable {
         case paidById = "paidBy"
         case paidByName
         case paidByUsername
-        case paidByHasStripe
     }
 
     var formattedDate: String {
@@ -71,7 +68,6 @@ struct UnpaidSplit: Codable, Identifiable {
     let date: String
     let currency: String
     let cashPending: Bool?
-    let paidByHasStripe: Bool?
     let paidByUsername: String?
 
     var formattedDate: String {
@@ -82,27 +78,7 @@ struct UnpaidSplit: Codable, Identifiable {
     }
 }
 
-struct PaymentIntentResponse: Codable {
-    let clientSecret: String
-    let chargedAmount: Double
-    let customerId: String?
-    let ephemeralKeySecret: String?
-}
-
-struct BulkPaymentIntentResponse: Codable {
-    let clientSecret: String
-    let chargedAmount: Double
-    let customerId: String?
-    let ephemeralKeySecret: String?
-    let splitIds: [Int]
-}
-
 struct ExpenseSplitInput: Codable {
     let userId: Int
     let amount: Double
-}
-
-// Stripe fee passthrough: mirrors server-side calculateChargedAmount
-func calculateChargedAmount(_ owed: Double) -> Double {
-    return (ceil(((owed + 0.30) / (1.0 - 0.029)) * 100) / 100)
 }

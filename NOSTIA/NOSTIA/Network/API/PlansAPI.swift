@@ -94,6 +94,15 @@ final class PlansAPI {
     /// (audit F-04) — the filename is a fixed literal, never anything the user
     /// or the device names, and the server generates the stored path itself.
     func uploadStopPhoto(planId: Int, stopId: Int, jpeg: Data, nonce: String) async throws -> PhotoAttachResponse {
+        // The only multipart request in the app, and the only one that builds its own
+        // URLSession call, so the demo guard has to live here rather than in APIClient.
+        // The photo is simply not sent anywhere; the capture flow gets its pass verdict
+        // and the stop attaches, which is all the UI needs to complete.
+        if AppConfig.isDemoMode {
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            return PhotoAttachResponse(verdict: "pass", attached: true, method: "demo")
+        }
+
         guard let url = URL(string: AppConfig.apiBaseURL + "/plans/\(planId)/stops/\(stopId)/photo") else {
             throw APIError.invalidURL
         }

@@ -20,6 +20,16 @@ final class APIClient {
         body: [String: Any]? = nil,
         requiresAuth: Bool = true
     ) async throws -> T {
+        // Demo builds answer from `DemoBackend` and never open a socket. This sits above
+        // the token guard on purpose: there is nothing to authenticate against, and a
+        // missing Keychain entry must not turn every request into `noToken`. Everything
+        // below — the decoder, the error types, the callers — is untouched, because what
+        // comes back is the same `Data` a real response would carry.
+        if AppConfig.isDemoMode {
+            let data = try await DemoBackend.respond(path: path, method: method, body: body)
+            return try decode(data)
+        }
+
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
 
         var urlRequest = URLRequest(url: url)
@@ -82,6 +92,11 @@ final class APIClient {
             throw APIError.httpError(statusCode: http.statusCode, message: msg)
         }
 
+        return try decode(data)
+    }
+
+    /// Shared by the live and demo paths so both fail the same way on a shape mismatch.
+    private func decode<T: Decodable>(_ data: Data) throws -> T {
         do {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
@@ -97,6 +112,12 @@ final class APIClient {
         method: String,
         body: [String: Any]? = nil
     ) async throws {
+        // Same short-circuit as `request(_:)`, above the token guard for the same reason.
+        if AppConfig.isDemoMode {
+            _ = try await DemoBackend.respond(path: path, method: method, body: body)
+            return
+        }
+
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
 
         var urlRequest = URLRequest(url: url)

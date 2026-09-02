@@ -5,7 +5,6 @@ struct RootView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.scenePhase) private var scenePhase
     @State private var showProfileBuilder = false
-    @State private var showPaymentSetupPrompt = false
     @State private var showThemePrompt = false
     @State private var showAppTour = false
     @State private var inviteJoinedVault: String?
@@ -33,19 +32,12 @@ struct RootView: View {
             .id(themeManager.accentTheme)
         }
         .fullScreenCover(isPresented: $showProfileBuilder, onDismiss: {
-            // Activation budget (v2 §4: under 90 seconds to a real plan): the
-            // payment cover is OUT of the first-run chain — cards are asked for
-            // contextually, at the first vault (Settings → Payment still works).
-            // Profile → straight to the (3-page) tour → home.
+            // Activation budget (v2 §4: under 90 seconds to a real plan):
+            // profile → straight to the (3-page) tour → home.
             maybeShowAppTour()
         }) {
             ProfileBuilderView {
                 showProfileBuilder = false
-            }
-        }
-        .fullScreenCover(isPresented: $showPaymentSetupPrompt) {
-            PaymentSetupPromptView {
-                showPaymentSetupPrompt = false
             }
         }
         .sheet(isPresented: $showThemePrompt, onDismiss: { themeManager.markFirstRunPromptShown() }) {
@@ -126,7 +118,6 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .userDidLogout)) { _ in
             authManager.isAuthenticated = false
             showProfileBuilder = false
-            showPaymentSetupPrompt = false
             showAppTour = false
             // Unlocked palettes are per-account, not per-device (audit D12.3).
             themeManager.clearAccentForSignOut()
@@ -180,7 +171,7 @@ struct RootView: View {
     private func maybeShowThemePrompt() {
         guard authManager.isAuthenticated,
               themeManager.shouldShowFirstRunPrompt,
-              !showProfileBuilder, !showPaymentSetupPrompt, !showAppTour else { return }
+              !showProfileBuilder, !showAppTour else { return }
         showThemePrompt = true
     }
 
@@ -190,7 +181,7 @@ struct RootView: View {
     private func maybeShowAppTour() {
         guard authManager.isAuthenticated,
               UserDefaults.standard.bool(forKey: "nostia_pending_app_tour"),
-              !showProfileBuilder, !showPaymentSetupPrompt else { return }
+              !showProfileBuilder else { return }
         withAnimation(.easeOut(duration: 0.25)) { showAppTour = true }
     }
 

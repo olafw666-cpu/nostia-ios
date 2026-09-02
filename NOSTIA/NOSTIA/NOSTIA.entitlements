@@ -2,15 +2,27 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>aps-environment</key>
-	<string>development</string>
+	<!--
+	  Two entitlements were removed for the backend-free build, both because they
+	  cause traffic that no Swift-level guard can stop:
+
+	  aps-environment — the app no longer registers for remote notifications, so an
+	  APNs environment would only be requesting a token for a server that is not there.
+
+	  com.apple.developer.associated-domains (webcredentials:api.nostia.io) — iOS
+	  itself fetches https://api.nostia.io/.well-known/apple-app-site-association on
+	  install to validate the passkey relying party. That is a request to the droplet
+	  made outside any app code, so dropping the entitlement is the only way to stop
+	  it. Passkey enrolment is unavailable in this build in any case.
+
+	  Sign in with Apple stays: it talks to Apple, not to Nostia, and the demo backend
+	  accepts the resulting sign-in locally.
+
+	  Restore both alongside AppConfig.isDemoMode = false to go back to the live backend.
+	-->
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
-	</array>
-	<key>com.apple.developer.associated-domains</key>
-	<array>
-		<string>webcredentials:api.nostia.io</string>
 	</array>
 </dict>
 </plist>

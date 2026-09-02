@@ -13,19 +13,8 @@ struct PrivacyView: View {
     @State private var showDeleteAccountStep2 = false
     @State private var isDeletingAccount = false
     @State private var deleteAccountError: String?
-    @State private var navigateToPaymentMethods = false
-    @State private var showEmailPrompt = false
-    @State private var promptEmail = ""
-    @State private var isSavingEmail = false
-    @State private var emailSaveError: String?
-    @State private var showAddressPrompt = false
-    @State private var promptLine1 = ""
-    @State private var promptCity = ""
-    @State private var promptState = ""
-    @State private var promptZip = ""
-    @State private var isSavingAddress = false
-    @State private var addressSaveError: String?
     @State private var showTermsSheet = false
+    @State private var showResetDemoAlert = false
     @State private var trackingEnabled = true
     @State private var navigateToBlockedUsers = false
     @State private var navigateToNotifications = false
@@ -68,39 +57,6 @@ struct PrivacyView: View {
                                 GlassRow(icon: "envelope.fill", label: "Email", value: email)
                             }
                         }
-                        Button {
-                            if let email = user?.email, !email.isEmpty {
-                                if user?.hasHomeAddress == true {
-                                    navigateToPaymentMethods = true
-                                } else {
-                                    promptLine1 = ""; promptCity = ""; promptState = ""; promptZip = ""
-                                    addressSaveError = nil
-                                    showAddressPrompt = true
-                                }
-                            } else {
-                                promptEmail = ""
-                                emailSaveError = nil
-                                showEmailPrompt = true
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "creditcard.fill").foregroundColor(Color.nostiaAccent).frame(width: 24)
-                                Text("Payment Methods").foregroundColor(Color.nostiaTextPrimary)
-                                Spacer()
-                                Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
-                            }
-                            .font(.subheadline).padding(responsive.spacing(16))
-                            .overlay(Divider().background(Color.nostiaDivider), alignment: .bottom)
-                        }
-                        .buttonStyle(.nostiaTap)
-                        .navigationDestination(isPresented: $navigateToPaymentMethods) {
-                            PaymentMethodsView()
-                                .navigationTitle("Payment Methods")
-                                .navigationBarTitleDisplayMode(.inline)
-                                .toolbarBackground(.hidden, for: .navigationBar)
-                                // Pushed screens don't inherit the sheet's themed canvas.
-                                .background(Color.nostiaBackground.ignoresSafeArea())
-                        }
                     }
 
                     // Help section
@@ -121,6 +77,29 @@ struct PrivacyView: View {
                         }
                         .buttonStyle(.nostiaTap)
                         .accessibilityHint("Shows the walkthrough of the app's main features again")
+                    }
+
+                    // Demo section — only compiled into the screen when the app is
+                    // running against the on-device backend. Restores the seeded world
+                    // so a showing always starts from the same place.
+                    if AppConfig.isDemoMode {
+                        GlassSection(title: "Demo") {
+                            Button {
+                                Haptics.tap()
+                                showResetDemoAlert = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .foregroundColor(Color.nostiaAccent).frame(width: 24)
+                                    Text("Reset demo data").foregroundColor(Color.nostiaTextPrimary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundColor(Color.nostiaTextSecond)
+                                }
+                                .font(.subheadline).padding(responsive.spacing(16))
+                            }
+                            .buttonStyle(.nostiaTap)
+                            .accessibilityHint("Discards everything done in this demo and restores the starting data")
+                        }
                     }
 
                     // Notifications section
@@ -304,26 +283,17 @@ struct PrivacyView: View {
         .sheet(isPresented: $showTermsSheet) {
             LegalDocumentView()
         }
-        .sheet(isPresented: $showEmailPrompt) {
-            EmailCaptureSheet(
-                email: $promptEmail,
-                errorMessage: $emailSaveError,
-                isSaving: $isSavingEmail,
-                onSave: { Task { await saveEmailAndNavigate() } },
-                onDismiss: { showEmailPrompt = false }
-            )
-        }
-        .sheet(isPresented: $showAddressPrompt) {
-            AddressCaptureSheet(
-                line1: $promptLine1,
-                city: $promptCity,
-                state: $promptState,
-                zip: $promptZip,
-                errorMessage: $addressSaveError,
-                isSaving: $isSavingAddress,
-                onSave: { Task { await saveAddressAndNavigate() } },
-                onDismiss: { showAddressPrompt = false }
-            )
+        .alert("Reset demo data?", isPresented: $showResetDemoAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
+                Task {
+                    await DemoStore.shared.reset()
+                    await CacheManager.shared.clearAll()
+                    await loadData()
+                }
+            }
+        } message: {
+            Text("Everything posted, sent, or settled in this demo is discarded and the starting data comes back.")
         }
         .alert("Delete Your Account?", isPresented: $showDeleteAccountStep1) {
             Button("Cancel", role: .cancel) {}
@@ -393,252 +363,8 @@ struct PrivacyView: View {
         }
     }
 
-    func saveEmailAndNavigate() async {
-        let trimmed = promptEmail.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, trimmed.contains("@"), trimmed.contains(".") else {
-            emailSaveError = "Please enter a valid email address."
-            return
-        }
-        isSavingEmail = true
-        emailSaveError = nil
-        do {
-            let updated = try await AuthAPI.shared.updateMe(["email": trimmed])
-            user = updated
-            showEmailPrompt = false
-            navigateToPaymentMethods = true
-        } catch let error as APIError {
-            if case .httpError(_, let message) = error {
-                emailSaveError = message
-            } else {
-                emailSaveError = "Failed to save email. Please try again."
-            }
-        } catch {
-            emailSaveError = "Failed to save email. Please try again."
-        }
-        isSavingEmail = false
-    }
-
-    func saveAddressAndNavigate() async {
-        let line1 = promptLine1.trimmingCharacters(in: .whitespaces)
-        let city = promptCity.trimmingCharacters(in: .whitespaces)
-        let state = promptState.trimmingCharacters(in: .whitespaces).uppercased()
-        let zip = promptZip.trimmingCharacters(in: .whitespaces)
-        guard !line1.isEmpty, !city.isEmpty, state.count == 2, zip.count >= 5 else {
-            addressSaveError = "Please fill in all fields. State must be a 2-letter code (e.g. CA)."
-            return
-        }
-        isSavingAddress = true
-        addressSaveError = nil
-        do {
-            let updated = try await AuthAPI.shared.updateMe([
-                "address_line1": line1,
-                "address_city": city,
-                "address_state": state,
-                "address_zip": zip
-            ])
-            user = updated
-            showAddressPrompt = false
-            navigateToPaymentMethods = true
-        } catch let error as APIError {
-            if case .httpError(_, let message) = error {
-                addressSaveError = message
-            } else {
-                addressSaveError = "Failed to save address. Please try again."
-            }
-        } catch {
-            addressSaveError = "Failed to save address. Please try again."
-        }
-        isSavingAddress = false
-    }
 }
 
-// MARK: - Email Capture Sheet
-
-struct EmailCaptureSheet: View {
-    @Binding var email: String
-    @Binding var errorMessage: String?
-    @Binding var isSaving: Bool
-    let onSave: () -> Void
-    let onDismiss: () -> Void
-    @EnvironmentObject var responsive: ResponsiveLayoutManager
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: responsive.spacing(24)) {
-                VStack(spacing: responsive.spacing(12)) {
-                    Image(systemName: "envelope.badge.fill")
-                        .font(.nostiaBody(responsive.fontSize(48)))
-                        .foregroundStyle(Color.nostiaAccent)
-                    Text("Email Required")
-                        .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
-                    Text("An email address is required to set up payment methods. This email is used by Stripe for account verification.")
-                        .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, responsive.spacing(8))
-
-                NostiaTextField(label: "Email", placeholder: "your@email.com", text: $email)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-
-                if let err = errorMessage {
-                    Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Button {
-                    onSave()
-                } label: {
-                    HStack(spacing: 8) {
-                        if isSaving {
-                            ProgressView().tint(.white)
-                        } else {
-                            Image(systemName: "arrow.right.circle.fill")
-                            Text("Save & Continue")
-                        }
-                    }
-                    .font(.headline.bold()).foregroundColor(.white)
-                    .frame(maxWidth: .infinity).padding(responsive.spacing(16))
-                    .background(Color.nostiaAccent).cornerRadius(14)
-                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
-                }
-                .disabled(isSaving || email.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                Spacer()
-            }
-            .padding(responsive.spacing(24))
-            .frame(maxWidth: responsive.contentMaxWidth)
-            .frame(maxWidth: .infinity)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { onDismiss() }
-                        .foregroundColor(Color.nostiaTextSecond)
-                }
-            }
-        }
-        .presentationBackground(Color.nostiaBackground)
-        .presentationDetents([.medium])
-    }
-}
-
-// MARK: - Address Capture Sheet
-
-struct AddressCaptureSheet: View {
-    @Binding var line1: String
-    @Binding var city: String
-    @Binding var state: String
-    @Binding var zip: String
-    @Binding var errorMessage: String?
-    @Binding var isSaving: Bool
-    let onSave: () -> Void
-    let onDismiss: () -> Void
-    @EnvironmentObject var responsive: ResponsiveLayoutManager
-
-    private var isValid: Bool {
-        !line1.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !city.trimmingCharacters(in: .whitespaces).isEmpty &&
-        state.trimmingCharacters(in: .whitespaces).count == 2 &&
-        zip.trimmingCharacters(in: .whitespaces).count >= 5
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: responsive.spacing(20)) {
-                    VStack(spacing: responsive.spacing(12)) {
-                        Image(systemName: "house.fill")
-                            .font(.nostiaBody(responsive.fontSize(48)))
-                            .foregroundStyle(Color.nostiaAccent)
-                        Text("Home Address Required")
-                            .font(.title2.bold()).foregroundColor(Color.nostiaTextPrimary)
-                        Text("Your home address is required to set up your payout account with Stripe for receiving payments.")
-                            .font(.subheadline).foregroundColor(Color.nostiaTextSecond)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, responsive.spacing(8))
-
-                    VStack(spacing: responsive.spacing(12)) {
-                        NostiaTextField(label: "Street Address", placeholder: "123 Main St", text: $line1)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-
-                        HStack(spacing: responsive.spacing(12)) {
-                            NostiaTextField(label: "City", placeholder: "New York", text: $city)
-                                .textInputAutocapitalization(.words)
-                                .autocorrectionDisabled()
-
-                            NostiaTextField(label: "State", placeholder: "NY", text: $state)
-                                .textInputAutocapitalization(.characters)
-                                .autocorrectionDisabled()
-                                .frame(maxWidth: 80)
-                                .onChange(of: state) { newValue in
-                                    if newValue.count > 2 { state = String(newValue.prefix(2)) }
-                                }
-                        }
-
-                        NostiaTextField(label: "ZIP Code", placeholder: "10001", text: $zip)
-                            .keyboardType(.numberPad)
-                    }
-
-                    if let err = errorMessage {
-                        Text(err).font(.footnote).foregroundColor(Color.nostriaDanger)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    Button {
-                        onSave()
-                    } label: {
-                        HStack(spacing: 8) {
-                            if isSaving {
-                                ProgressView().tint(.white)
-                            } else {
-                                Image(systemName: "arrow.right.circle.fill")
-                                Text("Save & Continue")
-                            }
-                        }
-                        .font(.headline.bold()).foregroundColor(.white)
-                        .frame(maxWidth: .infinity).padding(responsive.spacing(16))
-                        .background(Color.nostiaAccent).cornerRadius(14)
-                        .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
-                    }
-                    .disabled(isSaving || !isValid)
-
-                    Spacer()
-                }
-                .padding(responsive.spacing(24))
-                .frame(maxWidth: responsive.contentMaxWidth)
-                .frame(maxWidth: .infinity)
-            }
-            .background(.clear)
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { onDismiss() }
-                        .foregroundColor(Color.nostiaTextSecond)
-                }
-                // Number-pad fields (ZIP) have no return key; without this Done
-                // button there is no way to leave the field.
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { hideKeyboard() }
-                        .foregroundColor(Color.nostiaAccent)
-                }
-            }
-        }
-        .presentationBackground(Color.nostiaBackground)
-        .presentationDetents([.large])
-    }
-}
-
-// Server wraps the consent object: { consent: { locationConsent: 1, ... }, isValid: bool }
-// SQLite stores booleans as integers (0/1), so we decode as Int and derive Bool.
 struct ConsentResponse: Decodable {
     let consent: ConsentStatus?
 }

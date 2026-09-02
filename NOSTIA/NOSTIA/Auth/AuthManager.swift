@@ -14,6 +14,15 @@ final class AuthManager: ObservableObject {
     private let recognizedDeviceTokenKey = "nostia_2fa_device_token"
 
     private init() {
+        // Demo builds land signed in. Rather than special-case the auth state, mint the
+        // token the demo backend hands out and let everything below run unchanged: the
+        // Keychain read succeeds, `isAuthenticated` becomes true, and `currentUserId`
+        // comes out of the payload exactly as it would for a real session. Signing out
+        // still works, and signing back in accepts anything.
+        if AppConfig.isDemoMode, getToken() == nil {
+            keychainWrite(key: tokenKey, value: DemoBackend.token)
+            keychainWrite(key: refreshTokenKey, value: DemoBackend.token)
+        }
         if let token = getToken() {
             isAuthenticated = true
             currentUserId = userIdFromToken(token)
@@ -99,8 +108,11 @@ final class AuthManager: ObservableObject {
     }
 
     func logout() {
-        // Revoke token server-side (fire-and-forget) before deleting locally
-        if let token = getToken(), let url = URL(string: AppConfig.apiBaseURL + "/auth/logout") {
+        // Revoke token server-side (fire-and-forget) before deleting locally. This is the
+        // one request in the app that builds its own URLSession call rather than going
+        // through APIClient, so it needs the demo guard of its own.
+        if !AppConfig.isDemoMode,
+           let token = getToken(), let url = URL(string: AppConfig.apiBaseURL + "/auth/logout") {
             Task {
                 var req = URLRequest(url: url)
                 req.httpMethod = "POST"

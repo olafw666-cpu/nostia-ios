@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		920594232F8F4CEB0081C030 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = 920594222F8F4CEB0081C030 /* StripePaymentSheet */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,7 +68,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				920594232F8F4CEB0081C030 /* StripePaymentSheet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +128,6 @@
 			);
 			name = NOSTIA;
 			packageProductDependencies = (
-				920594222F8F4CEB0081C030 /* StripePaymentSheet */,
 			);
 			productName = NOSTIA;
 			productReference = 92C59F052F8EC5B200A99550 /* NOSTIA.app */;
@@ -214,9 +211,6 @@
 			);
 			mainGroup = 92C59EFC2F8EC5B200A99550;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				920594212F8F4CEB0081C030 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 92C59F062F8EC5B200A99550 /* Products */;
 			projectDirPath = "";
@@ -623,24 +617,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		920594212F8F4CEB0081C030 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 25.11.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		920594222F8F4CEB0081C030 /* StripePaymentSheet */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 920594212F8F4CEB0081C030 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
-			productName = StripePaymentSheet;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 92C59EFD2F8EC5B200A99550 /* Project object */;
 }

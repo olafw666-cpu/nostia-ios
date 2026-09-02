@@ -1,5 +1,4 @@
 import SwiftUI
-import StripePaymentSheet
 
 // VaultContentView: embeddable vault expense view (no own navigation)
 struct VaultContentView: View {
@@ -143,13 +142,10 @@ struct VaultContentView: View {
                                 entry: entry,
                                 currentUserId: currentUserId,
                                 vaultLeaderId: data.vaultLeaderId,
-                                vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                                 onDelete: { Task { await vm.deleteEntry(entry.id, tripId: tripId) } },
                                 onMarkPaid: { splitId in activeAlert = .confirmCash(splitId) },
-                                onPayWithCard: { splitId in Task { await vm.handleCardTap(splitId: splitId) } },
                                 onVerifyCash: { splitId in activeAlert = .confirmVerify(splitId) },
                                 onDeclineCash: { splitId in activeAlert = .confirmDecline(splitId) },
-                                payingId: vm.payingId,
                                 busySplitId: vm.busySplitId
                             )
                         }
@@ -183,9 +179,6 @@ struct VaultContentView: View {
         .onChange(of: vm.infoMessage) { msg in
             if let msg { activeAlert = .info(msg); vm.infoMessage = nil }
         }
-        .onChange(of: vm.showNoCardPrompt) { show in
-            if show { activeAlert = .noCard; vm.showNoCardPrompt = false }
-        }
         .sheet(isPresented: $showAddExpense) {
             CreateExpenseSheet(tripId: tripId, members: participants, showCategory: false) { desc, amount, cat, date, splits in
                 let ok = await vm.addExpense(tripId: tripId, description: desc, amount: amount, category: cat, date: date, splits: splits)
@@ -198,56 +191,13 @@ struct VaultContentView: View {
                     unpaidSplits: data.unpaidSplits ?? [],
                     tripId: tripId,
                     vm: vm,
-                    vaultLeaderHasStripe: data.vaultLeaderHasStripe ?? false,
                     onMarkAllPaid: { splitIds in
                         // Dismiss first: the result alert (infoMessage → activeAlert) can't
                         // present while the sheet is still up.
                         showPayTotal = false
                         Task { await vm.markAllPaid(splitIds: splitIds, tripId: tripId) }
-                    },
-                    onCardPay: { splitIds in
-                        showPayTotal = false
-                        Task { await vm.handleBulkCardTap(splitIds: splitIds, tripId: tripId) }
                     }
                 )
-            }
-        }
-        // Add-card sheet (shown after no-card prompt → Add Card)
-        .sheet(isPresented: Binding(
-            get: { activeAlert == nil && !vm.showNoCardPrompt && (vm.pendingCardSplitId != nil || vm.pendingCardBulkSplitIds != nil) },
-            set: { if !$0 {
-                vm.pendingCardSplitId = nil
-                vm.pendingCardBulkSplitIds = nil
-            }}
-        )) {
-            AddCardReturnView(
-                onCardAdded: {
-                    let splitId = vm.pendingCardSplitId
-                    let bulkIds = vm.pendingCardBulkSplitIds
-                    vm.pendingCardSplitId = nil
-                    vm.pendingCardBulkSplitIds = nil
-                    if let id = splitId {
-                        Task { await vm.preparePaymentSheet(splitId: id) }
-                    } else if let ids = bulkIds {
-                        Task { await vm.prepareBulkPaymentSheet(splitIds: ids, tripId: tripId) }
-                    }
-                }
-            )
-        }
-        .optionalPaymentSheet(isPresented: $vm.showPaymentSheet, paymentSheet: vm.paymentSheet) { result in
-            Task {
-                await vm.handlePaymentResult(result, tripId: tripId)
-                if case .completed = result, let msg = vm.pendingPaymentMessage {
-                    activeAlert = .paymentSuccess(msg)
-                }
-            }
-        }
-        .optionalPaymentSheet(isPresented: $vm.showBulkPaymentSheet, paymentSheet: vm.bulkPaymentSheet) { result in
-            Task {
-                await vm.handleBulkPaymentResult(result, tripId: tripId)
-                if case .completed = result, let msg = vm.pendingBulkMessage {
-                    activeAlert = .paymentSuccess(msg)
-                }
             }
         }
     }
@@ -255,7 +205,7 @@ struct VaultContentView: View {
     @ViewBuilder
     private func alertActions(for alert: VaultAlert) -> some View {
         switch alert {
-        case .error, .info, .paymentSuccess:
+        case .error, .info:
             Button("OK") {}
         case .confirmCash(let id):
             Button("Cancel", role: .cancel) {}
@@ -266,12 +216,6 @@ struct VaultContentView: View {
         case .confirmDecline(let id):
             Button("Cancel", role: .cancel) {}
             Button("Decline", role: .destructive) { Task { await vm.declineCash(splitId: id, tripId: tripId) } }
-        case .noCard:
-            Button("Cancel", role: .cancel) {
-                vm.pendingCardSplitId = nil
-                vm.pendingCardBulkSplitIds = nil
-            }
-            Button("Add Card") {} // dismissing the alert lets the add-card sheet present
         case .reminder(let userId, _):
             Button("Cancel", role: .cancel) {}
             Button("Send") { Task { await vm.sendReminder(targetUserId: userId, tripId: tripId) } }
@@ -307,21 +251,6 @@ struct VaultContentView: View {
                     amount: $0.amount
                 )
             }
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func optionalPaymentSheet(
-        isPresented: Binding<Bool>,
-        paymentSheet: PaymentSheet?,
-        onCompletion: @escaping (PaymentSheetResult) -> Void
-    ) -> some View {
-        if let sheet = paymentSheet {
-            self.paymentSheet(isPresented: isPresented, paymentSheet: sheet, onCompletion: onCompletion)
-        } else {
-            self
         }
     }
 }
@@ -402,22 +331,18 @@ struct BalanceRow: View {
 enum VaultAlert: Identifiable {
     case error(String)
     case info(String)
-    case paymentSuccess(String)
     case confirmCash(Int)
     case confirmVerify(Int)
     case confirmDecline(Int)
-    case noCard
     case reminder(userId: Int, username: String?)
 
     var id: String {
         switch self {
         case .error: return "error"
         case .info: return "info"
-        case .paymentSuccess: return "paymentSuccess"
         case .confirmCash(let id): return "confirmCash-\(id)"
         case .confirmVerify(let id): return "confirmVerify-\(id)"
         case .confirmDecline(let id): return "confirmDecline-\(id)"
-        case .noCard: return "noCard"
         case .reminder(let userId, _): return "reminder-\(userId)"
         }
     }
@@ -426,18 +351,16 @@ enum VaultAlert: Identifiable {
         switch self {
         case .error: return "Error"
         case .info: return "Request Sent"
-        case .paymentSuccess: return "Payment Submitted"
         case .confirmCash: return "Paid in Cash?"
         case .confirmVerify: return "Verify Cash Payment"
         case .confirmDecline: return "Decline Cash Claim?"
-        case .noCard: return "No Card on File"
         case .reminder: return "Send Reminder"
         }
     }
 
     var message: String {
         switch self {
-        case .error(let m), .info(let m), .paymentSuccess(let m):
+        case .error(let m), .info(let m):
             return m
         case .confirmCash:
             return "This sends a request to the person who paid this expense. The split is marked paid once they verify they received the cash."
@@ -445,8 +368,6 @@ enum VaultAlert: Identifiable {
             return "Confirm you received this payment in cash. This marks the split as paid."
         case .confirmDecline:
             return "The split stays unpaid and the member is notified that you didn't receive the cash."
-        case .noCard:
-            return "You have no card on file. Would you like to add one?"
         case .reminder(_, let username):
             return "Send a payment reminder to \(username.map { "@\($0)" } ?? "this member")?"
         }
@@ -457,13 +378,10 @@ struct ExpenseCard: View {
     let entry: VaultEntry
     let currentUserId: Int?
     let vaultLeaderId: Int?
-    var vaultLeaderHasStripe: Bool = false
     let onDelete: () -> Void
     let onMarkPaid: (Int) -> Void
-    let onPayWithCard: (Int) -> Void
     var onVerifyCash: (Int) -> Void = { _ in }
     var onDeclineCash: (Int) -> Void = { _ in }
-    let payingId: Int?
     var busySplitId: Int? = nil
 
     @State private var showDeleteAlert = false
@@ -472,12 +390,6 @@ struct ExpenseCard: View {
     private var canDelete: Bool {
         guard let me = currentUserId else { return false }
         return vaultLeaderId == me || entry.paidById == me
-    }
-
-    // Card payments transfer to the EXPENSE PAYER, so the Card button is gated on the
-    // payer's payout setup (falls back to the old vault-leader flag for older responses).
-    private var payerHasStripe: Bool {
-        entry.paidByHasStripe ?? vaultLeaderHasStripe
     }
 
     private var paidByDisplay: String {
@@ -562,32 +474,15 @@ struct ExpenseCard: View {
                                     .padding(.horizontal, 10).padding(.vertical, 6)
                                     .background(Capsule().fill(Color.nostiaWarningSoft))
                             } else {
-                                HStack(spacing: 8) {
-                                    Button { onMarkPaid(split.id) } label: {
-                                        Text("Cash")
-                                            .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
-                                            .padding(.horizontal, 16).padding(.vertical, 8)
-                                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
-                                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostriaBorder, lineWidth: 1))
-                                    }
-                                    .disabled(busySplitId != nil)
-                                    if payerHasStripe {
-                                        Button { onPayWithCard(split.id) } label: {
-                                            if payingId == split.id {
-                                                ProgressView().tint(.white).scaleEffect(0.8)
-                                                    .frame(width: 70, height: 34)
-                                                    .background(Color.nostiaAccent).cornerRadius(10)
-                                            } else {
-                                                Text("Card")
-                                                    .font(.subheadline.bold()).foregroundColor(.white)
-                                                    .padding(.horizontal, 16).padding(.vertical, 8)
-                                                    .background(Color.nostiaAccent).cornerRadius(10)
-                                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 4)
-                                            }
-                                        }
-                                        .disabled(payingId != nil)
-                                    }
+                                Button { onMarkPaid(split.id) } label: {
+                                    Label("I Paid", systemImage: "checkmark")
+                                        .font(.subheadline.bold()).foregroundColor(Color.nostiaAccent)
+                                        .padding(.horizontal, 16).padding(.vertical, 8)
+                                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.nostiaCard))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.nostiaAccent.opacity(0.55), lineWidth: 1))
                                 }
+                                .disabled(busySplitId != nil)
+                                .accessibilityLabel("Mark your share of \(entry.description) as paid")
                             }
                         }
                     }
@@ -611,19 +506,13 @@ struct PayTotalSheet: View {
     let unpaidSplits: [UnpaidSplit]
     let tripId: Int
     let vm: VaultViewModel
-    var vaultLeaderHasStripe: Bool = false
     let onMarkAllPaid: ([Int]) -> Void
-    let onCardPay: ([Int]) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var responsive: ResponsiveLayoutManager
 
     private var total: Double { unpaidSplits.reduce(0) { $0 + $1.amount } }
     private var splitIds: [Int] { unpaidSplits.map(\.id) }
-    // Card pays each expense's payer directly — every payer in the batch must have payouts set up
-    private var allPayersHaveStripe: Bool {
-        unpaidSplits.allSatisfy { $0.paidByHasStripe ?? vaultLeaderHasStripe }
-    }
 
     var body: some View {
         NavigationStack {
@@ -658,42 +547,21 @@ struct PayTotalSheet: View {
                                 Text(String(format: "$%.2f", total))
                                     .font(.nostiaDisplay(28, weight: .heavy)).foregroundColor(Color.nostiaTextPrimary)
                             }
-                            Text(String(format: "Card charge: $%.2f (includes Stripe fee)", calculateChargedAmount(total)))
-                                .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .padding(responsive.spacing(16))
                         .nostiaCard(in: RoundedRectangle(cornerRadius: 16))
 
                         VStack(spacing: responsive.spacing(12)) {
-                            HStack(spacing: 12) {
-                                Button {
-                                    onMarkAllPaid(splitIds)
-                                } label: {
-                                    Text("Pay Cash")
-                                        .font(.headline.bold()).foregroundColor(Color.nostiaAccent)
-                                        .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
-                                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.nostiaCard))
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.nostiaAccent, lineWidth: 1.5))
-                                }
-                                if allPayersHaveStripe {
-                                    Button {
-                                        onCardPay(splitIds)
-                                    } label: {
-                                        Text("Pay with Card")
-                                            .font(.headline.bold()).foregroundColor(.white)
-                                            .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
-                                            .background(Color.nostiaAccent).cornerRadius(14)
-                                            .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
-                                    }
-                                }
+                            Button {
+                                onMarkAllPaid(splitIds)
+                            } label: {
+                                Label("Mark as Paid", systemImage: "checkmark.circle.fill")
+                                    .font(.headline.bold()).foregroundColor(.white)
+                                    .frame(maxWidth: .infinity).padding(.vertical, responsive.spacing(14))
+                                    .background(Color.nostiaAccent).cornerRadius(14)
+                                    .shadow(color: Color.nostiaAccent.opacity(0.4), radius: 8)
                             }
-                            if !allPayersHaveStripe {
-                                Text("Card payments unavailable — someone you owe hasn't set up payouts yet.")
-                                    .font(.caption).foregroundColor(Color.nostiaTextMuted)
-                                    .multilineTextAlignment(.center)
-                            }
-                            Text("Pay Cash sends a verification request — each person you paid must confirm they received the cash.")
+                            Text("Each person you paid confirms they got it before the split clears.")
                                 .font(.caption).foregroundColor(Color.nostiaTextMuted)
                                 .multilineTextAlignment(.center)
                         }
@@ -704,7 +572,7 @@ struct PayTotalSheet: View {
                 .frame(maxWidth: .infinity)
             }
             .background(.clear)
-            .navigationTitle("Pay Total")
+            .navigationTitle("Settle Up")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
@@ -712,31 +580,6 @@ struct PayTotalSheet: View {
                     Button("Cancel") { dismiss() }.foregroundColor(Color.nostiaAccent)
                 }
             }
-        }
-        .presentationBackground(Color.nostiaBackground)
-    }
-}
-
-// MARK: - Add Card Return View
-
-struct AddCardReturnView: View {
-    let onCardAdded: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            PaymentMethodsView()
-                .navigationTitle("Payment Methods")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(.hidden, for: .navigationBar)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
-                            dismiss()
-                            onCardAdded()
-                        }.foregroundColor(Color.nostiaAccent)
-                    }
-                }
         }
         .presentationBackground(Color.nostiaBackground)
     }

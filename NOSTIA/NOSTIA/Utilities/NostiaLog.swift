@@ -11,7 +11,7 @@ import Foundation
 /// never even evaluated: no string is built, nothing is emitted. Anything that
 /// genuinely needs to be visible in production belongs in a server-side log
 /// with an actor and a timestamp (D14.1), not here.
-enum NostiaLog {
+nonisolated enum NostiaLog {
     static func debug(_ category: String, _ message: @autoclosure () -> String) {
         #if DEBUG
         print("[\(category)] \(message())")

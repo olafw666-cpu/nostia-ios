@@ -2,12 +2,12 @@
 // Update the version constant and body text together whenever legal updates these documents.
 
 enum LegalDocuments {
-    static let tosVersion = "2026-07-19"
+    static let tosVersion = "2026-09-01"
 
     static let termsOfUse = """
 TERMS OF USE
 
-Effective Date: July 19, 2026
+Effective Date: September 1, 2026
 
 Welcome to Nostia ("the App," "we," "our," or "us"). By creating an account and using Nostia, you agree to be bound by these Terms of Use. Please read them carefully.
 
@@ -59,15 +59,13 @@ In-app experience invitations: you can invite another Nostia user to join you at
 
 We reserve the right to remove content that violates these Terms or that we deem inappropriate, without prior notice.
 
-6. PAYMENT FEATURES (VAULT)
+6. EXPENSE TRACKING (VAULT)
 
-The Vault feature enables shared expense tracking and payment splitting via Stripe. By using Vault payment features, you agree to Stripe's Terms of Service in addition to these Terms.
+The Vault feature is a shared record of what a group spent and who owes whom. It is a ledger only. Nostia does not process, hold, transfer, or handle money in any form, and the App never collects card, bank, or other payment details.
 
-Card and Apple Pay payments: When you pay a split by card or Apple Pay, the payment is processed by Stripe and transferred directly to the member who fronted the expense. A payment processing fee is added to these charges and shown to you before you confirm payment. To receive payments, you must set up payouts through Stripe, which includes providing identity and payout information directly to Stripe and agreeing to Stripe's Connected Account Agreement. Nostia does not receive or store the identity documents or full banking details you provide to Stripe, and does not receive your Apple Pay card details.
+Settling up: Money changes hands between you and the other members outside Nostia, by whatever means you arrange between yourselves. Marking your share as paid sends a request to the member who fronted the expense; the split is recorded as settled only after that member confirms they received the money. Falsely claiming a payment violates these Terms and our Community Guidelines.
 
-Cash payments: Recording a cash payment sends a verification request to the member who fronted the expense; the split is marked paid only after that member confirms they received the cash. Falsely claiming a cash payment violates these Terms and our Community Guidelines.
-
-Disputes and reversals: If a card payment is disputed or reversed, the related transfer to its recipient may be reversed and the corresponding split may be reopened. We are not responsible for any payment failures, disputes, or errors arising from Stripe's processing. You are responsible for ensuring your payment information is accurate. Nostia does not mediate financial disputes between users.
+Balances are a record, not an obligation we enforce: amounts shown in a vault reflect what members entered themselves. Nostia does not verify that any payment actually occurred, does not mediate financial disputes between users, and is not responsible for amounts entered incorrectly or in bad faith.
 
 7. DAILY ADVENTURES, AI-GENERATED CONTENT, AND MOVEMENT GOALS
 
@@ -105,7 +103,7 @@ All content, design, graphics, interfaces, and software that are part of the App
 
 12. THIRD-PARTY SERVICES
 
-Nostia integrates with third-party services including Stripe for payments and payouts (including Stripe Connect), Apple Pay as a payment method (processed by Stripe), and Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services. Adventure content is generated and reviewed on Nostia's own infrastructure — no third-party AI provider is involved, and your data is never sent to one. Step and distance measurement for adventures is performed on your device by Apple's Motion & Fitness framework.
+Nostia integrates with Apple Push Notification service for notifications. Your use of those services is subject to their respective terms and privacy policies. We are not responsible for third-party services. Adventure content is generated and reviewed on Nostia's own infrastructure — no third-party AI provider is involved, and your data is never sent to one. Step and distance measurement for adventures is performed on your device by Apple's Motion & Fitness framework.
 
 13. DISCLAIMERS
 
@@ -143,7 +141,7 @@ For questions about these Terms, contact us through the App's support channels.
     static let privacyPolicy = """
 PRIVACY POLICY
 
-Effective Date: July 19, 2026
+Effective Date: September 1, 2026
 
 This Privacy Policy describes how Nostia ("we," "our," or "us") collects, uses, shares, and protects information about you when you use the Nostia mobile application.
 
@@ -155,7 +153,7 @@ a) Information You Provide
 - User-generated content: posts, comments, experience descriptions, ratings and reviews, trip details (including trip tasks and date poll votes), and content you share within organizations
 - Motion & Fitness data: if you grant Motion & Fitness permission, your device's step count and estimated walking distance are used to measure progress on your active daily adventure. Measurement happens on your device via iOS; only cumulative totals (steps and distance in meters) since the adventure was issued are sent to our server. We never receive your routes or movement history, and no motion data is read while you have no active adventure.
 - Crash pad listings and requests: if you offer a crash pad, the listing details you enter (title, description, approximate area, capacity) are stored and shown to your mutual followers. Nostia asks only for an approximate area and does not require your exact address; requests to stay (including optional dates and a message) are stored and shown to the host.
-- Payment information: processed by Stripe; we store only Stripe identifiers (customer ID and, if you set up payouts, a connected-account ID) and the last four digits of saved cards. Apple Pay payments are processed by Stripe; we never receive your Apple Pay card details. If you set up payouts to receive money from other members, the identity and banking details you provide during Stripe onboarding are collected and held by Stripe, not by us.
+- Payment information: none. Nostia does not collect card, bank, or any other payment details, and does not process or transfer money. Vault balances are a record of amounts members entered themselves.
 - Face ID security (passkeys): if you enable Face ID security, we store a passkey public-key credential and a device name for each device you enroll. Your biometric data never leaves your device — Apple only tells us whether the check succeeded.
 - Location data: if you grant location permission, your approximate coordinates are used for experience discovery, map features, and determining eligibility for location-based organizations
 - Contacts: if you grant Contacts permission and use the optional "find friends from contacts" feature, email addresses from your address book are transmitted to our server solely to check which of them belong to existing Nostia users; they are matched in memory and not stored. If you explicitly invite a specific contact, that contact's email and/or phone number is stored only to generate the invitation link, and the record expires after 7 days. Contact data is never used for advertising and never shared with third parties.
@@ -167,7 +165,6 @@ b) Information Collected Automatically
 - Adventure activity: which adventures you receive, complete, or discard, your recorded progress toward each adventure's step and distance goals, your points balance, and cosmetic items you unlock
 
 c) Information From Third Parties
-- Stripe provides payment processing status and webhook events related to your transactions
 
 2. HOW WE USE YOUR INFORMATION
 
@@ -175,7 +172,7 @@ We use the information we collect to:
 - Provide, operate, and maintain the Nostia service
 - Enable social features including following, messaging, experience discovery, location-based organizations, and crash pads
 - Provide your daily adventures, measure and store your progress toward their movement goals, and operate the points system and cosmetic store
-- Process vault payments and expense splits via Stripe
+- Keep a shared record of vault expenses and who owes whom
 - Send in-app notifications and push notifications (where consented)
 - Monitor for security threats, fraud, and abuse
 - Comply with legal obligations
@@ -195,7 +192,7 @@ If you or another user shares an invite link to a publicly-visible experience, i
 If you invite another user to an experience in-app, that user receives an in-app notification (and, if they have push enabled, a push notification) showing your name and the experience. We store a record of who invited whom to which experience so the App can show you who you have already invited and never notify the same person twice for the same experience. In-app invitations can only be exchanged between users with a follow relationship, and only for experiences the recipient can already view under its visibility settings.
 
 b) With Service Providers
-We share data with Stripe (payment processing, including Apple Pay transactions) and Apple (push notifications) solely to operate those features. Adventure content is prepared on Nostia's own infrastructure and does not involve third-party AI providers; step and distance measurement happens on your device.
+We share data with Apple (push notifications) solely to operate that feature. Adventure content is prepared on Nostia's own infrastructure and does not involve third-party AI providers; step and distance measurement happens on your device.
 
 c) For Legal Reasons
 We may disclose information if required by law, regulation, or legal process, or to protect the rights, property, or safety of Nostia, its users, or the public.

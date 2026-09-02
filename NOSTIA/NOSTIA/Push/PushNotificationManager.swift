@@ -21,6 +21,12 @@ final class PushNotificationManager: NSObject, UNUserNotificationCenterDelegate 
     /// Request authorization at an appropriate moment — after the user is in the app,
     /// never on first launch (Section 3.1 "Permission"). Safe to call repeatedly.
     func requestAuthorizationIfAppropriate() {
+        // No APNs handshake in a demo build. `registerForRemoteNotifications()` is a
+        // network call to Apple whose only purpose is obtaining a token to POST to a
+        // backend that is not there, so asking for the permission at all would be
+        // pretending. In-app notifications still work — they come from the demo store.
+        guard !AppConfig.isDemoMode else { return }
+
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             let status = settings.authorizationStatus
             Task { @MainActor in

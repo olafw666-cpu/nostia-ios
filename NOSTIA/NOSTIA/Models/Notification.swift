@@ -1,6 +1,10 @@
 import Foundation
 
-struct NostiaNotification: Identifiable, Decodable {
+// Codable rather than Decodable-only: the demo backend keeps notifications as typed
+// values and re-encodes them into response bytes. `encode(to:)` synthesises cleanly
+// from the stored properties below despite the hand-written `init(from:)`, which has
+// to stay — the server has sent `read` as both a bool and a 0/1 int.
+struct NostiaNotification: Identifiable, Codable {
     let id: Int
     let type: String
     let title: String
